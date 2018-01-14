@@ -1,0 +1,15 @@
+{
+  "name": "mutil",
+  "version": "0.0.0",
+  "description": "μtil - micro utilities",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "fluffywaffles <skorlir@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "rollup": "^0.54.0",
+    "rollup-plugin-node-resolve": "^3.0.2"
+  }
+}
