@@ -4,7 +4,7 @@
   "description": "μtil - micro utilities",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pnpx rollup -c .rollup.test.js -- index.js && node .test.js && rm .test.js"
   },
   "author": "fluffywaffles <skorlir@gmail.com>",
   "license": "ISC",
