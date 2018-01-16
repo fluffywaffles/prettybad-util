@@ -14,8 +14,7 @@
  *  attr
  *  relative_xy
  *  immutable
- *  proxy
- *  Some/None
+ *  Some
  *  defined
  *
  */
@@ -77,39 +76,43 @@ export const or    = fs => v => any(f => f(v))(fs)
 
 // pipelining: accumulators pt. 1
 // TODO(jordan): today: poor man's lenses; tomorrow: lens library?
-export const ᐅcarry   = f => init => [ init, f(init) ]
-export const ᐅcont    = f => ([ init, ...vs ]) => [ init, f(init), ...vs ]
-export const ᐅuncarry = f => ᐅᶠ([ reverse, apply(f) ])
+export const ᐅlift  = f => init => [ init, f(init) ]
+export const ᐅpile  = f => ([ init, ...vs ]) => [ init, f(init), ...vs ]
+export const ᐅdrop  = f => ᐅᶠ([ reverse, apply(f) ])
+export const ᐅdropn = n => f => ᐅᶠ([ reverse, slice(0)(n), apply(f) ])
+export const ᐅdrop2 = ᐅdropn(2)
 
 // objects pt. 1
 const _get_descs = Object.getOwnPropertyDescriptors
 const _defprops  = Object.defineProperties
 const _defprop   = Object.defineProperty
-export const symbols      = Object.getOwnPropertySymbols
-export const keys         = Object.keys
-export const values       = Object.values
-export const to_kvs       = Object.entries
-export const freeze       = Object.freeze
-export const get_desc     = prop => obj => Object.getOwnPropertyDescriptor(obj, prop)
-export const create       = props => Object.create(null, props)
-export const def_props    = { mut: props => obj => _defprops(objs, props) }
-export const def_prop     = { mut: prop => desc => obj => (_defprop(obj, prop, desc), obj) }
-export const from_kvs     = fold(o => ([k, v]) => def_prop.mut(k)(v)(o))(create())
-export const prop_descs   = ᐅᶠ([ _get_descs, to_kvs ])
-export const symbol_descs = ᐅᶠ([ ᐅcarry(symbols), ᐅuncarry(syms => obj => map(flip(get_desc)(obj))(syms)) ])
-export const descs        = ᐅᶠ([ ᐅcarry(prop_descs), ᐅuncarry(concat) ])
-export const object_clone = ᐅᶠ([ descs, from_kvs ])
-export const mixin        = a => b => ᐅᶠ([ map(descs), apply(concat), from_kvs ])([ a, b ])
-export const build        = fold(mixin)(create())
+export const symbols       = Object.getOwnPropertySymbols
+export const keys          = ᐅᶠ([ _get_descs, Object.keys ])
+export const props         = ᐅᶠ([ ᐅlift(keys), ᐅpile(symbols), ᐅdrop2(concat) ])
+export const key_values    = Object.values
+export const symbol_values = ᐅᶠ([ ᐅlift(symbols), ᐅdrop(ss => obj => map(s => obj[s])(ss)) ])
+export const freeze        = Object.freeze
+export const get_desc      = prop => obj => Object.getOwnPropertyDescriptor(obj, prop)
+export const create        = props => Object.create(null, _get_descs(props || {}))
+export const def_props     = { mut: props => obj => _defprops(obj, props) }
+export const def_prop      = { mut: prop => desc => obj => (_defprop(obj, prop, desc), obj) }
+// NOTE(jordan): super curious. If we drop the kvs params here, things get... wrong. Why?
+export const prop_descs    = ᐅᶠ([ _get_descs, Object.entries ])
+export const symbol_descs  = ᐅᶠ([ ᐅlift(symbols), ᐅdrop(syms => obj => map(s => [ s, get_desc(s)(obj) ])(syms)) ])
+export const descs         = ᐅᶠ([ ᐅlift(prop_descs), ᐅpile(symbol_descs), ᐅdrop2(concat) ])
+export const from_descs    = descs => fold(o => ([p, d]) => def_prop.mut(p)(d)(o))(create())(descs)
+export const object_clone  = ᐅᶠ([ descs, from_descs ])
+export const mixin         = a => b => ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
+export const build         = fold(mixin)(create())
 
 // functions pt. 3
-const _mimic = f => flip(mixin)({
-  get name () { return f.name },
-  toString () { return f.toString() },
+const _mimic = f => def_props.mut({
+  name: { configurable: false, enumerable: false, get () { return f.name } },
+  toString: { value () { return f.toString() } },
 })
 export const copy_fn  = bind({})
-export const mimic_fn = srcfn => ᐅᶠ([ copy_fn, _mimic(srcfn) ])
-export const meta_fn  = meta  => ᐅᶠ([ copy_fn, def_props.mut(meta) ])
+export const mimic_fn = srcfn => destfn => ᐅᶠ([ copy_fn, _mimic(srcfn) ])(destfn)
+export const meta_fn  = meta  => ᐅᶠ([ copy_fn, def_props.mut(_get_descs(meta)) ])
 export const named    = name  => meta_fn({ name })
 /* TODO(jordan):
  *  memoization
@@ -124,17 +127,17 @@ export const proxy = traps => target => new Proxy(target, traps)
 export const None  = proxy({
   get (target, prop, recv) {
     const prop_in  = f => v => incl(prop)(f(v))
-    const has_prop = or([ prop_in(keys), prop_in(symbols) ])
+    const has_prop = prop_in(props)
     return ᐅif(has_prop)(get(prop))(ret(None))(target)
   }
-}, create({
+})(meta_fn({
   toString () { return 'None' },
   [Symbol.toPrimitive] (hint) {
-    if (hint === 'string') return this.toString()
+    if (hint === 'string') return 'None'
     if (hint === 'number') throw new Error('None is not a number and cannot be used as one')
     throw new Error('None is not a value and cannot be used here')
   }
-}))
+})(function () { return None }))
 
 // objects pt. 2
 export const get = prop => obj => prop in obj ? obj[prop] : None
@@ -150,16 +153,17 @@ export const delace   = fold(_delacer)([[], []])
 export const splice   = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs)), arr)
 export const insert   = v => i => ᐅᶠ([ array_copy, splice(i)(0)(v) ])
 export const remdex   = i => ᐅᶠ([ array_copy, splice(i)(1)() ])
-export const remove   = v => arr => ᐅᶠ([ arr_copy, carry(index(v)), uncarry(remdex) ])
-export const meta_arr = defs => ᐅᶠ([ array_copy, def_props.mut(defs) ])
+export const remove   = v => arr => ᐅᶠ([ arr_copy, ᐅlift(index(v)), ᐅdrop(remdex) ])
+export const meta_arr = defs => ᐅᶠ([ array_copy, def_props.mut(_get_descs(defs)) ])
 
 // ...? special for sisyphus
 export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
 
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
+  const just_hi = _ => "hi"
 
-  return suite('unformulaic utilities', [
+  return suite('μtil: micro utility library', [
     t => t.suite('functions', {
       'flip: flips args':
         t => t.eq(flip(a => b => a - b)(1)(2))(1),
@@ -280,16 +284,71 @@ export function test (suite) {
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
     }),
     t => t.suite('pipelining: accumulators pt. 1', {
-      'ᐅcarry: carries along origin array':
-        t => t.eq(ᐅcarry(a => a[0])(to6))([ to6, 1 ]),
-      'ᐅuncarry: stops carrying':
-        t => t.eq(ᐅᶠ([ ᐅcarry(a => a[1]), ᐅuncarry(push) ])(to6))([ 1, 2, 3, 4, 5, 2 ]),
-      'ᐅcarry & ᐅuncarry: cancel out':
-        t => t.eq(ᐅᶠ([ ᐅcarry(a => a[0]), ᐅuncarry(v => arr => arr) ])(to6))(to6),
+      'ᐅlift: carries along original value':
+        t => t.eq(ᐅlift(a => a[0])(to6))([ to6, 1 ]),
+      'ᐅdrop: applies a function to all the carried values':
+        t => t.eq(ᐅᶠ([ ᐅlift(a => a[1]), ᐅdrop(push) ])(to6))([ 1, 2, 3, 4, 5, 2 ]),
+      'ᐅlift & ᐅdrop: cancel out':
+        t => t.eq(ᐅᶠ([ ᐅlift(a => a[0]), ᐅdrop(v => arr => arr) ])(to6))(to6),
+    }),
+    t => t.suite(`objects pt. 1`, {
+      'symbols: lists symbols':
+        t => t.eq(symbols({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
+      'keys: lists non-symbol keys':
+        t => t.eq(keys({ [Symbol.split]: just_hi, a: 4 }))(['a']),
+      'props: lists both symbols and non-symbol keys':
+        t => t.eq(props({ [Symbol.split]: just_hi, a: 4 }))(['a', Symbol.split]),
+      'key_values: lists non-symbol values':
+        t => t.eq(key_values({ [Symbol.split]: just_hi, a: 4 }))([4]),
+      'symbol_values: lists symbol values':
+        t => t.eq(symbol_values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi ]),
+      // TODO
+      // 'values: lists both symbol values and non-symbol values':
+      //   t => t.eq(values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi, 4 ]),
+      'freeze: freezes object': t => {
+        const o = { a: 5, b: "hi" }
+        freeze(o)
+        try {
+          o.c = 3
+          return false
+        } catch (e) {
+          return e instanceof TypeError && e.message.startsWith('Cannot add property')
+        }
+      },
+      'get_desc: gets property descriptor':
+        t => t.eq(get_desc('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
+      'create: creates null-prototype empty object':
+        t => t.eq(create())(Object.create(null)),
+      'def_props.mut: mutably sets properties on an object': t => {
+        const o = { a: 5 }
+        def_props.mut({ b: { value: 3 } })(o)
+        def_props.mut({ a: { value: o.a + 1, enumerable: false } })(o)
+        return t.eq(o.b)(3) && t.eq(o.a)(6) && t.eq(Object.keys(o))([])
+      },
+      'def_prop.mut: mutably sets a single property on an object': t => {
+        const o = { a: 1 }
+        def_prop.mut('b')({ value: 5 })(o)
+        def_prop.mut('a')({ enumerable: false })(o)
+        return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
+      },
+      'prop_descs: gets descriptors for non-symbol properties':
+        t => t.eq(prop_descs({ a: 5 }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }]]),
+      'symbol_descs: gets descriptors for symbol properties':
+        t => t.eq(symbol_descs({ [Symbol.split]: just_hi }))([[Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
+      'descs: gets all descriptors':
+        t => t.eq(descs({ a: 5, [Symbol.split]: just_hi }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }], [Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
+      'from_descs: converts [prop, desc] pairs to an object':
+        t => t.eq(from_descs([['a', { configurable: true, writable: true, enumerable: true, value: 5 }]]))({ a: 5 }),
+      'object_clone: (shallowly) clones an object':
+        t => t.eq(object_clone({ a: 5 }))({ a: 5 }) && t.refeq(object_clone({ f: to6 }).f)(to6),
+      'mixin: creates a new object combining properties of two source objects':
+        t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
+      'build: combines an array of objects':
+        t => t.eq(build([{ a: 5 }, { a: 4 }, { a: 3, b: 2 }]))({ a: 3, b: 2 }),
     }),
     t => t.suite('functions pt. 3', {
       'copy_fn: copies a function':
-        t => t.eq(copy_fn(id)(id)) && !t.refeq(copy_fn(id))(id),
+        t => t.eq(copy_fn(id)(id)) && !t.refeq(copy_fn(id))(id) && t.eq(copy_fn(id)(5))(id(5)),
       'mimic_fn: copies a function, keeping its name and toString':
         t => {
           const fn = x => x + 1
@@ -297,25 +356,35 @@ export function test (suite) {
           const mimic = mimic_fn(id)(fn)
           return t.eq(mimic.name)(id.name)
               && t.eq(mimic.toString())(id.toString())
-              && t.eq(mimic('hi'))(id('hi'))
+              && t.eq(mimic('hi'))(id('hi') + 1)
               && !t.refeq(mimic)(id)
               && !t.refeq(mimic)(fn)
         },
       'meta_fn: defines hidden properties on a copy of a function':
         t => {
           const fn = _ => 5
-          const mf = meta_fn({ value: fn() })(fn)
+          const mf = meta_fn({ a: fn() })(fn)
           return t.eq(mf())(fn())
-              && t.eq(mf.value)(fn())
+              && t.eq(mf.a)(fn())
               && !t.refeq(mf)(fn)
         },
       'named: names a function':
         t => t.eq(named('hello')(v => `hello, ${v}`).name)('hello'),
-    })
-    // t => t.suite(`'named' names functions`, [
-    //   t => t.eq(named(`fn`)(_ => 42).name)(`fn`),
-    //   t => t.eq(named(`fn`)(_ => 42)())(42),
-    // ]),
+    }),
+    t => t.suite(`strings`, {
+      'split: splits a string around a delimiter':
+        t => t.eq(split(',')('a,b,c'))(['a', 'b', 'c']),
+      'quote: surrounds a string in quotes':
+        t => t.eq(quote('s'))('"s"'),
+    }),
+    t => t.suite(`None`, {
+      'None: perpetuates itself and is None':
+      t => {
+        return t.eq(None.toString())('None')
+            && t.eq(`${None}`)('None')
+            && t.eq(None.a.b.c.hi())(None)
+      },
+    }),
   ])
 }
 
