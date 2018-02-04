@@ -128,6 +128,21 @@ export const None  = proxy({
   get (target, prop, recv) {
     const prop_in  = f => v => incl(prop)(f(v))
     const has_prop = prop_in(props)
+    /* EXPLANATION(jordan): Yeah... wtf wrt this next line. Lets None be push/concat/etc.-ed without
+     * disappearing in the result array. This is an issue because of the way Symbols were designed
+     * for backwards compatability -- basically, returning undefined is "good" and counts as the
+     * same as if the Symbol (which is a required behavior and so has to be, in some sense, defined)
+     * were set, and set to "false". This is because undefined is falsy. Fucking falsyness. Falsy
+     * fucking falsy. Ugh. May be worth investigating how and why [].concat refers to
+     * isConcatSpreadable in the first place; is this situation a single special case, or one of
+     * many?
+     */
+    // TODO(jordan)?: exclude more well-known symbols?
+    if (prop === Symbol.isConcatSpreadable) return target[prop]
+    /* NOTE(jordan): ironically, valueOf works because its result is None anyway, but in general
+     * prototype dispatch on properties is borked by this. We may want to consider if this causes
+     * problems, and if so when/how...
+     */
     return ᐅif(has_prop)(get(prop))(ret(None))(target)
   }
 })(meta_fn({
