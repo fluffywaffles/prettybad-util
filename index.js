@@ -22,8 +22,9 @@
 // 00: mutation
 const _defprops  = Object.defineProperties
 const _defprop   = Object.defineProperty
-export const def           = { mut: prop => desc => obj => (_defprop(obj, prop, desc), obj) }
-export const defs          = { mut: props => obj => _defprops(obj, props) }
+export const def  = { mut: prop => desc => obj => (_defprop(obj, prop, desc), obj) }
+export const defs = { mut: props => obj => _defprops(obj, props) }
+
 // NOTE(jordan): for mutative versions, where applicable
 const mut = v => def.mut('mut')({ value: v })
 
@@ -83,9 +84,9 @@ export const on    = v => map(call(v))
 export const fmap  = flip(on)
 
 // pipelining
-export const ᐅᶠ      = flip(fold(call))
-export const ᐅif     = cond => t_fn => f_fn => val => cond(val) ? t_fn(val) : f_fn(val)
-export const ᐅwhen   = cond => t_fn => ᐅif(cond)(t_fn)(id)
+export const ᐅᶠ    = flip(fold(call))
+export const ᐅif   = cond => t_fn => f_fn => val => cond(val) ? t_fn(val) : f_fn(val)
+export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
 
 // arrays
 export const reverse = ᐅᶠ([ array, a => [].reverse.call(a) ])
