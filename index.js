@@ -41,7 +41,7 @@ export const fn      = bind({})
 // numbers
 export const inc = x => x + 1
 export const dec = x => x - 1
-// NOTE(jordan): without defaulting v to 0, num() ==> +undefined ==> NaN, which we don't want
+// NOTE(jordan): without defaulting v to 0: num() == +undefined == NaN, which we don't want
 export const num = (v=0) => +v
 
 // arrays
