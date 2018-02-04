@@ -202,7 +202,7 @@ export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
   const just_hi = _ => "hi"
 
-  return suite('μtil: micro utility library', [
+  return suite(`prettybad/μtil: worse than underscore`, [
     t => t.suite('functions', {
       'flip: flips args':
         t => t.eq(flip(a => b => a - b)(1)(2))(1),
