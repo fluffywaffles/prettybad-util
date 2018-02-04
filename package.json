@@ -1,10 +1,10 @@
 {
-  "name": "microtil",
+  "name": "mutil",
   "version": "0.0.0",
   "description": "μtil - micro utilities",
   "main": "index.js",
   "scripts": {
-    "test": "pnpx rollup -c .rollup.test.js -- index.js && node .test.js && rm .test.js"
+    "test": "pnpx rollup -c .rollup.test.js -- test.js && node .test.js && rm .test.js"
   },
   "author": "fluffywaffles <skorlir@gmail.com>",
   "license": "ISC",
