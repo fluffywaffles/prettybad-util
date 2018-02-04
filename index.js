@@ -61,7 +61,6 @@ export const join    = v => arr => [].join.call(arr, v)
 export const slice   = i => j => arr => [].slice.call(arr, i, j)
 export const fold    = f => init => arr => [].reduce.call(arr, (acc, v) => f(acc)(v), init)
 export const len     = arr => arr.length
-export const take    = j => slice(0)(j)
 export const n_of    = x => n => (new Array(n)).fill(x)
 export const cons    = v => concat([ v ])
 export const push    = v => flip(concat)([ v ])
@@ -95,54 +94,20 @@ export const upto    = ᐅᶠ([ inc, til ])
 export const splice  = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs)), arr)
 export const insert  = v => i => ᐅᶠ([ array, splice(i)(0)(v) ])
 export const remdex  = i => ᐅᶠ([ array, splice(i)(1)() ])
+export const take    = j => slice(0)(j)
+export const skip    = i => ᐅᶠ([ fmap([ len, id ]), apply(slice(i)) ])
+export const rest    = skip(1)
 
 // 3: depending on at most 3, 2 and 1
-
-// TODO(jordan): today: poor man's lenses; tomorrow: lens library?
-// TODO?(jordan): abstract over lift/pile? if instanceof Array, pile; else, lift?
-// pipelining: prettybad lenses
-export const ᐅlift  = f => init => [ init, f(init) ]
-export const ᐅpile  = f => ([ init, ...vs ]) => [ init, f(init), ...vs ]
-export const ᐅdrop  = f => ᐅᶠ([ reverse, apply(f) ])
-export const ᐅdropn = n => f => ᐅᶠ([ reverse, slice(0)(n), apply(f) ])
-export const ᐅdrop2 = ᐅdropn(2)
-
-// arrays
-export const skip = i => ᐅᶠ([ ᐅlift(len), ᐅdrop(slice(i)) ])
-export const rest = skip(1)
-
-// objects
-// NOTE(jordan): don't export _get_descs; its return type is inconvenient. prefer key_descs.
-const _get_descs = Object.getOwnPropertyDescriptors
-export const has_prop      = prop => obj => Object.hasOwnProperty.call(obj, prop)
-export const keys          = ᐅᶠ([ _get_descs, Object.keys ])
-export const symbols       = Object.getOwnPropertySymbols
-export const props         = ᐅᶠ([ ᐅlift(keys), ᐅpile(symbols), ᐅdrop2(concat) ])
-export const key_values    = Object.values
-export const symbol_values = ᐅᶠ([ ᐅlift(symbols), ᐅdrop(ss => obj => map(s => obj[s])(ss)) ])
-export const get_desc      = prop => obj => Object.getOwnPropertyDescriptor(obj, prop)
-export const create        = props => Object.create(null, _get_descs(props || {}))
-export const key_descs     = ᐅᶠ([ _get_descs, Object.entries ])
-export const symbol_descs  = ᐅᶠ([ ᐅlift(symbols), ᐅdrop(syms => obj => map(s => [ s, get_desc(s)(obj) ])(syms)) ])
-export const descs         = ᐅᶠ([ ᐅlift(key_descs), ᐅpile(symbol_descs), ᐅdrop2(concat) ])
-// NOTE(jordan): need to make sure create() is called every time here! so we have the descs arg
-export const from_descs    = descs => fold(o => ([p, d]) => def.mut(p)(d)(o))(create())(descs)
-export const object        = ᐅᶠ([ descs, from_descs ])
-export const mixin         = a => b => ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
-export const build         = fold(mixin)(create())
-export const make_desc     = value => object({ value, writable: true, configurable: true, enumerable: true })
-export const to_kvs        = ᐅᶠ([ descs, map(([ prop, desc ]) => [ prop, desc.value ]) ])
-export const from_kvs      = ᐅᶠ([ map(([ prop, value ]) => [ prop, make_desc(value) ]), from_descs ])
-
-// 4: depending on at most 4, 3, 2, and 1
 // functions
+const _own_descs = Object.getOwnPropertyDescriptors
 const _mimic = f => defs.mut({
   name: { configurable: false, enumerable: false, get () { return f.name } },
   toString: { value () { return f.toString() } },
 })
 export const copy_fn  = bind({})
 export const mimic_fn = srcfn => destfn => ᐅᶠ([ copy_fn, _mimic(srcfn) ])(destfn)
-export const meta_fn  = meta  => ᐅᶠ([ copy_fn, defs.mut(_get_descs(meta)) ])
+export const meta_fn  = meta  => ᐅᶠ([ copy_fn, defs.mut(_own_descs(meta)) ])
 export const named    = name  => meta_fn({ name })
 /* TODO(jordan):
  *  memoization
@@ -183,6 +148,7 @@ export const None  = proxy({
 // objects & arrays
 export const get      = prop  => obj => has_prop(prop)(obj) ? obj[prop] : None
 export const get_path = props => obj => fold(flip(get))(obj)(props)
+export const get_all  = props => fmap(map(get)(props))
 export const update   = prop  => val => obj => has_prop(prop)(obj) ? mixin(obj)({ prop: val }) : None
 // WIP(jordan): drill/surface/blah -- programmatically create ᐅpiles from arrays of ops
 // GOAL(jordan): update functions:
@@ -195,8 +161,29 @@ export const update   = prop  => val => obj => has_prop(prop)(obj) ? mixin(obj)(
 //          in order to do more interesting things, we need a form of ᐅdrop that doesn't necessarily consume all the
 //          results; ᐅdrop should be renamed ᐅconsume, and ᐅdrop should mean "end up with a lens". You can end the lens
 //          by just taking the first value; I guess that's ᐅextract or something.
-const drill   = ([ first_prop, ... props ]) => fold(ᐅᶠ([ get, ᐅpile ]))(props)(ᐅlift(first_prop))
-const surface = dig => ᐅdropn(len(dig))
+// const drill   = ([ first_prop, ... props ]) => fold(ᐅᶠ([ get, ᐅpile ]))(props)(ᐅlift(first_prop))
+// const surface = dig => ᐅdropn(len(dig))
+
+// objects
+export const has_prop      = prop => obj => Object.hasOwnProperty.call(obj, prop)
+export const keys          = ᐅᶠ([ _own_descs, Object.keys ])
+export const symbols       = Object.getOwnPropertySymbols
+export const props         = ᐅᶠ([ fmap([ keys, symbols ]), apply(concat) ])
+export const key_values    = Object.values
+export const symbol_values = ᐅᶠ([ fmap([ symbols, id ]), apply(get_all) ])
+export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
+export const create        = props => Object.create(null, _own_descs(props || {}))
+export const key_descs     = ᐅᶠ([ _own_descs, Object.entries ])
+export const symbol_descs  = ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbols ]), apply(map) ])
+export const descs         = ᐅᶠ([ fmap([ key_descs, symbol_descs ]), apply(concat) ])
+// NOTE(jordan): need to make sure create() is called every time here! so we have the descs arg
+export const from_descs    = descs => fold(o => ([p, d]) => def.mut(p)(d)(o))(create())(descs)
+export const object        = ᐅᶠ([ descs, from_descs ])
+export const mixin         = a => b => ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
+export const build         = objs  => fold(mixin)(create())(objs)
+export const make_desc     = value => object({ value, writable: true, configurable: true, enumerable: true })
+export const to_kvs        = ᐅᶠ([ descs, map(([ prop, desc ]) => [ prop, desc.value ]) ])
+export const from_kvs      = ᐅᶠ([ map(([ prop, value ]) => [ prop, make_desc(value) ]), from_descs ])
 
 // TODO(jordan): untested
 // arrays
@@ -205,8 +192,8 @@ const _delacer   = ([ a, b ]) => fmap([ ᐅᶠ([ get(0), cons(a) ]), ᐅᶠ([ ge
 export const first    = get(0)
 export const lace     = a => b => ᐅᶠ([ len, til, fmap([ flip(get)(a), flip(get)(b) ]) ])(a)
 export const delace   = fold(_delacer)([[], []])
-export const remove   = v => arr => ᐅᶠ([ array, ᐅlift(index(v)), ᐅdrop(remdex) ])
-export const meta_arr = defs => ᐅᶠ([ array, defs.mut(_get_descs(defs)) ])
+export const remove   = v => arr => ᐅᶠ([ fmap([ array, index(v) ]), apply(remdex) ])
+export const meta_arr = defs => ᐅᶠ([ array, defs.mut(_own_descs(defs)) ])
 
 // ...? special for sisyphus
 export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
@@ -332,14 +319,6 @@ export function test (suite) {
         t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0, x => x < 10 ])(6)),
       'or: true if any predicate is true':
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
-    }),
-    t => t.suite('pipelining: accumulators pt. 1', {
-      'ᐅlift: carries along original value':
-        t => t.eq(ᐅlift(a => a[0])(to6))([ to6, 1 ]),
-      'ᐅdrop: applies a function to all the carried values':
-        t => t.eq(ᐅᶠ([ ᐅlift(a => a[1]), ᐅdrop(push) ])(to6))([ 1, 2, 3, 4, 5, 2 ]),
-      'ᐅlift & ᐅdrop: cancel out':
-        t => t.eq(ᐅᶠ([ ᐅlift(a => a[0]), ᐅdrop(v => arr => arr) ])(to6))(to6),
     }),
     t => t.suite(`objects pt. 1`, {
       'symbols: lists symbols':
