@@ -88,15 +88,17 @@ export const ᐅif   = cond => t_fn => f_fn => val => cond(val) ? t_fn(val) : f_
 export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
 
 // arrays
+const mut_splice = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs)), arr)
 export const reverse = ᐅᶠ([ array, a => [].reverse.call(a) ])
 export const til     = ᐅᶠ([ n_of(0), each((_, i, arr) => arr[i] = i) ])
 export const upto    = ᐅᶠ([ inc, til ])
-export const splice  = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs)), arr)
-export const insert  = v => i => ᐅᶠ([ array, splice(i)(0)(v) ])
-export const remdex  = i => ᐅᶠ([ array, splice(i)(1)() ])
+export const splice  = mut(mut_splice)(i => n => vs => ᐅᶠ([ array, splice.mut(i)(n)(vs) ]))
+export const insert  = v => i => splice(i)(0)(v)
+export const remdex  = i => splice(i)(1)()
 export const take    = j => slice(0)(j)
 export const skip    = i => ᐅᶠ([ fmap([ len, id ]), apply(slice(i)) ])
 export const rest    = skip(1)
+export const last    = ᐅᶠ([ skip(-1), ([ l ]) => l ])
 
 // 3: depending on at most 3, 2 and 1
 // functions
@@ -149,7 +151,7 @@ export const None  = proxy({
 export const get      = prop  => obj => has_prop(prop)(obj) ? obj[prop] : None
 export const get_path = props => obj => fold(flip(get))(obj)(props)
 export const get_all  = props => fmap(map(get)(props))
-export const update   = prop  => val => obj => has_prop(prop)(obj) ? mixin(obj)({ prop: val }) : None
+export const update   = prop  => updater => mixin({ [prop]: updater(prop) })
 // WIP(jordan): drill/surface/blah -- programmatically create ᐅpiles from arrays of ops
 // GOAL(jordan): update functions:
 // update_path :: path   -> updater -> obj -> obj; updater is a ᐅdropn of the update arity / number of items you want
@@ -161,7 +163,7 @@ export const update   = prop  => val => obj => has_prop(prop)(obj) ? mixin(obj)(
 //          in order to do more interesting things, we need a form of ᐅdrop that doesn't necessarily consume all the
 //          results; ᐅdrop should be renamed ᐅconsume, and ᐅdrop should mean "end up with a lens". You can end the lens
 //          by just taking the first value; I guess that's ᐅextract or something.
-// const drill   = ([ first_prop, ... props ]) => fold(ᐅᶠ([ get, ᐅpile ]))(props)(ᐅlift(first_prop))
+const drill   = path => obj => [ obj, path, ᐅᶠ(map(get)(path))(obj) ]
 // const surface = dig => ᐅdropn(len(dig))
 
 // objects
@@ -172,7 +174,7 @@ export const props         = ᐅᶠ([ fmap([ keys, symbols ]), apply(concat) ])
 export const key_values    = Object.values
 export const symbol_values = ᐅᶠ([ fmap([ symbols, id ]), apply(get_all) ])
 export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
-export const create        = props => Object.create(null, _own_descs(props || {}))
+export const create        = descs => Object.create(null, (descs || {}))
 export const key_descs     = ᐅᶠ([ _own_descs, Object.entries ])
 export const symbol_descs  = ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbols ]), apply(map) ])
 export const descs         = ᐅᶠ([ fmap([ key_descs, symbol_descs ]), apply(concat) ])
@@ -193,7 +195,7 @@ export const first    = get(0)
 export const lace     = a => b => ᐅᶠ([ len, til, fmap([ flip(get)(a), flip(get)(b) ]) ])(a)
 export const delace   = fold(_delacer)([[], []])
 export const remove   = v => arr => ᐅᶠ([ fmap([ array, index(v) ]), apply(remdex) ])
-export const meta_arr = defs => ᐅᶠ([ array, defs.mut(_own_descs(defs)) ])
+export const def_meta = mixin
 
 // ...? special for sisyphus
 export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
