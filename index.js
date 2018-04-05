@@ -50,7 +50,7 @@ export const d = defs.mut(own_descs({
    * Internal configuration
    */
   _: {
-    unknown_parse: c => 0b111, // all_config
+    unknown_parse: c => d.all_config({}),
     s: {
       c: 'configurable',
       e:   'enumerable',
