@@ -33,7 +33,7 @@ export const d = defs.mut(own_descs({
    * Internal configuration
    */
   _: {
-    on_parse_failure: c => 0b111, // all_config
+    unknown_parse: c => 0b111, // all_config
     s: {
       c: 'configurable',
       e:   'enumerable',
@@ -43,25 +43,27 @@ export const d = defs.mut(own_descs({
   /**
    * Parse a string of cew into its descriptor properties
    */
-  parse_cew_string: (c='') => {
-    const [ c1, c2, c3 ] = c.split('')
+  parse_cew_string: (cew='') => {
+    const [ c1, c2, c3 ] = cew.split('')
     return  c1 && c2 && c3 ? { [d._.s[c1]]: true, [d._.s[c2]]: true, [d._.s[c3]]: true }
           : c1 && c2       ? { [d._.s[c1]]: true, [d._.s[c2]]: true }
           : c1             ? { [d._.s[c1]]: true }
           : {}
   },
-  /**
-   * Descriptor configuration option shorthands
-   */
-  all_config : desc => d('cwe')(desc), // 111 7
-  no_conf    : desc => d( 'ew')(desc), // 110 6
-  no_write   : desc => d( 'ce')(desc), // 101 5
-  no_iter    : desc => d( 'cw')(desc), // 011 3
-  write_only : desc => d(  'w')(desc), // 100 4
-  iter_only  : desc => d(  'e')(desc), // 010 2
-  conf_only  : desc => d(  'c')(desc), // 001 1
-  no_config  : desc => d(   '')(desc), // 000 0
 }))(make_descriptor)
+/**
+ * Descriptor configuration option shorthands
+ */
+defs.mut(own_descs({
+  all_config : d('cew'),
+  no_conf    : d( 'ew'),
+  no_write   : d( 'ce'),
+  no_iter    : d( 'cw'),
+  write_only : d(  'w'),
+  iter_only  : d(  'e'),
+  conf_only  : d(  'c'),
+  no_config  : d(   ''),
+}))(d)
 /**
  * Straightforward descriptor creation api
  *
@@ -71,25 +73,22 @@ export const d = defs.mut(own_descs({
  *   d('ew')({ v: 3 })          ⇒ { enumerable: true, writable: true, value: 3 }
  *   d('ew')(d.v(3))            ⇒ { enumerable: true, writable: true, value: 3 } (same as above)
  */
-function make_descriptor (conf) {
-  function with_conf (conf) {
-    return ({ v, g, s }) => {
-      if (v !== undefined) conf.value = v
-      if (g !== undefined) conf.get   = g
-      if (s !== undefined) conf.set   = s
-      return conf
-    }
-  }
-  const parse = typeof conf === 'string' ? d.parse_cew_string : null
+function make_descriptor (cew) {
+  const parse = typeof cew === 'string' ? d.parse_cew_string : d._.unknown_parse
   if (parse === null) {
-    console.error(`descriptor configuration ${conf} is unrecognized!`)
+    console.error(`descriptor configuration ${cew} is unrecognized!`)
     console.debug(`
       what happens next? μ.d will fall back to 'all_config', the same as a JS object,
-      or you can configure it using μ.d.on_parse_failure: bad_conf_in ⇒ good_conf_out.
+      or you can configure it using μ.d.unknown_parse: unknown_conf_in ⇒ good_conf_out.
     `)
-    return with_conf(d._.on_parse_failure(conf))
   }
-  return with_conf(parse(conf))
+  return ({ v, g, s }) => {
+    const conf = parse(cew)
+    if (v !== undefined) conf.value = v
+    if (g !== undefined) conf.get   = g
+    if (s !== undefined) conf.set   = s
+    return conf
+  }
 }
 
 // Utils utils
