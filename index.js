@@ -112,22 +112,22 @@ function make_descriptor (cew) {
 const with_mut_alt = v => def.mut('mut')(d.no_config({ v }))
 
 // functions
-export const id       = v => v
-export const partial  = v => f => f(v)
-export const call     = f => v => f(v)
-export const block    = f => call(f)()
-export const flip     = f => a => b => f(b)(a)
-export const compose  = f => g => v => g(f(v))
-export const ret      = v => _ => v
-export const bind     = ctx => f => Function.bind.call(f, ctx)
-export const loop     = n => f => { let i = n; while (i--) { f(i) } }
-export const apply    = f => args => fold(partial)(f)(args)
-export const times    = n => f => v => fold(call)(v)(n_of(f)(n))
-export const and      = fs => v => all(f => f(v))(fs)
-export const or       = fs => v => any(f => f(v))(fs)
-export const on       = v => fold(f => prev => (prev !== None ? f(prev) : f)(v))(None)
-export const fmap     = fs => v => map(partial(v))(fs)
-export const copy_fn  = fn => bind({})(fn)
+export const id      = v => v
+export const partial = v => f => f(v)
+export const call    = f => v => f(v)
+export const block   = f => call(f)()
+export const flip    = f => a => b => f(b)(a)
+export const compose = f => g => v => g(f(v))
+export const ret     = v => _ => v
+export const bind    = ctx => f => Function.bind.call(f, ctx)
+export const loop    = n => f => { let i = n; while (i--) { f(i) } }
+export const apply   = f => args => fold(partial)(f)(args)
+export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
+export const and     = fs => v => all(partial(v))(fs)
+export const or      = fs => v => any(partial(v))(fs)
+export const on      = v => fold(f => prev => (prev !== None ? f(prev) : f)(v))(None)
+export const fmap    = fs => v => map(partial(v))(fs)
+export const copy_fn = fn => bind({})(fn)
 const _mimic_fn = fn => defs.mut({
   name     : d.iter_only({ g: _ => fn.name }),
   toString : d.no_config({ v: _ => fn.toString() }),
