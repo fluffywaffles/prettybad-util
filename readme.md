@@ -28,6 +28,16 @@ library. it is pretty bad, tbh. it has some pretty bad goals:
     - or something. one of those is supposed to be the good outcome. i can't remember which.
     - mutative APIs should still return the new value, so they can be composed
 
+it also has at least 1 really pretty bad goal:
+
+0. things are as bare as possible
+    - javascript is pretty meh & i'd rather not have it so `Object.create(null)` all the way
+    - things shouldn't be configurable/writable/enumerable in general
+    - implication: no prototypes, so no `toString()` ⇒ `"[Object object]"` for you (sorry)
+    - implication: you can't modify properties, so no `splice.mut = /* muahaha */` for you
+    - implication: you can't enumerate utility properties, so `Object.keys(splice)` ⇒ `[]` even
+        though you and i both know that there's a `splice.mut` method for mutative `splice`-ing
+
 so there, i had reasons. never let it be said i was unreasonable. insane, maybe, but only within
 reason. if only someone else had already written a pretty bad utility library, and then i wouldn't
 be writing this one... er, wait.
