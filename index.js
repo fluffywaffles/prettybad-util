@@ -116,11 +116,11 @@ const _mimic_fn = fn => defs.mut({
   toString : d.no_config({ v: _ => fn.toString() }),
 })
 export const mimic_fn = srcfn => destfn => ᐅᶠ([ copy_fn, _mimic_fn(srcfn) ])(destfn)
-export const meta_fn  = meta  => ᐅᶠ([ copy_fn, defs.mut(own_descs(meta)) ])
+export const meta_fn  = meta => ᐅᶠ([ copy_fn, defs.mut(own_descs(meta)) ])
 // constructing functions from strings (for rotten profit)
 const make_let_string  = variable => value => `let ${variable} = ${value}; return ${variable}`
-const iife_from_string = source => (new Function(source))()
-export const named     = name  => def => iife_from_string(make_let_string(name)(def.toString()))
+const iife_from_string = source   => (new Function(source))()
+export const named     = name     => def => iife_from_string(make_let_string(name)(def.toString()))
 
 // numbers
 export const inc = x => x + 1
