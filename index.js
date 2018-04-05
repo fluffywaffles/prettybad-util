@@ -96,7 +96,7 @@ function make_descriptor (cew) {
     console.error(`descriptor configuration ${cew} is unrecognized!`)
     console.debug(`
       what happens next? μ.d will fall back to 'all_config', the same as a JS object,
-      or you can configure it using μ.d.unknown_parse: unknown_conf_in ⇒ good_conf_out.
+      or you can configure it using μ.d._.unknown_parse: unknown_conf_in ⇒ good_conf_out.
     `)
   }
   return ({ v, g, s }) => {
