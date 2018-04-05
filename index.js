@@ -157,7 +157,7 @@ const _splice  = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(v
 const _til     = n => a => (loop(n)(i => a[i] = i), a)
 export const reverse  = a => ᐅᶠ([ array_copy, _reverse ])(a)
 export const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
-export const upto     = n => ᐅᶠ([ inc, til ])(n)
+export const thru     = n => til(inc(n))
 export const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
 export const insert   = v => i => splice(i)(0)(v)
 export const remdex   = i => splice(i)(1)()
