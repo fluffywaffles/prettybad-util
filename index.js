@@ -20,10 +20,10 @@
  */
 
 // 0a: descriptor mutation primitives
-const _defprops = Object.defineProperties
-const _defprop  = Object.defineProperty
-export const def  = { mut: prop => desc => obj => (_defprop(obj, prop, desc), obj) }
-export const defs = { mut: props => obj => _defprops(obj, props) }
+const _defprops = prop_descs => obj => (Object.defineProperties(obj, prop_descs), obj)
+const _defprop  = prop => desc => obj => (Object.defineProperty(obj, prop, desc), obj)
+export const def  = _defprop('mut')({ value: _defprop })(Object.create(null))
+export const defs = def.mut('mut')({ value: _defprops })(Object.create(null))
 
 // 0b: descriptor mutation affordances
 export const own_descs = Object.getOwnPropertyDescriptors
