@@ -19,6 +19,23 @@
  *
  */
 
+
+/*
+ * Obvious TODOs
+ *
+ * mutative alternatives for more APIs
+ *   - not everything has a logical mutable alternative
+ *   - for example, id
+ * tests for
+ *   - d
+ *   - internal APIs (with_mut_alt)
+ *   - def.mut, defs.mut
+ * less awful lenses
+ *   - lens, today, is largely useless
+ *   - involves a ton of boilerplate
+ *   - doesn't interoperate as neatly as i'd hoped with insert/update APIs
+ */
+
 // 0a: descriptor mutation primitives
 const _defprops = prop_descs => obj => (Object.defineProperties(obj, prop_descs), obj)
 const _defprop  = prop => desc => obj => (Object.defineProperty(obj, prop, desc), obj)
