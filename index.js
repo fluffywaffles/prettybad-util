@@ -188,7 +188,8 @@ export const split_at = n => fmap([ take(n), skip(n) ])
 export const split_on = v => arr => on(arr)([ index(v), split_at ])
 
 // objects & arrays
-export const has      = prop => obj => Object.hasOwnProperty.call(obj, prop)
+// NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep (proto traversing)
+export const has      = prop  => obj => Object.hasOwnProperty.call(obj, prop)
 export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
 export const get_all  = props => fmap(map(get)(props))
 
