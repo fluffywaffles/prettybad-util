@@ -176,10 +176,10 @@ export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
 export const get_all  = props => fmap(map(get)(props))
 
 // objects
-export const keys          = obj => ᐅᶠ([ own_descs, Object.keys ])(obj)
+export const keys          = Object.keys
 export const key_values    = Object.values
 export const symbols       = Object.getOwnPropertySymbols
-export const props         = obj => ᐅᶠ([ fmap([ keys, symbols ]), apply(concat) ])(obj)
+export const props         = Reflect.ownKeys
 export const symbol_values = obj => on(obj)([ symbols, get_all ])
 export const create        = descs => Object.create(null, (descs || {}))
 export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
