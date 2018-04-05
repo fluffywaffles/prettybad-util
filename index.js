@@ -19,101 +19,188 @@
  *
  */
 
-// 00: mutation
-const _defprops  = Object.defineProperties
-const _defprop   = Object.defineProperty
+// 0a: descriptor mutation primitives
+const _defprops = Object.defineProperties
+const _defprop  = Object.defineProperty
 export const def  = { mut: prop => desc => obj => (_defprop(obj, prop, desc), obj) }
 export const defs = { mut: props => obj => _defprops(obj, props) }
 
-// NOTE(jordan): for mutative versions, where applicable
-const mut = v => def.mut('mut')({ value: v })
+// 0b: descriptor mutation affordances
+export const own_descs = Object.getOwnPropertyDescriptors
+// borrowing shamelessly from d.js: https://www.npmjs.com/package/d
+export const d = defs.mut(own_descs({
+  /**
+   * Internal configuration
+   */
+  _: {
+    on_parse_failure: c => 0b111, // all_config
+    s: {
+      c: 'configurable',
+      e:   'enumerable',
+      w:     'writable',
+    },
+  },
+  /**
+   * Parse a string of cew into its descriptor properties
+   */
+  parse_cew_string: (c='') => {
+    const [ c1, c2, c3 ] = c.split('')
+    return  c1 && c2 && c3 ? { [d._.s[c1]]: true, [d._.s[c2]]: true, [d._.s[c3]]: true }
+          : c1 && c2       ? { [d._.s[c1]]: true, [d._.s[c2]]: true }
+          : c1             ? { [d._.s[c1]]: true }
+          : {}
+  },
+  /**
+   * Descriptor configuration option shorthands
+   */
+  all_config : desc => d('cwe')(desc), // 111 7
+  no_conf    : desc => d( 'ew')(desc), // 110 6
+  no_write   : desc => d( 'ce')(desc), // 101 5
+  no_iter    : desc => d( 'cw')(desc), // 011 3
+  write_only : desc => d(  'w')(desc), // 100 4
+  iter_only  : desc => d(  'e')(desc), // 010 2
+  conf_only  : desc => d(  'c')(desc), // 001 1
+  no_config  : desc => d(   '')(desc), // 000 0
+}))(make_descriptor)
+/**
+ * Straightforward descriptor creation api
+ *
+ * Usage:
+ *   d.all_config({ v: 5 })     ⇒ { configurable: true, enumerable: true, writable: true, value: 5 }
+ *   d.no_config({ g: ret(4) }) ⇒ { get: ret(4) }
+ *   d('ew')({ v: 3 })          ⇒ { enumerable: true, writable: true, value: 3 }
+ *   d('ew')(d.v(3))            ⇒ { enumerable: true, writable: true, value: 3 } (same as above)
+ */
+function make_descriptor (conf) {
+  function with_conf (conf) {
+    return ({ v, g, s }) => {
+      if (v !== undefined) conf.value = v
+      if (g !== undefined) conf.get   = g
+      if (s !== undefined) conf.set   = s
+      return conf
+    }
+  }
+  const parse = typeof conf === 'string' ? d.parse_cew_string : null
+  if (parse === null) {
+    console.error(`descriptor configuration ${conf} is unrecognized!`)
+    console.debug(`
+      what happens next? μ.d will fall back to 'all_config', the same as a JS object,
+      or you can configure it using μ.d.on_parse_failure: bad_conf_in ⇒ good_conf_out.
+    `)
+    return with_conf(d._.on_parse_failure(conf))
+  }
+  return with_conf(parse(conf))
+}
 
-// 1: depending on built-ins
-// functions: base
-export const id      = v => v
-export const call    = v => f => f(v)
-export const flip    = f => a => b => f(b)(a)
-export const compose = f => g => v => g(f(v))
-export const ret     = v => _ => v
-export const bind    = ctx => f => Function.bind.call(f, ctx)
-export const fn      = bind({})
+// Utils utils
+const with_mut_alt = v => def.mut('mut')(d.no_config({ v }))
+
+// functions
+export const id       = v => v
+export const partial  = v => f => f(v)
+export const call     = f => v => f(v)
+export const block    = f => call(f)()
+export const flip     = f => a => b => f(b)(a)
+export const compose  = f => g => v => g(f(v))
+export const ret      = v => _ => v
+export const bind     = ctx => f => Function.bind.call(f, ctx)
+export const loop     = iterations => operation => { while (iterations--) { operation() } }
+export const apply    = f => args => fold(partial)(f)(args)
+export const times    = n => f => v => fold(call)(v)(n_of(f)(n))
+export const and      = fs => v => all(f => f(v))(fs)
+export const or       = fs => v => any(f => f(v))(fs)
+export const on       = v => map(partial(v))
+export const fmap     = fs => flip(on)(fs)
+export const copy_fn  = fn => bind({})(fn)
+const _mimic_fn = fn => defs.mut({
+  name     : d.iter_only({ g: _ => fn.name }),
+  toString : d.no_config({ v: _ => fn.toString() }),
+})
+export const mimic_fn = srcfn => destfn => ᐅᶠ([ copy_fn, _mimic_fn(srcfn) ])(destfn)
+export const meta_fn  = meta  => ᐅᶠ([ copy_fn, defs.mut(own_descs(meta)) ])
+// constructing functions from strings (for rotten profit)
+const make_let_string  = variable => value => `let ${variable} = ${value}; return ${variable}`
+const iife_from_string = source => (new Function(source))()
+export const named     = name  => def => iife_from_string(make_let_string(name)(def.toString()))
 
 // numbers
 export const inc = x => x + 1
 export const dec = x => x - 1
-// NOTE(jordan): without defaulting v to 0: num() == +undefined == NaN, which we don't want
+// NOTE(jordan): without defaulting v to 0: num() ⇒ +undefined ⇒ NaN, which we don't want
 export const num = (v=0) => +v
 
 // arrays
-// QUESTION(jordan): each could mutate. Copy before run?
-export const each    = f => arr => ([].forEach.call(arr, f), arr)
-export const map     = f => arr => [].map.call(arr, f)
-export const filter  = f => arr => [].filter.call(arr, f)
-export const concat  = a => b   => [].concat.call([], a, b)
-export const all     = f => arr => [].every.call(arr, f)
-export const any     = f => arr => [].some.call(arr, f)
-export const sort    = f => arr => [].sort.call(arr, f)
-export const incl    = v => arr => [].includes.call(arr, v)
-export const index   = v => arr => [].indexOf.call(arr, v)
-export const find    = f => arr => [].find.call(arr, f)
+export const map     = f => arr => []      .map.call(arr, f)
+export const find    = f => arr => []     .find.call(arr, f) || None
+export const join    = v => arr => []     .join.call(arr, v)
+export const any     = f => arr => []     .some.call(arr, f)
+export const sort    = f => arr => []     .sort.call(arr, f)
+export const all     = f => arr => []    .every.call(arr, f)
+export const concat  = a =>   b => []   .concat.call([], a, b)
+export const filter  = f => arr => []   .filter.call(arr, f)
+export const each    = f => arr => ([] .forEach.call(arr, f), arr) // NOTE: could mutate...
+export const index   = v => arr => []  .indexOf.call(arr, v)
+export const incl    = v => arr => [] .includes.call(arr, v)
 export const findex  = f => arr => [].findIndex.call(arr, f)
-export const join    = v => arr => [].join.call(arr, v)
-export const slice   = i => j => arr => [].slice.call(arr, i, j)
-export const fold    = f => init => arr => [].reduce.call(arr, (acc, v) => f(acc)(v), init)
-export const len     = arr => arr.length
+export const slice   = i => j => arr => (instance(Array)(arr) ? [] : "").slice.call(arr, i, j)
+export const fold    = f => init => arr => [].reduce.call(arr, (acc, v) => f(v)(acc), init)
+export const len     = a => a.length
 export const n_of    = x => n => (new Array(n)).fill(x)
 export const cons    = v => concat([ v ])
 export const push    = v => flip(concat)([ v ])
-export const flatten = fold(concat)([])
+export const flatten = a => fold(flip(concat))([])(a)
 export const flatmap = f => arr => flatten(map(f)(arr))
-export const array   = (arr=[]) => slice(0)(len(arr))(arr)
+export const mapix   = f => map((it, ix) => f(ix)(it))
+const _fold_def = ([ name, desc ]) => obj => def.mut(name)(desc)(obj)
+export const array_copy = arr => fold(_fold_def)([])(descs(arr))
+const _reverse = a => [].reverse.call(a)
+const _splice  = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs||[])), arr)
+const _til     = n => a => loop(n)(i => a[i] = i)
+export const reverse  = a => ᐅᶠ([ array_copy, _reverse ])(a)
+export const til      = n => ᐅᶠ([ n_of(0), _til ])(n)
+export const upto     = n => ᐅᶠ([ inc, til ])(n)
+export const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
+export const insert   = v => i => splice(i)(0)(v)
+export const remdex   = i => splice(i)(1)()
+export const take     = j => slice(0)(j)
+export const skip     = i => ᐅᶠ([ fmap([ len, id ]), apply(slice(i)) ])
+export const rest     = a => skip(1)(a)
+export const last     = a => ᐅᶠ([ skip(-1), ᐅif(a => len(a) === 0)(ret(None))(first) ])(a)
+export const split_at = n => fmap([ take(n), skip(n) ])
+export const split_on = v => ᐅᶠ([ fmap([ index(v), id ]), apply(split_at) ])
+
+// objects & arrays
+export const has      = prop => obj => Object.hasOwnProperty.call(obj, prop)
+export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
+export const get_all  = props => fmap(map(get)(props))
+
+// objects
+export const keys          = obj => ᐅᶠ([ own_descs, Object.keys ])(obj)
+export const key_values    = Object.values
+export const symbols       = Object.getOwnPropertySymbols
+export const symbol_values = obj => ᐅᶠ([ fmap([ symbols, id ]), apply(get_all) ])(obj)
+export const props         = obj => ᐅᶠ([ fmap([ keys, symbols ]), apply(concat) ])(obj)
+export const create        = descs => Object.create(null, (descs || {}))
+export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
+export const key_descs     = obj => ᐅᶠ([ own_descs, Object.entries ])(obj)
+export const symbol_descs  = obj => ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbols ]), apply(map) ])(obj)
+export const descs         = obj => ᐅᶠ([ fmap([ key_descs, symbol_descs ]), apply(concat) ])(obj)
+export const from_descs    = descs => fold(([p, d]) => def.mut(p)(d))(create())(descs)
+export const object        = obj => ᐅᶠ([ descs, from_descs ])(obj)
+export const extend        = a => b => def_meta(a)(b)//ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
+export const mixin         = obj => flip(extend)(obj)
+export const to_kvs        = obj => ᐅᶠ([ descs, map(([ prop, desc ]) => [ prop, desc.value ]) ])(obj)
+export const from_kvs      = kvs => ᐅᶠ([ map(([ prop, value ]) => [ prop, d.all_config({ v: value }) ]), from_descs ])(kvs)
 
 // strings
 // NOTE(jordan): most array functions also work on strings
-export const split = delim => str => str.split(delim)
-export const quote = str => `"${str}"`
-
-// 2: depending on at most 2 and 1
-// functions
-export const apply = f => args => fold(f => v => f(v))(f)(args)
-export const times = n => f => flip(fold(call))(n_of(f)(n))
-export const and   = fs => v => all(f => f(v))(fs)
-export const or    = fs => v => any(f => f(v))(fs)
-export const on    = v => map(call(v))
-export const fmap  = flip(on)
+export const quote  = str => `"${str}"`
+export const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
 
 // pipelining
-export const ᐅᶠ    = flip(fold(call))
+export const ᐅᶠ    =  ops =>  val => fold(call)(val)(ops)
 export const ᐅif   = cond => t_fn => f_fn => val => cond(val) ? t_fn(val) : f_fn(val)
 export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
-
-// arrays
-const mut_splice = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs)), arr)
-export const reverse = ᐅᶠ([ array, a => [].reverse.call(a) ])
-export const til     = ᐅᶠ([ n_of(0), each((_, i, arr) => arr[i] = i) ])
-export const upto    = ᐅᶠ([ inc, til ])
-export const splice  = mut(mut_splice)(i => n => vs => ᐅᶠ([ array, splice.mut(i)(n)(vs) ]))
-export const insert  = v => i => splice(i)(0)(v)
-export const remdex  = i => splice(i)(1)()
-export const take    = j => slice(0)(j)
-export const skip    = i => ᐅᶠ([ fmap([ len, id ]), apply(slice(i)) ])
-export const rest    = skip(1)
-export const last    = ᐅᶠ([ skip(-1), ([ l ]) => l ])
-
-// 3: depending on at most 3, 2 and 1
-// functions
-const _own_descs = Object.getOwnPropertyDescriptors
-const _mimic = f => defs.mut({
-  name: { configurable: false, enumerable: false, get () { return f.name } },
-  toString: { value () { return f.toString() } },
-})
-export const copy_fn  = bind({})
-export const mimic_fn = srcfn => destfn => ᐅᶠ([ copy_fn, _mimic(srcfn) ])(destfn)
-export const meta_fn  = meta  => ᐅᶠ([ copy_fn, defs.mut(_own_descs(meta)) ])
-export const named    = name  => meta_fn({ name })
-/* TODO(jordan):
- *  memoization
- */
 
 // general
 export const proxy = traps => target => new Proxy(target, traps)
@@ -147,12 +234,23 @@ export const None  = proxy({
   }
 })(_ => None))
 
-// objects & arrays
-export const get      = prop  => obj => has_prop(prop)(obj) ? obj[prop] : None
-export const get_path = props => obj => fold(flip(get))(obj)(props)
-export const get_all  = props => fmap(map(get)(props))
-export const update   = prop  => updater => mixin({ [prop]: updater(prop) })
-// WIP(jordan): drill/surface/blah -- programmatically create ᐅpiles from arrays of ops
+// 3: depending on at most 3, 2 and 1
+// functions
+/* TODO(jordan):
+ *  memoization
+ */
+
+
+export const not = t => v => !t(v)
+export const prop_exclude = a => b => ᐅᶠ([ filter(not(flip(has)(b))) ])(props(a))
+// const copy_prop_as_meta_from = a => prop => obj => def_meta({ [prop]: get(prop)(a) })(obj)
+// export const mixin = a => b => fold(copy_prop_as_meta_from(a))(copy(b))(prop_exclude(a)(b))
+
+// TODO(jordan): untested
+export const first    = arr => get(0)(arr)
+export const pop      = arr => fmap([ first, rest ])(arr)
+export const get_path = path => obj => fold(get)(obj)(path)
+
 // GOAL(jordan): update functions:
 // update_path :: path   -> updater -> obj -> obj; updater is a ᐅdropn of the update arity / number of items you want
 // update_walk :: walker -> updater -> obj -> obj; similar to path, but more choice: walker outlines many paths
@@ -163,39 +261,32 @@ export const update   = prop  => updater => mixin({ [prop]: updater(prop) })
 //          in order to do more interesting things, we need a form of ᐅdrop that doesn't necessarily consume all the
 //          results; ᐅdrop should be renamed ᐅconsume, and ᐅdrop should mean "end up with a lens". You can end the lens
 //          by just taking the first value; I guess that's ᐅextract or something.
-const drill   = path => obj => [ obj, path, ᐅᶠ(map(get)(path))(obj) ]
-// const surface = dig => ᐅdropn(len(dig))
+const type        = t => v => typeof v === t
+const instance    = C => v => v instanceof C
+const object_case = ({ array: a, object: o }) => ᐅwhen(type('object'))(ᐅif(instance(Array))(a)(o))
+export const reflex = { type, instance, object_case }
 
-// objects
-export const has_prop      = prop => obj => Object.hasOwnProperty.call(obj, prop)
-export const keys          = ᐅᶠ([ _own_descs, Object.keys ])
-export const symbols       = Object.getOwnPropertySymbols
-export const props         = ᐅᶠ([ fmap([ keys, symbols ]), apply(concat) ])
-export const key_values    = Object.values
-export const symbol_values = ᐅᶠ([ fmap([ symbols, id ]), apply(get_all) ])
-export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
-export const create        = descs => Object.create(null, (descs || {}))
-export const key_descs     = ᐅᶠ([ _own_descs, Object.entries ])
-export const symbol_descs  = ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbols ]), apply(map) ])
-export const descs         = ᐅᶠ([ fmap([ key_descs, symbol_descs ]), apply(concat) ])
-// NOTE(jordan): need to make sure create() is called every time here! so we have the descs arg
-export const from_descs    = descs => fold(o => ([p, d]) => def.mut(p)(d)(o))(create())(descs)
-export const object        = ᐅᶠ([ descs, from_descs ])
-export const mixin         = a => b => ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
-export const build         = objs  => fold(mixin)(create())(objs)
-export const make_desc     = value => object({ value, writable: true, configurable: true, enumerable: true })
-export const to_kvs        = ᐅᶠ([ descs, map(([ prop, desc ]) => [ prop, desc.value ]) ])
-export const from_kvs      = ᐅᶠ([ map(([ prop, value ]) => [ prop, make_desc(value) ]), from_descs ])
+export const object_copy = object
+export const copy = object_case({ array: array_copy, object: object_copy })
 
-// TODO(jordan): untested
+// FIXME(jordan): these should take v => v functions...
+const update_array  = i => v => splice(i)(1)([ v ])
+const update_object = k => v => extend({ [k]: v })
+export const update = k => v => object_case({ array: update_array(k)(v), object: update_object(k)(v) })
+
+export const trace = adder => tracker => ᐅᶠ([ fmap([ adder, tracker ]), apply(cons) ])
+
+const update_tracker = k => ([ o, fill_hole ]) => (v => fill_hole(update(k)(v)(o)))
+export const trace_update = k => trace(ᐅᶠ([ first, get(k) ]))(update_tracker(k))
+export const lens = path => object => fold(trace_update)([ object, id ])(path)
+
 // arrays
 const split_pair = fmap([ get(0), get(1) ])
 const _delacer   = ([ a, b ]) => fmap([ ᐅᶠ([ get(0), cons(a) ]), ᐅᶠ([ get(1), cons(b) ]) ])
-export const first    = get(0)
 export const lace     = a => b => ᐅᶠ([ len, til, fmap([ flip(get)(a), flip(get)(b) ]) ])(a)
 export const delace   = fold(_delacer)([[], []])
-export const remove   = v => arr => ᐅᶠ([ fmap([ array, index(v) ]), apply(remdex) ])
-export const def_meta = mixin
+export const remove   = v => ᐅᶠ([ fmap([ index(v), id ]), apply(remdex) ])
+export const def_meta = meta => ᐅᶠ([ copy, defs.mut(own_descs(meta)) ])
 
 // ...? special for sisyphus
 export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
@@ -213,13 +304,53 @@ export function test (suite) {
       'id: works on objects':
         t => t.eq(id({ a: 5 }))({ a: 5 }),
       'call: calls func':
-        t => t.eq(call(1)(id))(1),
+        t => t.eq(call(id)(1))(1),
       'bind: binds ctx':
         t => t.eq(bind({ a: 7 })(function (v) { return this[v] })('a'))(7),
       'compose: composes':
         t => t.eq(compose(x => x + 5)(x => 2 * x)(1))(12),
       'ret: returns':
         t => t.eq(ret(5)())(5),
+      'apply: applies function to array of args':
+        t => t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3),
+      'times: repeats a function a set number of times':
+        t => t.eq(times(3)(x => x * 2)(2))(16),
+      'and: true if all predicates are true':
+        t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0, x => x < 10 ])(6)),
+      'or: true if any predicate is true':
+        t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
+      'copy_fn: copies a function':
+        t => t.eq(copy_fn(id)(id)) && !t.refeq(copy_fn(id))(id) && t.eq(copy_fn(id)(5))(id(5)),
+      'mimic_fn: copies a function, keeping its name and toString':
+        t => {
+          const fn = x => x + 1
+          const id = x => x
+          const mimic = mimic_fn(id)(fn)
+          return t.eq(mimic.name)(id.name)
+              && t.eq(mimic.toString())(id.toString())
+              && t.eq(mimic('hi'))(id('hi') + 1)
+              && !t.refeq(mimic)(id)
+              && !t.refeq(mimic)(fn)
+        },
+      'meta_fn: defines hidden properties on a copy of a function':
+        t => {
+          const fn = _ => 5
+          const mf = meta_fn({ a: fn() })(fn)
+          return t.eq(mf())(fn())
+              && t.eq(mf.a)(fn())
+              && !t.refeq(mf)(fn)
+        },
+      'named: names a function':
+        t => t.eq(named('hello')(v => `hello, ${v}`).name)('hello'),
+    }),
+    t => t.suite('pipelining', {
+      'ᐅᶠ: pipelines functions':
+        t => t.eq(ᐅᶠ([ id, inc ])(1))(2),
+      'ᐅif: inline if':
+        t => t.eq(ᐅif(id)(_ => 5)(_ => 6)(true))(5) && t.eq(ᐅif(id)(_ => 5)(_ => 6)(false))(6),
+      'ᐅwhen: one-armed inline if':
+        t => t.eq(ᐅwhen(v => v % 2 === 0)(_ => 'even')(2))('even')
+          && t.eq(ᐅwhen(v => v % 2 === 0)(_ => 'even')(1))(1),
     }),
     t => t.suite('numbers', {
       'inc: adds 1':
@@ -227,7 +358,7 @@ export function test (suite) {
       'dec: subtracts 1':
         t => t.eq(dec(5))(4),
     }),
-    t => t.suite('arrays pt. 1', {
+    t => t.suite('arrays', {
       'each: no effect':
         t => t.eq(each(v => v * v)(to6))(to6),
       'map: adds 1':
@@ -260,8 +391,6 @@ export function test (suite) {
         t => t.eq(findex(v => v % 2 == 0)(to6))(1),
       'join: joins an array into a string':
         t => t.eq(join('+')(to6))('1+2+3+4+5'),
-      'slice()(): copy (same as array)':
-        t => t.eq(slice()()(to6))([ 1, 2, 3, 4, 5 ]),
       'slice(0)(0): nothing':
         t => t.eq(slice(0)(0)(to6))([]),
       'slice(1)(): of to6 is 2..5':
@@ -275,7 +404,7 @@ export function test (suite) {
       'rest: same as slice(1)':
         t => t.eq(rest(to6))([ 2, 3, 4, 5 ]),
       'fold: sum of to6 is 15':
-        t => t.eq(fold(acc => v => acc + v)(0)(to6))(15),
+        t => t.eq(fold(v => acc => v + acc)(0)(to6))(15),
       'cons: cons [0] to to6 gives [0],1..5':
         t => t.eq(cons([ 0 ])(to6))([ [ 0 ], 1, 2, 3, 4, 5 ]),
       'len: len of to6 is 5':
@@ -285,44 +414,22 @@ export function test (suite) {
       'push: to6 push [6] is 1..5,[6]':
         t => t.eq(push([ 6 ])(to6))([ 1, 2, 3, 4, 5, [ 6 ] ]),
       'flatten: flattening arbitrarily partitioned to6 is to6':
-        t => t.eq(flatten([[1], [2, 3], 4, [5]]))(to6),
+        t => t.eq(flatten([[1], [2, 3], 4, [5]]))(to6)
+          && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ]),
       'flatmap: maps then flattens':
         t => t.eq(flatmap(v => [ v, v + 5 ])(to6))([ 1, 6, 2, 7, 3, 8, 4, 9, 5, 10 ]),
-      'array: creates new copy of array':
-        t => t.eq(array(to6))(to6) && !t.refeq(array(to6))(to6),
-    }),
-    t => t.suite('arrays pt. 2', {
+      'array_copy: creates new copy of array':
+        t => t.eq(array_copy(to6))(to6) && !t.refeq(array_copy(to6))(to6),
       'reverse: reverse of to6 is 5..1':
         t => t.eq(reverse(to6))([ 5, 4, 3, 2, 1 ]),
-      // 'cont: appends values to carried':
-      //   t => t.todo(),
-      // 'remove: removing 2 from to6 drops index 1':
-      //   t => t.eq(remove(2)(to6))([ 1, 3, 4, 5 ]),
-      // 'remdex: removing index 1 from to6 drops 2':
-      //   t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
+      'remove: removing 2 from to6 drops index 1':
+        t => t.eq(remove(2)(to6))([ 1, 3, 4, 5 ]),
+      'remdex: removing index 1 from to6 drops 2':
+        t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
       // 'split: splits on delimeter':
       //   t => t.eq(split(',')('1,2,3,4,5'))(map(v => '' + v)(to6)),
     }),
-    t => t.suite('pipelining', {
-      'ᐅᶠ: pipelines functions':
-        t => t.eq(ᐅᶠ([ id, inc ])(1))(2),
-      'ᐅif: inline if':
-        t => t.eq(ᐅif(id)(_ => 5)(_ => 6)(true))(5) && t.eq(ᐅif(id)(_ => 5)(_ => 6)(false))(6),
-      'ᐅwhen: one-armed inline if':
-        t => t.eq(ᐅwhen(v => v % 2 === 0)(_ => 'even')(2))('even')
-          && t.eq(ᐅwhen(v => v % 2 === 0)(_ => 'even')(1))(1),
-    }),
-    t => t.suite('functions pt. 2', {
-      'apply: applies function to array of args':
-        t => t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3),
-      'times: repeats a function a set number of times':
-        t => t.eq(times(3)(x => x * 2)(2))(16),
-      'and: true if all predicates are true':
-        t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0, x => x < 10 ])(6)),
-      'or: true if any predicate is true':
-        t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
-    }),
-    t => t.suite(`objects pt. 1`, {
+    t => t.suite(`objects`, {
       'symbols: lists symbols':
         t => t.eq(symbols({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
       'keys: lists non-symbol keys':
@@ -364,37 +471,19 @@ export function test (suite) {
         t => t.eq(object({ a: 5 }))({ a: 5 }) && t.refeq(object({ f: to6 }).f)(to6),
       'mixin: creates a new object combining properties of two source objects':
         t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
-      'build: combines an array of objects':
-        t => t.eq(build([{ a: 5 }, { a: 4 }, { a: 3, b: 2 }]))({ a: 3, b: 2 }),
-    }),
-    t => t.suite('functions pt. 3', {
-      'copy_fn: copies a function':
-        t => t.eq(copy_fn(id)(id)) && !t.refeq(copy_fn(id))(id) && t.eq(copy_fn(id)(5))(id(5)),
-      'mimic_fn: copies a function, keeping its name and toString':
-        t => {
-          const fn = x => x + 1
-          const id = x => x
-          const mimic = mimic_fn(id)(fn)
-          return t.eq(mimic.name)(id.name)
-              && t.eq(mimic.toString())(id.toString())
-              && t.eq(mimic('hi'))(id('hi') + 1)
-              && !t.refeq(mimic)(id)
-              && !t.refeq(mimic)(fn)
-        },
-      'meta_fn: defines hidden properties on a copy of a function':
-        t => {
-          const fn = _ => 5
-          const mf = meta_fn({ a: fn() })(fn)
-          return t.eq(mf())(fn())
-              && t.eq(mf.a)(fn())
-              && !t.refeq(mf)(fn)
-        },
-      'named: names a function':
-        t => t.eq(named('hello')(v => `hello, ${v}`).name)('hello'),
+      'get: gets a key/index or None if not present':
+        t => t.eq(get(0)([5]))(5) && t.eq(get('a')({}))(None),
+      'get_path: gets a path of keys/indices or None if any part of path is not present':
+        t => t.eq(get_path([ 'a', 'b', 'c' ])({ 'a': { 'b': { 'c': 5 } } }))(5)
+          && t.eq(get_path([ 'a', 'b', 'd' ])({ 'a': { 'b': { 'c': 5 } } }))(None),
+      'to_kvs: gets {key,symbol}, value pairs':
+        t => t.eq(to_kvs({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
+      'from_kvs: turns {key,symbol}, value pairs into an object':
+        t => t.eq(from_kvs([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
     }),
     t => t.suite(`strings`, {
       'split: splits a string around a delimiter':
-        t => t.eq(split(',')('a,b,c'))(['a', 'b', 'c']),
+        t => t.eq(split_on(',')('a,b,c'))(['a', 'b', 'c']),
       'quote: surrounds a string in quotes':
         t => t.eq(quote('s'))('"s"'),
     }),
@@ -408,17 +497,6 @@ export function test (suite) {
             && t.eq(concat(None)(5))([ None, 5 ])
             && t.eq(flatten([ id, None, flatten ]))([ id, None, flatten ])
       },
-    }),
-    t => t.suite(`objects pt. 2`, {
-      'get: gets a key/index or None if not present':
-        t => t.eq(get(0)([5]))(5) && t.eq(get('a')({}))(None),
-      'get_path: gets a path of keys/indices or None if any part of path is not present':
-      t => t.eq(get_path([ 'a', 'b', 'c' ])({ 'a': { 'b': { 'c': 5 } } }))(5)
-        && t.eq(get_path([ 'a', 'b', 'd' ])({ 'a': { 'b': { 'c': 5 } } }))(None),
-      'to_kvs: gets {key,symbol}, value pairs':
-        t => t.eq(to_kvs({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
-      'from_kvs: turns {key,symbol}, value pairs into an object':
-        t => t.eq(from_kvs([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
     }),
   ])
 }

@@ -1,3 +1,5 @@
+dependencies:
+  '@sisyphus/sisyphus': 'link:../../.local/pnpm-global/node_modules/@sisyphus/sisyphus'
 devDependencies:
   rollup: 0.54.0
   rollup-plugin-node-resolve: 3.0.2
