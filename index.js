@@ -108,8 +108,8 @@ export const apply    = f => args => fold(partial)(f)(args)
 export const times    = n => f => v => fold(call)(v)(n_of(f)(n))
 export const and      = fs => v => all(f => f(v))(fs)
 export const or       = fs => v => any(f => f(v))(fs)
-export const on       = v => map(partial(v))
-export const fmap     = fs => flip(on)(fs)
+export const on       = v => fold(f => prev => (prev !== None ? f(prev) : f)(v))(None)
+export const fmap     = fs => v => map(partial(v))(fs)
 export const copy_fn  = fn => bind({})(fn)
 const _mimic_fn = fn => defs.mut({
   name     : d.iter_only({ g: _ => fn.name }),
@@ -162,11 +162,11 @@ export const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ]
 export const insert   = v => i => splice(i)(0)(v)
 export const remdex   = i => splice(i)(1)()
 export const take     = j => slice(0)(j)
-export const skip     = i => ᐅᶠ([ fmap([ len, id ]), apply(slice(i)) ])
+export const skip     = i => arr => on(arr)([ len, slice(i) ])
 export const rest     = a => skip(1)(a)
 export const last     = a => ᐅᶠ([ skip(-1), ᐅif(a => len(a) === 0)(ret(None))(first) ])(a)
 export const split_at = n => fmap([ take(n), skip(n) ])
-export const split_on = v => ᐅᶠ([ fmap([ index(v), id ]), apply(split_at) ])
+export const split_on = v => arr => on(arr)([ index(v), split_at ])
 
 // objects & arrays
 export const has      = prop => obj => Object.hasOwnProperty.call(obj, prop)
@@ -177,8 +177,8 @@ export const get_all  = props => fmap(map(get)(props))
 export const keys          = obj => ᐅᶠ([ own_descs, Object.keys ])(obj)
 export const key_values    = Object.values
 export const symbols       = Object.getOwnPropertySymbols
-export const symbol_values = obj => ᐅᶠ([ fmap([ symbols, id ]), apply(get_all) ])(obj)
 export const props         = obj => ᐅᶠ([ fmap([ keys, symbols ]), apply(concat) ])(obj)
+export const symbol_values = obj => on(obj)([ symbols, get_all ])
 export const create        = descs => Object.create(null, (descs || {}))
 export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
 export const key_descs     = obj => ᐅᶠ([ own_descs, Object.entries ])(obj)
@@ -284,7 +284,7 @@ const split_pair = fmap([ get(0), get(1) ])
 const _delacer   = ([ a, b ]) => fmap([ ᐅᶠ([ get(0), cons(a) ]), ᐅᶠ([ get(1), cons(b) ]) ])
 export const lace     = a => b => ᐅᶠ([ len, til, fmap([ flip(get)(a), flip(get)(b) ]) ])(a)
 export const delace   = fold(_delacer)([[], []])
-export const remove   = v => ᐅᶠ([ fmap([ index(v), id ]), apply(remdex) ])
+export const remove   = v => arr => on(arr)([ index(v), remdex ])
 export const def_meta = meta => ᐅᶠ([ copy, defs.mut(own_descs(meta)) ])
 
 // ...? special for sisyphus
