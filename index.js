@@ -19,7 +19,6 @@
  *
  */
 
-
 /*
  * Obvious TODOs
  *
@@ -27,117 +26,202 @@
  *   - not everything has a logical mutable alternative
  *   - for example, id
  * tests for
- *   - d
- *   - internal APIs (with_mut_alt)
- *   - def.mut, defs.mut
+ *   - d (descriptor factory)
+ *   - internal APIs (mutative)
+ *   - define_prop.mut, define_props.mut
  * less awful lenses
  *   - lens, today, is largely useless
  *   - involves a ton of boilerplate
  *   - doesn't interoperate as neatly as i'd hoped with insert/update APIs
+ * μ.time.wait, μ.time.every, μ.time.asap
+ *   - wait  ⇔ setTimeout
+ *   - every ⇔ setInterval
+ *   - asap  ⇔ requestAnimationFrame
  */
+import d from './d'
+import { define_prop, define_props, define, with_mutative, derive_from } from './mutton'
+import { own_descs, get_desc, of_descs, bind, symbol_keys, string_keys, keys } from './lynchpin'
+import { source, code } from './fungible'
 
-// 0a: descriptor mutation primitives
-const _defprops = prop_descs => obj => (Object.defineProperties(obj, prop_descs), obj)
-const _defprop  = prop => desc => obj => (Object.defineProperty(obj, prop, desc), obj)
-export const def  = _defprop('mut')({ value: _defprop })(Object.create(null))
-export const defs = def.mut('mut')({ value: _defprops })(Object.create(null))
-
-// 0b: descriptor mutation affordances
-export const own_descs = Object.getOwnPropertyDescriptors
-// borrowing shamelessly from d.js: https://www.npmjs.com/package/d
-export const d = defs.mut(own_descs({
-  /**
-   * Internal configuration
-   */
-  _: {
-    unknown_parse: c => d.all_config({}),
-    s: {
-      c: 'configurable',
-      e:   'enumerable',
-      w:     'writable',
-    },
-  },
-  /**
-   * Parse a string of cew into its descriptor properties
-   */
-  parse_cew_string: (cew='') => {
-    const [ c1, c2, c3 ] = cew.split('')
-    return  c1 && c2 && c3 ? { [d._.s[c1]]: true, [d._.s[c2]]: true, [d._.s[c3]]: true }
-          : c1 && c2       ? { [d._.s[c1]]: true, [d._.s[c2]]: true }
-          : c1             ? { [d._.s[c1]]: true }
-          : {}
-  },
-}))(make_descriptor)
-/**
- * Descriptor configuration option shorthands
- */
-defs.mut(own_descs({
-  all_config : d('cew'),
-  no_conf    : d( 'ew'),
-  no_write   : d( 'ce'),
-  no_iter    : d( 'cw'),
-  write_only : d(  'w'),
-  iter_only  : d(  'e'),
-  conf_only  : d(  'c'),
-  no_config  : d(   ''),
-}))(d)
-/**
- * Straightforward descriptor creation api
- *
- * Usage:
- *   d.all_config({ v: 5 })     ⇒ { configurable: true, enumerable: true, writable: true, value: 5 }
- *   d.no_config({ g: ret(4) }) ⇒ { get: ret(4) }
- *   d('ew')({ v: 3 })          ⇒ { enumerable: true, writable: true, value: 3 }
- *   d('ew')(d.v(3))            ⇒ { enumerable: true, writable: true, value: 3 } (same as above)
- */
-function make_descriptor (cew) {
-  const parse = typeof cew === 'string' ? d.parse_cew_string : d._.unknown_parse
-  if (parse === null) {
-    console.error(`descriptor configuration ${cew} is unrecognized!`)
-    console.debug(`
-      what happens next? μ.d will fall back to 'all_config', the same as a JS object,
-      or you can configure it using μ.d._.unknown_parse: unknown_conf_in ⇒ good_conf_out.
-    `)
-  }
-  return ({ v, g, s }) => {
-    const conf = parse(cew)
-    if (v !== undefined) conf.value = v
-    if (g !== undefined) conf.get   = g
-    if (s !== undefined) conf.set   = s
-    return conf
-  }
+export {
+  d, define_prop, define_props, define,
+  // FIXME: of_descs shouldn't need to be renamed
+  of_descs as create, bind,
 }
 
-// Utils utils
-const with_mut_alt = v => def.mut('mut')(d.no_config({ v }))
+// FIXME: remove
+export const block = f => call(f)()
 
 // functions
-export const id      = v => v
-export const partial = v => f => f(v)
-export const call    = f => v => f(v)
-export const block   = f => call(f)()
-export const flip    = f => a => b => f(b)(a)
-export const compose = f => g => v => g(f(v))
-export const ret     = v => _ => v
-export const bind    = ctx => f => Function.bind.call(f, ctx)
-export const loop    = n => f => { let i = n; while (i--) { f(i) } }
-export const apply   = f => args => fold(partial)(f)(args)
-export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
-export const and     = fs => v => all(partial(v))(fs)
-export const or      = fs => v => any(partial(v))(fs)
-export const on      = v => fold(f => prev => (prev !== None ? f(prev) : f)(v))(None)
-export const fmap    = fs => v => map(partial(v))(fs)
-export const copy_fn = fn => bind({})(fn)
-const _mimic_fn = fn => defs.mut({
-  name     : d.iter_only({ g: _ => fn.name }),
-  toString : d.no_config({ v: _ => fn.toString() }),
+export const id      = v  => v
+export const on      = v  => fold(f => prev => (prev !== None ? f(prev) : f)(v))(None)
+export const ret     = v  =>    _ => v
+export const call    = f  =>    v => f(v)
+export const pass    = v  =>    f => f(v)
+export const loop    = n  =>    f => { let i = n; while (i--) { f(i) } }
+export const apply   = f  => args => fold(pass)(f)(args)
+export const and     = fs =>    v => all(pass(v))(fs)
+export const or      = fs =>    v => any(pass(v))(fs)
+export const fmap    = fs =>    v => map(pass(v))(fs)
+export const flip    = f  =>    a => b => f(b)(a)
+export const compose = f  =>    g => v => g(f(v))
+export const times   = n  =>    f => v => fold(call)(v)(n_of(f)(n))
+const _mimic_fn_meta = f => of_descs({
+  name     : d.iter_only({ g: _ => f.name }),
+  toString : d.no_config({ v: _ => f.toString() }),
 })
-export const mimic_fn = srcfn => destfn => ᐅᶠ([ copy_fn, _mimic_fn(srcfn) ])(destfn)
-export const meta_fn  = meta => ᐅᶠ([ copy_fn, defs.mut(own_descs(meta)) ])
+export const meta_fn  = with_mutative(define.mut)(meta => ᐅᶠ([ copy_fn, meta_fn.mut(meta) ]))
+export const mimic_fn = derive_from(meta_fn)(meta_fn => target => meta_fn(_mimic_fn_meta(target)))
 // constructing functions from strings (for rotten profit)
-const make_let_string  = variable => value => `let ${variable} = ${value}; return ${variable}`
-const iife_from_string = source   => (new Function(source))()
-export const named     = name     => def => iife_from_string(make_let_string(name)(def.toString()))
+export const named     = name => def => code.iife(source.let(name)(def.toString()))
+export const copy_fn   = f    => bind({})(f)
+
+/* =================
+ * Copying Functions
+ * =================
+ *
+ * there are 4 pieces of state to keep in mind when copying functions.
+ *
+ * 1. closure (lexical) state
+ * 2. identity (own) state
+ * 3. instance (prototypal) state
+ * 4. contextual (this) state
+ *
+ * if a copy loses the lexical environment of its closure, undefined errors are going to be
+ * introduced when the copy tries to access a member of its (now empty) scope. pure functions are
+ * immune to this.
+ *
+ * ```
+ * // example:
+ * function monotonic_incrementer () {
+ *   let value = 0
+ *   return function increment () {
+ *     return ++value
+ *   }
+ * }
+ *
+ * let next = monotonic_incrementer()
+ * let copy_next = copy(next)
+ * next()      // ⇒ 1
+ * copy_next() // ⇒ ++value ⇒ ++undefined ⇒ NaN
+ * ```
+ *
+ * if a copy loses identity state (that is, if `name`, `toString()`, other implicit properties set
+ * by the runtime during function definition change), introspection is crippled, and any form of
+ * copy-to-source comparison (not just direct equality comparison) becomes nigh impossible.
+ *
+ * ```
+ * // example:
+ * function debug_log_function (f) {
+ *   console.log(`${f.name}: ${f.toString()}`)
+ * }
+ * function add (a, b) { return a + b }
+ * debug_log_function(add)       // ⇒ logs: "add: function add (a, b) { return a + b }"
+ * debug_log_function(copy(add)) // unknown behavior (implementation and js engine specific)
+ * ```
+ *
+ * if a copy loses instance state (the prototype changes), its inheritance chain is broken, and
+ * instanceof checks that should succeed will fail.
+ *
+ * ```
+ * // example:
+ * class Rect () {
+ *   constructor (length, height) {
+ *     this.length = length
+ *     this.height = height
+ *   }
+ *   area () {
+ *     return this.length * this.height
+ *   }
+ * }
+ *
+ * let size5_square = new Rect(5, 5)
+ * size5_square.area()                // ⇒ 25
+ * size5_square instanceof Rect       // ⇒ true
+ * copy(size5_square) instanceof Rect // ⇒ false
+ * copy(size5_square).area()          // ⇒ TypeError: undefined is not a function
+ * ```
+ *
+ * if a copy loses contextual state (that is, if it is bound to a context using bind() and can no
+ * longer be implicitly rebound to a new context), it is no longer usable as, for example, a mixin
+ * definition for an object, because its `this` value will not change when its runtime context
+ * changes.
+ *
+ * ```
+ * // example:
+ * function debug_mixin () {
+ *   return {
+ *     type  : typeof this,
+ *     proto : Object.getPrototypeOf(this),
+ *     value : this.valueOf(),
+ *   }
+ * }
+ *
+ * const debuggable_C = Object.create(class C { }, {
+ *   debug: { value: debug_mixin }
+ * })
+ * debuggable_C.debug() // ⇒ { type: "object", proto: C.prototype, valueOf: Function {...} }
+ *
+ * const not_so_debuggable_C = Object.create(class C { }, {
+ *   debug: { value: copy(debug_mixin) }
+ * })
+ * not_so_debuggable_C.debug() // ⇒ { type: "object", proto: Object.prototype, valueOf: {} }
+ * ```
+ *
+ * there is no elegant method of copying functions that can avoid every pitfall.
+ *
+ * here are known methods for copying functions, and trade-offs they introduce:
+ *
+ * 1. create a wrapper function (not truly a copy, but a 'mimic') that calls the source function
+ *    - preserves closure state
+ *    - loses identity state (but this can be mitigated, at least partly, by copying it separately)
+ *    - loses instance state (this can probably be mitigated by directly setting prototype)
+ *    - loses contextual state (unless it binds the inner function to its own context)
+ *    - complex: all non-closure state must be manually copied
+ *    - flexible: permits arbitrary pre- and post-call code execution (separate use-case)
+ * 2. (new Function(`return ${source_function.toString()}`))()
+ *    - loses closure state (and there's no way to access a closure's lexical state to copy it)
+ *    - preserves identity state (cleanly; it evaluates a 2nd definition of the original function)
+ *    - loses instance state (can be mitigated by directly setting prototype)
+ *    - preserves contextual state (the function is not rebound or moved into a new scope)
+ *    - simple: preserves most of a function's state without manual copying
+ *    - inefficient: evaluates a source string, triggering a parse/compile sequence in the runtime
+ *    - problem: there's no way to copy the lexical environment of the original closure
+ * 3. rebind the function to a new (empty) context
+ *    - preserves closure state
+ *    - loses identity state (but this can be mitigated at least partly)
+ *    - preserves instance state (afaict)
+ *    - loses contextual state (only an explicit rebind can change the copy's context)
+ *    - problem: there's no way to restore normal contextual state behavior to the copy
+ *
+ * if lexical state and copy efficiency are unimportant, method 2 is superior. if lexical state is
+ * important, only methods 1 and 3 are applicable. of the two, method 1 is more hacky, more complex,
+ * and yet generally superior, because it is able to preserve the most state. method 3 clobbers
+ * contextual state, with no way to restore normal runtime contextual state behavior. if it is known
+ * that runtime contextual state behavior is unimportant, then method 3 is acceptable; however, it
+ * is only a side effect of function rebinding that the source function is 'copied,' not the intent
+ * of function rebinding. while it can generally be relied upon that function rebinding will cause
+ * the javascript engine to replicate the source function's behavior (including lexical state), it
+ * is purposefully designed to *replace* contextual state, and that's all it has to do.
+ *
+ * the best method for copying a function is to re-evaluate its definition, then copy the lexical
+ * environment from its source. unfortunately, we cannot access the lexical environment of a closure
+ * in javascript. mimicking a function (method 1) is not quite the same, and rebinding a function
+ * (method 3) is a different operation that happens to copy a function as a byproduct. method 2,
+ * which does re-evaluate the function definition, cannot be adapted to copy the source function's
+ * lexical environment, making it suitable only for copying pure functions.
+ *
+ * also worth considering: native runtime functions (whose source is not introspectable, due to its
+ * likely not being expressible in javascript in the first place) and/or node-gyp style
+ * foreign-functions cannot be copied using function re-evaluation, because the source is not
+ * available. but this begs the question: when and why are you copying non-user functions that are
+ * not part of your codebase in the first place? why would you copy, for example, Math.cos? or a
+ * function from an external library? it should never be seen as acceptable practice to mutate the
+ * standard library, or anyone's library for that matter, when extending them.
+ *
+ * so we are at an impasse. if we were going to expose a single API for copying functions, which
+ * trade-offs should it choose?
+ */
 
 // numbers
 export const inc = x => x + 1
@@ -167,7 +251,7 @@ export const push    = v => flip(concat)([ v ])
 export const flatten = a => fold(flip(concat))([])(a)
 export const flatmap = f => arr => flatten(map(f)(arr))
 export const mapix   = f => map((it, ix) => f(ix)(it))
-const _fold_def = ([ name, desc ]) => obj => def.mut(name)(desc)(obj)
+const _fold_def = ([ name, desc ]) => obj => name === 'length' ? obj : define_prop.mut(name)(desc)(obj)
 export const array_copy = arr => fold(_fold_def)([])(descs(arr))
 const _reverse = a => [].reverse.call(a)
 const _splice  = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs||[])), arr)
@@ -175,17 +259,17 @@ const _til     = n => a => (loop(n)(i => a[i] = i), a)
 export const reverse  = a => ᐅᶠ([ array_copy, _reverse ])(a)
 export const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
 export const thru     = n => til(inc(n))
-export const splice   = with_mut_alt(_splice)(i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ]))
-const derivative = of_fn => def => with_mut_alt(def(of_fn.mut))(def(of_fn))
-const splicer = def => derivative(splice)(def)
-export const insert   = splicer(splice => v => i => splice(i)(0)(v))
-export const remdex   = splicer(splice => i => splice(i)(1)())
+export const splice   = with_mutative(_splice)(i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ]))
 export const take     = j => slice(0)(j)
 export const skip     = i => arr => on(arr)([ len, slice(i) ])
 export const rest     = a => skip(1)(a)
 export const last     = a => ᐅᶠ([ skip(-1), ᐅif(a => len(a) === 0)(ret(None))(first) ])(a)
 export const split_at = n => fmap([ take(n), skip(n) ])
 export const split_on = v => arr => on(arr)([ index(v), split_at ])
+
+const splicer = derive_from(splice)
+export const insert = splicer(splice => v => i => splice(i)(0)(v))
+export const remdex = splicer(splice => i => splice(i)(1)())
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep (proto traversing)
@@ -194,20 +278,15 @@ export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
 export const get_all  = props => fmap(map(get)(props))
 
 // objects
-export const keys          = Object.keys
-export const key_values    = Object.values
-export const symbols       = Object.getOwnPropertySymbols
-export const props         = Reflect.ownKeys
-export const symbol_values = obj => on(obj)([ symbols, get_all ])
-export const create        = descs => Object.create(null, (descs || {}))
-export const get_desc      = prop  => obj => Object.getOwnPropertyDescriptor(obj, prop)
+export const string_keyed_values = obj => on(obj)([ string_keys, get_all ])
+export const symbol_keyed_values = obj => on(obj)([ symbol_keys, get_all ])
 export const key_descs     = obj => ᐅᶠ([ own_descs, Object.entries ])(obj)
-export const symbol_descs  = obj => ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbols ]), apply(map) ])(obj)
+export const symbol_descs  = obj => ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbol_keys ]), apply(map) ])(obj)
 export const descs         = obj => ᐅᶠ([ fmap([ key_descs, symbol_descs ]), apply(concat) ])(obj)
-export const from_descs    = descs => fold(([p, d]) => def.mut(p)(d))(create())(descs)
+export const from_descs    = descs => fold(([p, d]) => define_prop.mut(p)(d))(of_descs({}))(descs)
 export const object        = obj => ᐅᶠ([ descs, from_descs ])(obj)
-export const extend        = a => b => def_meta(a)(b)//ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
-export const mixin         = obj => flip(extend)(obj)
+export const mixin         = a => b => ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
+export const extend        = obj => flip(mixin)(obj)
 export const to_kvs        = obj => ᐅᶠ([ descs, map(([ prop, desc ]) => [ prop, desc.value ]) ])(obj)
 export const from_kvs      = kvs => ᐅᶠ([ map(([ prop, value ]) => [ prop, d.all_config({ v: value }) ]), from_descs ])(kvs)
 
@@ -226,7 +305,7 @@ export const proxy = traps => target => new Proxy(target, traps)
 export const None  = proxy({
   get (target, prop, recv) {
     const prop_in  = f => v => incl(prop)(f(v))
-    const has_prop = prop_in(props)
+    const has_prop = prop_in(keys)
     /* EXPLANATION(jordan): Yeah... wtf wrt this next line. Lets None be push/concat/etc.-ed without
      * disappearing in the result array. This is an issue because of the way Symbols were designed
      * for backwards compatability -- basically, returning undefined is "good" and counts as the
@@ -244,7 +323,7 @@ export const None  = proxy({
      */
     return ᐅif(has_prop)(get(prop))(ret(None))(target)
   }
-})(meta_fn({
+})(meta_fn.mut({
   toString () { return 'None' },
   [Symbol.toPrimitive] (hint) {
     if (hint === 'string') return 'None'
@@ -259,9 +338,8 @@ export const None  = proxy({
  *  memoization
  */
 
-
 export const not = t => v => !t(v)
-export const prop_exclude = a => b => ᐅᶠ([ filter(not(flip(has)(b))) ])(props(a))
+export const prop_exclude = a => b => ᐅᶠ([ filter(not(flip(has)(b))) ])(keys(a))
 // const copy_prop_as_meta_from = a => prop => obj => def_meta({ [prop]: get(prop)(a) })(obj)
 // export const mixin = a => b => fold(copy_prop_as_meta_from(a))(copy(b))(prop_exclude(a)(b))
 
@@ -282,10 +360,26 @@ export const get_path = path => obj => fold(get)(obj)(path)
 //          by just taking the first value; I guess that's ᐅextract or something.
 const type        = t => v => typeof v === t
 const instance    = C => v => v instanceof C
-const object_case = ({ array: a, object: o }) => ᐅwhen(type('object'))(ᐅif(instance(Array))(a)(o))
+const object_case = ({ array: a, object: o }) => ᐅwhen(type(t.object))(ᐅif(instance(Array))(a)(o))
 export const reflex = { type, instance, object_case }
 
-export const object_copy = object
+// primitive types : boolean, undefined, number, string, symbol, object
+// weirdo types    : null (typeof null === 'object' but null is not an instance of an object)
+//                   NaN  (NaN != NaN, typeof NaN === 'number', but NaN instanceof Number === false)
+// object types    : literally everything else (boxed types, user objects, etc.)
+// REFACTOR(jordan): module
+const t = (function () {
+  const number    = 'number'    // number literals, Number(), but not new Number (which is object)
+  const object    = 'object'    // constructed instances (e.g. new class), literal objects
+  const string    = 'string'    // string literals, String(), but not new String (which is object)
+  const symbol    = 'symbol'    // symbols, well-known Symbols (e.g. Symbol.iterator)
+  const boolean   = 'boolean'   // true, false, Boolean(), but not new Boolean (which is object)
+  const function_ = 'function'  // functions, classes
+  const undefined = 'undefined' // free variables, literal undefined
+  return { number, object, string, symbol, boolean, function: function_, undefined }
+})()
+
+export const object_copy = obj => of_descs(own_descs(obj))
 export const copy = object_case({ array: array_copy, object: object_copy })
 
 // FIXME(jordan): these should take v => v functions...
@@ -305,7 +399,6 @@ const _delacer   = ([ a, b ]) => fmap([ ᐅᶠ([ get(0), cons(a) ]), ᐅᶠ([ ge
 export const lace     = a => b => ᐅᶠ([ len, til, fmap([ flip(get)(a), flip(get)(b) ]) ])(a)
 export const delace   = fold(_delacer)([[], []])
 export const remove   = v => arr => on(arr)([ index(v), remdex ])
-export const def_meta = meta => ᐅᶠ([ copy, defs.mut(own_descs(meta)) ])
 
 // ...? special for sisyphus
 export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
@@ -437,7 +530,7 @@ export function test (suite) {
           && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ]),
       'flatmap: maps then flattens':
         t => t.eq(flatmap(v => [ v, v + 5 ])(to6))([ 1, 6, 2, 7, 3, 8, 4, 9, 5, 10 ]),
-      'array_copy: creates new copy of array':
+      'array_copy: s new copy of array':
         t => t.eq(array_copy(to6))(to6) && !t.refeq(array_copy(to6))(to6),
       'reverse: reverse of to6 is 5..1':
         t => t.eq(reverse(to6))([ 5, 4, 3, 2, 1 ]),
@@ -449,33 +542,31 @@ export function test (suite) {
       //   t => t.eq(split(',')('1,2,3,4,5'))(map(v => '' + v)(to6)),
     }),
     t => t.suite(`objects`, {
-      'symbols: lists symbols':
-        t => t.eq(symbols({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
-      'keys: lists non-symbol keys':
-        t => t.eq(keys({ [Symbol.split]: just_hi, a: 4 }))(['a']),
-      'props: lists both symbols and non-symbol keys':
-        t => t.eq(props({ [Symbol.split]: just_hi, a: 4 }))(['a', Symbol.split]),
-      'key_values: lists non-symbol values':
-        t => t.eq(key_values({ [Symbol.split]: just_hi, a: 4 }))([4]),
-      'symbol_values: lists symbol values':
-        t => t.eq(symbol_values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi ]),
+      'symbol_keyss: lists symbols':
+        t => t.eq(symbol_keys({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
+      'string_keys: lists non-symbol keys':
+        t => t.eq(string_keys({ [Symbol.split]: just_hi, a: 4 }))(['a']),
+      'keys: lists both symbols and non-symbol keys':
+        t => t.eq(keys({ [Symbol.split]: just_hi, a: 4 }))(['a', Symbol.split]),
+      'string_keyed_values: lists non-symbol values':
+        t => t.eq(string_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([4]),
+      'symbol_keyed_values: lists symbol values':
+        t => t.eq(symbol_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi ]),
       // TODO
       // 'values: lists both symbol values and non-symbol values':
       //   t => t.eq(values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi, 4 ]),
       'get_desc: gets property descriptor':
         t => t.eq(get_desc('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
-      'create: creates null-prototype empty object':
-        t => t.eq(create())(Object.create(null)),
-      'defs.mut: mutably sets properties on an object': t => {
+      'define_props.mut: mutably sets properties on an object': t => {
         const o = { a: 5 }
-        defs.mut({ b: { value: 3 } })(o)
-        defs.mut({ a: { value: o.a + 1, enumerable: false } })(o)
+        define_props.mut({ b: { value: 3 } })(o)
+        define_props.mut({ a: { value: o.a + 1, enumerable: false } })(o)
         return t.eq(o.b)(3) && t.eq(o.a)(6) && t.eq(Object.keys(o))([])
       },
-      'def.mut: mutably sets a single property on an object': t => {
+      'define_prop.mut: mutably sets a single property on an object': t => {
         const o = { a: 1 }
-        def.mut('b')({ value: 5 })(o)
-        def.mut('a')({ enumerable: false })(o)
+        define_prop.mut('b')({ value: 5 })(o)
+        define_prop.mut('a')({ enumerable: false })(o)
         return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
       },
       'key_descs: gets descriptors for non-symbol properties':
@@ -488,7 +579,7 @@ export function test (suite) {
         t => t.eq(from_descs([['a', { configurable: true, writable: true, enumerable: true, value: 5 }]]))({ a: 5 }),
       'object: (shallowly) clones an object':
         t => t.eq(object({ a: 5 }))({ a: 5 }) && t.refeq(object({ f: to6 }).f)(to6),
-      'mixin: creates a new object combining properties of two source objects':
+      'mixin: s a new object combining properties of two source objects':
         t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
       'get: gets a key/index or None if not present':
         t => t.eq(get(0)([5]))(5) && t.eq(get('a')({}))(None),
