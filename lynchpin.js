@@ -7,8 +7,9 @@
  */
 // descriptor affordances
 export const own_descs = Object.getOwnPropertyDescriptors
+export const has_own   = name  => obj => Object.prototype.hasOwnProperty.call(obj, name)
 export const get_desc  = name  => obj => Object.getOwnPropertyDescriptor(obj, name)
-export const of_descs  = descs => Object.create(null, descs)
+export const of_properties = descs => Object.create(null, descs)
 // leading underscores indicate package-internal functions
 export const _defprop  = name  => desc => obj => (Object.defineProperty(obj, name, desc), obj)
 export const _defprops = props => obj => (Object.defineProperties(obj, props), obj)
@@ -75,9 +76,10 @@ export const _defprops = props => obj => (Object.defineProperties(obj, props), o
  * if you wish to filter out non-enumerable results, there is a pinning for
  * Object.protoype.propertyIsEnumerable that can be combined with filter.
  */
-export const string_keys = Object.getOwnPropertyNames
-export const symbol_keys = Object.getOwnPropertySymbols
-export const keys        = Reflect.ownKeys
+export const string_keys   = Object.getOwnPropertyNames
+export const symbol_keys   = Object.getOwnPropertySymbols
+export const keys          = Reflect.ownKeys
+export const is_enumerable = key => obj => Object.prototype.propertyIsEnumerable.call(obj, key)
 
 // function affordances
 /*

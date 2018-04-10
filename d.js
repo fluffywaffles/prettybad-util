@@ -18,7 +18,7 @@ const d = define.mut({
    * Internal configuration
    */
   _: {
-    unknown_parse: c => d.all_config,
+    unknown_parse: c => d.default,
     cew: {
       c: 'configurable',
       e:   'enumerable',
@@ -55,19 +55,19 @@ function make_descriptor (cew) {
  * Descriptor configuration option shorthands
  *
  * Usage:
- *   d.all_config({ v: 5 })     ⇒ { configurable: true, enumerable: true, writable: true, value: 5 }
- *   d.no_config({ g: ret(4) }) ⇒ { get: ret(4) }
- *   d.iter_only({ v: 'hi' })   ⇒ { enumerable: true, value: 'hi' }
+ *   d.default({ v: 5 })      ⇒ { configurable: true, enumerable: true, writable: true, value: 5 }
+ *   d.nothing({ g: ret(4) }) ⇒ { get: ret(4) }
+ *   d.iter_only({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
  */
 define.mut({
-  all_config : d('cew'),
+  default    : d('cew'),
   no_conf    : d( 'ew'),
   no_write   : d( 'ce'),
   no_iter    : d( 'cw'),
   write_only : d(  'w'),
   iter_only  : d(  'e'),
   conf_only  : d(  'c'),
-  no_config  : d(   ''),
+  nothing    : d(   ''),
 })(d)
 
 export default d

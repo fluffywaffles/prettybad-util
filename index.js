@@ -40,13 +40,13 @@
  */
 import d from './d'
 import { define_prop, define_props, define, with_mutative, derive_from } from './mutton'
-import { own_descs, get_desc, of_descs, bind, symbol_keys, string_keys, keys } from './lynchpin'
+import { own_descs, get_desc as unsafe_get_desc, of_properties, bind, symbol_keys, string_keys, keys } from './lynchpin'
 import { source, code } from './fungible'
 
 export {
   d, define_prop, define_props, define,
-  // FIXME: of_descs shouldn't need to be renamed
-  of_descs as create, bind,
+  // FIXME: of_properties shouldn't need to be renamed
+  of_properties, bind,
 }
 
 // FIXME: remove
@@ -66,9 +66,9 @@ export const fmap    = fs =>    v => map(pass(v))(fs)
 export const flip    = f  =>    a => b => f(b)(a)
 export const compose = f  =>    g => v => g(f(v))
 export const times   = n  =>    f => v => fold(call)(v)(n_of(f)(n))
-const _mimic_fn_meta = f => of_descs({
+const _mimic_fn_meta = f => of_properties({
   name     : d.iter_only({ g: _ => f.name }),
-  toString : d.no_config({ v: _ => f.toString() }),
+  toString : d.nothing({ v: _ => f.toString() }),
 })
 export const meta_fn  = with_mutative(define.mut)(meta => ᐅᶠ([ copy_fn, meta_fn.mut(meta) ]))
 export const mimic_fn = derive_from(meta_fn)(meta_fn => target => meta_fn(_mimic_fn_meta(target)))
@@ -251,8 +251,7 @@ export const push    = v => flip(concat)([ v ])
 export const flatten = a => fold(flip(concat))([])(a)
 export const flatmap = f => arr => flatten(map(f)(arr))
 export const mapix   = f => map((it, ix) => f(ix)(it))
-const _fold_def = ([ name, desc ]) => obj => name === 'length' ? obj : define_prop.mut(name)(desc)(obj)
-export const array_copy = arr => fold(_fold_def)([])(descs(arr))
+export const array_copy = arr => fold(define_property_pair)([])(properties(arr))
 const _reverse = a => [].reverse.call(a)
 const _splice  = i => n => vs => arr => ([].splice.apply(arr, concat([ i, n ])(vs||[])), arr)
 const _til     = n => a => (loop(n)(i => a[i] = i), a)
@@ -278,17 +277,29 @@ export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
 export const get_all  = props => fmap(map(get)(props))
 
 // objects
-export const string_keyed_values = obj => on(obj)([ string_keys, get_all ])
-export const symbol_keyed_values = obj => on(obj)([ symbol_keys, get_all ])
-export const key_descs     = obj => ᐅᶠ([ own_descs, Object.entries ])(obj)
-export const symbol_descs  = obj => ᐅᶠ([ fmap([ o => s => [ s, get_desc(s)(o) ], symbol_keys ]), apply(map) ])(obj)
-export const descs         = obj => ᐅᶠ([ fmap([ key_descs, symbol_descs ]), apply(concat) ])(obj)
-export const from_descs    = descs => fold(([p, d]) => define_prop.mut(p)(d))(of_descs({}))(descs)
-export const object        = obj => ᐅᶠ([ descs, from_descs ])(obj)
-export const mixin         = a => b => ᐅᶠ([ map(descs), apply(concat), from_descs ])([ a, b ])
-export const extend        = obj => flip(mixin)(obj)
-export const to_kvs        = obj => ᐅᶠ([ descs, map(([ prop, desc ]) => [ prop, desc.value ]) ])(obj)
-export const from_kvs      = kvs => ᐅᶠ([ map(([ prop, value ]) => [ prop, d.all_config({ v: value }) ]), from_descs ])(kvs)
+export const empty_object    = _   => of_properties({})
+export const get_descriptor  = key => obj => ᐅif(has(key))(unsafe_get_desc(key))(_ => None)(obj)
+export const pair_getter     = get => key => obj => [ key, get(key)(obj) ]
+export const get_entry       = key => pair_getter(get)(key)
+export const get_property    = key => pair_getter(get_descriptor)(key)
+export const pairs_getter    = get => keys => obj => map(key => get(key)(obj))(keys)
+export const get_entries     = keys => pairs_getter(get_entry)(keys)
+export const get_properties  = keys => pairs_getter(get_property)(keys)
+export const string_keyed_values     = obj => on(obj)([ string_keys, get_all ])
+export const symbol_keyed_values     = obj => on(obj)([ symbol_keys, get_all ])
+export const string_keyed_entries    = obj => on(obj)([ string_keys, get_entries ])
+export const symbol_keyed_entries    = obj => on(obj)([ symbol_keys, get_entries ])
+export const string_keyed_properties = obj => on(obj)([ string_keys, get_properties ])
+export const symbol_keyed_properties = obj => on(obj)([ symbol_keys, get_properties ])
+export const define_property_pair = ([ key, descriptor ]) => define_prop.mut(key)(descriptor)
+export const define_entry_pair = ([ key, value ]) => define_prop.mut(key)(d.default({ v: value }))
+export const get_both    = g_a => g_b => obj => ᐅᶠ([ fmap([ g_a, g_b ]), apply(concat) ])(obj)
+export const properties  = obj => get_both(string_keyed_properties)(symbol_keyed_properties)(obj)
+export const entries     = obj => get_both(string_keyed_entries)(symbol_keyed_entries)(obj)
+export const object_copy = obj => ᐅᶠ([ properties, from_properties ])(obj)
+export const from_properties = properties => fold(define_property_pair)(empty_object())(properties)
+export const from_entries = entries => fold(define_entry_pair)(empty_object())(entries)
+export const mixin       = a => b => ᐅᶠ([ map(properties), apply(concat), from_properties ])([ a, b ])
 
 // strings
 // NOTE(jordan): most array functions also work on strings
@@ -338,11 +349,6 @@ export const None  = proxy({
  *  memoization
  */
 
-export const not = t => v => !t(v)
-export const prop_exclude = a => b => ᐅᶠ([ filter(not(flip(has)(b))) ])(keys(a))
-// const copy_prop_as_meta_from = a => prop => obj => def_meta({ [prop]: get(prop)(a) })(obj)
-// export const mixin = a => b => fold(copy_prop_as_meta_from(a))(copy(b))(prop_exclude(a)(b))
-
 // TODO(jordan): untested
 export const first    = arr => get(0)(arr)
 export const pop      = arr => fmap([ first, rest ])(arr)
@@ -379,12 +385,11 @@ const t = (function () {
   return { number, object, string, symbol, boolean, function: function_, undefined }
 })()
 
-export const object_copy = obj => of_descs(own_descs(obj))
 export const copy = object_case({ array: array_copy, object: object_copy })
 
 // FIXME(jordan): these should take v => v functions...
 const update_array  = i => v => splice(i)(1)([ v ])
-const update_object = k => v => extend({ [k]: v })
+const update_object = k => v => obj => mixin(obj)({ [k]: v })
 export const update = k => v => object_case({ array: update_array(k)(v), object: update_object(k)(v) })
 
 export const trace = adder => tracker => ᐅᶠ([ fmap([ adder, tracker ]), apply(cons) ])
@@ -470,6 +475,56 @@ export function test (suite) {
       'dec: subtracts 1':
         t => t.eq(dec(5))(4),
     }),
+    t => t.suite(`objects`, {
+      'string_keys: lists string keys':
+        t => t.eq(string_keys({ [Symbol.split]: just_hi, a: 4 }))(['a']),
+      'symbol_keys: lists symbol keys':
+        t => t.eq(symbol_keys({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
+      'keys: lists both string and symbol keys':
+        t => t.eq(keys({ [Symbol.split]: just_hi, a: 4 }))(['a', Symbol.split]),
+      'string_keyed_values: lists string-keyed values':
+        t => t.eq(string_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([4]),
+      'symbol_keyed_values: lists symbol-keyed values':
+        t => t.eq(symbol_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi ]),
+      // TODO
+      // 'values: lists both symbol values and non-symbol values':
+      //   t => t.eq(values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi, 4 ]),
+      'get_descriptor: gets property descriptor':
+        t => t.eq(get_descriptor('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
+      'define_props.mut: mutably sets properties on an object': t => {
+        const o = { a: 5 }
+        define_props.mut({ b: { value: 3 } })(o)
+        define_props.mut({ a: { value: o.a + 1, enumerable: false } })(o)
+        return t.eq(o.b)(3) && t.eq(o.a)(6) && t.eq(Object.keys(o))([])
+      },
+      'define_prop.mut: mutably sets a single property on an object': t => {
+        const o = { a: 1 }
+        define_prop.mut('b')({ value: 5 })(o)
+        define_prop.mut('a')({ enumerable: false })(o)
+        return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
+      },
+      'string_keyed_properties: gets descriptors for non-symbol properties':
+        t => t.eq(string_keyed_properties({ a: 5 }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }]]),
+      'symbol_keyed_properties: gets descriptors for symbol properties':
+        t => t.eq(symbol_keyed_properties({ [Symbol.split]: just_hi }))([[Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
+      'properties: gets all descriptors':
+        t => t.eq(properties({ a: 5, [Symbol.split]: just_hi }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }], [Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
+      'from_properties: converts [prop, desc] pairs to an object':
+        t => t.eq(from_properties([['a', { configurable: true, writable: true, enumerable: true, value: 5 }]]))({ a: 5 }),
+      'object_copy: (shallowly) clones an object':
+        t => t.eq(object_copy({ a: 5 }))({ a: 5 }) && t.refeq(object_copy({ f: to6 }).f)(to6),
+      'mixin: creates a new object combining properties of two source objects':
+        t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
+      'get: gets a key/index or None if not present':
+        t => t.eq(get(0)([5]))(5) && t.eq(get('a')({}))(None),
+      'get_path: gets a path of keys/indices or None if any part of path is not present':
+        t => t.eq(get_path([ 'a', 'b', 'c' ])({ 'a': { 'b': { 'c': 5 } } }))(5)
+          && t.eq(get_path([ 'a', 'b', 'd' ])({ 'a': { 'b': { 'c': 5 } } }))(None),
+      'entries: gets {key,symbol}, value pairs':
+        t => t.eq(entries({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
+      'from_entries: turns {key,symbol}, value pairs into an object':
+        t => t.eq(from_entries([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
+    }),
     t => t.suite('arrays', {
       'each: no effect':
         t => t.eq(each(v => v * v)(to6))(to6),
@@ -540,56 +595,6 @@ export function test (suite) {
         t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
       // 'split: splits on delimeter':
       //   t => t.eq(split(',')('1,2,3,4,5'))(map(v => '' + v)(to6)),
-    }),
-    t => t.suite(`objects`, {
-      'symbol_keyss: lists symbols':
-        t => t.eq(symbol_keys({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
-      'string_keys: lists non-symbol keys':
-        t => t.eq(string_keys({ [Symbol.split]: just_hi, a: 4 }))(['a']),
-      'keys: lists both symbols and non-symbol keys':
-        t => t.eq(keys({ [Symbol.split]: just_hi, a: 4 }))(['a', Symbol.split]),
-      'string_keyed_values: lists non-symbol values':
-        t => t.eq(string_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([4]),
-      'symbol_keyed_values: lists symbol values':
-        t => t.eq(symbol_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi ]),
-      // TODO
-      // 'values: lists both symbol values and non-symbol values':
-      //   t => t.eq(values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi, 4 ]),
-      'get_desc: gets property descriptor':
-        t => t.eq(get_desc('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
-      'define_props.mut: mutably sets properties on an object': t => {
-        const o = { a: 5 }
-        define_props.mut({ b: { value: 3 } })(o)
-        define_props.mut({ a: { value: o.a + 1, enumerable: false } })(o)
-        return t.eq(o.b)(3) && t.eq(o.a)(6) && t.eq(Object.keys(o))([])
-      },
-      'define_prop.mut: mutably sets a single property on an object': t => {
-        const o = { a: 1 }
-        define_prop.mut('b')({ value: 5 })(o)
-        define_prop.mut('a')({ enumerable: false })(o)
-        return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
-      },
-      'key_descs: gets descriptors for non-symbol properties':
-        t => t.eq(key_descs({ a: 5 }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }]]),
-      'symbol_descs: gets descriptors for symbol properties':
-        t => t.eq(symbol_descs({ [Symbol.split]: just_hi }))([[Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
-      'descs: gets all descriptors':
-        t => t.eq(descs({ a: 5, [Symbol.split]: just_hi }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }], [Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
-      'from_descs: converts [prop, desc] pairs to an object':
-        t => t.eq(from_descs([['a', { configurable: true, writable: true, enumerable: true, value: 5 }]]))({ a: 5 }),
-      'object: (shallowly) clones an object':
-        t => t.eq(object({ a: 5 }))({ a: 5 }) && t.refeq(object({ f: to6 }).f)(to6),
-      'mixin: s a new object combining properties of two source objects':
-        t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
-      'get: gets a key/index or None if not present':
-        t => t.eq(get(0)([5]))(5) && t.eq(get('a')({}))(None),
-      'get_path: gets a path of keys/indices or None if any part of path is not present':
-        t => t.eq(get_path([ 'a', 'b', 'c' ])({ 'a': { 'b': { 'c': 5 } } }))(5)
-          && t.eq(get_path([ 'a', 'b', 'd' ])({ 'a': { 'b': { 'c': 5 } } }))(None),
-      'to_kvs: gets {key,symbol}, value pairs':
-        t => t.eq(to_kvs({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
-      'from_kvs: turns {key,symbol}, value pairs into an object':
-        t => t.eq(from_kvs([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
     }),
     t => t.suite(`strings`, {
       'split: splits a string around a delimiter':
