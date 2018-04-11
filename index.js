@@ -58,7 +58,7 @@ export const on      = v  => fold(f => prev => (prev !== None ? f(prev) : f)(v))
 export const ret     = v  =>    _ => v
 export const call    = f  =>    v => f(v)
 export const pass    = v  =>    f => f(v)
-export const loop    = n  =>    f => { let i = n; while (i--) { f(i) } }
+export const loop    = n  =>    f => { let i = 0; while (i !== n) { f(i); i++ } }
 export const apply   = f  => args => fold(pass)(f)(args)
 export const and     = fs =>    v => all(pass(v))(fs)
 export const or      = fs =>    v => any(pass(v))(fs)
@@ -230,6 +230,12 @@ export const dec = x => x - 1
 export const num = (v=0) => +v
 
 // arrays
+const _map   = f => arr => (loop(len(arr))(i => arr[i] = f(arr[i])), arr)
+const _push  = v => arr => [].push.call(arr, v)
+const _cons  = v => arr => [].unshift.call(arr, v)
+const _slice = s => e => arr => _pos_slice(_slice_wrap(len(arr))(s))(_slice_wrap(len(arr))(e))(arr)
+const _pos_slice = s => e => arr => (loop(e - s)(i => arr[i] = arr[s + i]), arr.length = e - s, arr)
+const _slice_wrap = len => n => n < 0 ? len + n : n
 export const map     = f => arr => []      .map.call(arr, f)
 export const find    = f => arr => []     .find.call(arr, f) || None
 export const join    = v => arr => []     .join.call(arr, v)
