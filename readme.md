@@ -9,24 +9,28 @@ library. it is pretty bad, tbh. it has some pretty bad goals:
 3. don't ignore property descriptors
 4. also preserve property descriptors during operations (e.g. `map`)
 5. everything is curry all of the time
-    - kind of like "it's all kosher," except not at all that
 6. "iteratee first, data last" as lodash/fp puts it
     - the functions come before the data, e.g. `map(inc)([ 1, 2, 3 ])`
     - i could have just said that, but i think the lodash-eff-pee-ers are funnier so i copied them
-7. be type agnostic
-    - it hurts, but it hurts good
-    - that is: check object type tags and do polymorphism
-    - for example, `copy` dispatches: `copy_array` on arrays, `copy_object` on objects, and `id` on
-      primitives (primitives are already immutable so there's no real need to copy them)
-8. be immutable by default, but provide mutative alternatives
-    - e.g., splice and splice.mut
+7. where it makes sense, be polymorphic
+    - that is: check object type tags and dispatch the correct function
+    - for example, `slice` dispatches: `slice_array` on arrays, and `slice_string` on strings
+8. be immutable by default, but provide clearly-labeled mutative alternatives
+    - e.g.: `splice` and `splice.mut`, `map` and `map.mut`, `filter` and `filter.mut`
     - mutation should be explicit and grep-able (so, like, search for `.*\.mut(.*)`)
-    - why? immutable is good, but what for performances in the where we do want to that, so there
-    - instead of hiding mutation in a compiler (hi, Elm) or a runtime (hi, React), it's included
-    - i call this the "give a man a footgun" principle of API design
-    - "give a man a footgun, and he'll have 1 foot and learnt a lesson, or he'll reinvent wheels"
-    - or something. one of those is supposed to be the good outcome. i can't remember which.
-    - mutative APIs should still return the new value, so they can be composed
+
+why mutative apis? well, uh, what for performances in the where we do want to that. but seriously:
+sometimes you want to mutate. for example, design-time mutation - to set the state of an object at
+initialization - is perfectly okay. and in tight loops, mutation can make a huge performance
+difference. besides, in practice, perfect immutability in javascript is a lie whenever you touch the
+DOM. frameworks that espouse immutable web interfaces hide mutation - sometimes in a compiler
+backend (hi, Elm) and sometimes in a runtime (hi, React) - but the fact is, the DOM mutates, and
+browsers are optimized for this.
+
+also, programmers are smart enough to be allowed to mutate when they want to. i call this the "give
+a man a footgun" principle of API design. it has a saying that goes... uh... "give a man a footgun,
+and he'll have 1 foot and learnt a lesson, or he'll reinvent wheels". or something like that. one of
+those is supposed to be the good outcome. i can't remember which.
 
 it also has at least 1 really pretty bad goal:
 
@@ -50,13 +54,7 @@ be writing this one... er, wait.
 
 ...
 
-2. why the functions all one file are in?
-
-because i put them there. think about all the `import` statements i could write if i split them
-up... ooh. the very thought of it makes me giddy. maybe i'll do that some weekend when i'm bored. i
-bet i could add 100 lines to my codebase that way.
-
-3. ?
+2. ...
 
 nevermind i'm tired of making up FAQs.
 
