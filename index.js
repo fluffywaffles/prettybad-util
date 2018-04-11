@@ -234,7 +234,7 @@ export const map     = f => arr => []      .map.call(arr, f)
 export const find    = f => arr => []     .find.call(arr, f) || None
 export const join    = v => arr => []     .join.call(arr, v)
 export const any     = f => arr => []     .some.call(arr, f)
-export const sort    = f => arr => []     .sort.call(arr, f)
+export const sort    = f => arr => []     .sort.call(arr, f) // NOTE: in-place! like reverse
 export const all     = f => arr => []    .every.call(arr, f)
 export const concat  = a =>   b => []   .concat.call([], a, b)
 export const filter  = f => arr => []   .filter.call(arr, f)
@@ -265,6 +265,10 @@ export const rest     = a => skip(1)(a)
 export const last     = a => ᐅᶠ([ skip(-1), ᐅif(a => len(a) === 0)(ret(None))(first) ])(a)
 export const split_at = n => fmap([ take(n), skip(n) ])
 export const split_on = v => arr => on(arr)([ index(v), split_at ])
+
+// NOTE(jordan): generalized copy for non-Object object instances
+// export const copy_instance = C => c => fold(define_property_pair)(new C)(properties(c))
+// export const copy_array  = copy_instance(Array)
 
 const splicer = derive_from(splice)
 export const insert = splicer(splice => v => i => splice(i)(0)(v))
@@ -298,8 +302,10 @@ export const properties  = obj => get_both(string_keyed_properties)(symbol_keyed
 export const entries     = obj => get_both(string_keyed_entries)(symbol_keyed_entries)(obj)
 export const object_copy = obj => ᐅᶠ([ properties, from_properties ])(obj)
 export const from_properties = properties => fold(define_property_pair)(empty_object())(properties)
-export const from_entries = entries => fold(define_entry_pair)(empty_object())(entries)
-export const mixin       = a => b => ᐅᶠ([ map(properties), apply(concat), from_properties ])([ a, b ])
+export const from_entries    = entries    => fold(define_entry_pair)(empty_object())(entries)
+export const map_properties = f => ᐅᶠ([ properties, f, from_properties ])
+export const map_entries    = f => ᐅᶠ([ entries, f, from_entries ])
+export const mixin = a => b => ᐅᶠ([ map(properties), apply(concat), from_properties ])([ a, b ])
 
 // strings
 // NOTE(jordan): most array functions also work on strings

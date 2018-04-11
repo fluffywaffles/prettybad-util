@@ -12,7 +12,7 @@ import d from './d'
 
 // mutative function factory
 export const mutative      = fn => of_properties({ mut: { value: fn } })
-export const with_mutative = mutative_fn => _defprops({ mut: { value: mutative_fn } })
+export const with_mutative = mutative_fn => _defprop(`mut`)({ value: mutative_fn })
 export const derive_from   = fn => derivation => with_mutative(derivation(fn.mut))(derivation(fn))
 
 // descriptor writers
