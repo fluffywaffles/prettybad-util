@@ -45,7 +45,6 @@ import { source, code } from './fungible'
 
 export {
   d, define_prop, define_props, define,
-  // FIXME: of_properties shouldn't need to be renamed
   of_properties, bind,
 }
 
