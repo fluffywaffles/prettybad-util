@@ -6,13 +6,17 @@
  * — fin
  */
 // descriptor affordances
-export const own_descs = Object.getOwnPropertyDescriptors
-export const has_own   = name  => obj => Object.prototype.hasOwnProperty.call(obj, name)
-export const get_desc  = name  => obj => Object.getOwnPropertyDescriptor(obj, name)
-export const of_properties = descs => Object.create(null, descs)
-// leading underscores indicate package-internal functions
-export const _defprop  = name  => desc => obj => (Object.defineProperty(obj, name, desc), obj)
-export const _defprops = props => obj => (Object.defineProperties(obj, props), obj)
+const _has_own_prop = Object.hasOwnProperty
+const _get_own_prop = Object.getOwnPropertyDescriptor
+export const own_descriptors = Object.getOwnPropertyDescriptors
+export const of_properties   = descs => Object.create(null, descs)
+export const has_own         = name  => o => _has_own_prop.call(o, name)
+export const get_descriptor  = name  => o => _get_own_prop(o, name)
+// descriptor mutators
+const _defprop = Object.defineProperty
+const _defprops = Object.defineProperties
+export const define_property = key => desc => o => (_defprop(o, key, desc), o)
+export const define_properties = props => o => (_defprops(o, props), o)
 
 /**
  * consistency is important in API design. This is why, in JavaScript, the functions:
@@ -79,7 +83,11 @@ export const _defprops = props => obj => (Object.defineProperties(obj, props), o
 export const string_keys   = Object.getOwnPropertyNames
 export const symbol_keys   = Object.getOwnPropertySymbols
 export const keys          = Reflect.ownKeys
-export const is_enumerable = key => obj => Object.prototype.propertyIsEnumerable.call(obj, key)
+const _prop_is_enumerable  = Object.propertyIsEnumerable
+export const is_enumerable = key => o => _prop_is_enumerable.call(o, key)
+export const enumerable_string_keys          = Object.keys
+export const enumerable_string_keyed_values  = Object.values
+export const enumerable_string_keyed_entries = Object.entries
 
 // function affordances
 /*
@@ -90,4 +98,36 @@ export const is_enumerable = key => obj => Object.prototype.propertyIsEnumerable
  *
  * — fin
  */
-export const bind = ctx => f => Function.bind.call(f, ctx)
+export const Fn    = Function
+export const arity = f   => f.length
+export const bind  = ctx => f => Fn.bind.call(f, ctx)
+export const call_context  = ctx => f =>  arg => Fn.call .call(f, ctx,  arg)
+export const apply_context = ctx => f => args => Fn.apply.call(f, ctx, args)
+
+// array affordances
+const _ap     = f => ctx => args => f.apply(ctx, args)
+const _splice = arr => args => _ap([].splice)(arr)(args)
+const _args   = (a=[]) => (b=[]) => concat(a)(b)
+const _folder = f => (acc, v) => f(v)(acc)
+export const len     = a => a.length
+export const pop     = arr      => []        .pop.call(arr)
+export const shift   = arr      => []      .shift.call(arr)
+export const reverse = arr      => []    .reverse.call(arr)
+export const map     = f => arr => []        .map.call(arr, f)
+export const find    = f => arr => []       .find.call(arr, f)
+export const join    = v => arr => []       .join.call(arr, v)
+export const push    = v => arr => []       .push.call(arr, v)
+export const some    = f => arr => []       .some.call(arr, f)
+export const sort    = f => arr => []       .sort.call(arr, f)
+export const every   = f => arr => []      .every.call(arr, f)
+export const concat  = a => b   => []     .concat.call([], a, b)
+export const filter  = f => arr => []     .filter.call(arr, f)
+export const each    = f => arr => []    .forEach.call(arr, f)
+export const index   = v => arr => []    .indexOf.call(arr, v)
+export const unshift = v => arr => []    .unshift.call(arr, v)
+export const findex  = f => arr => []  .findIndex.call(arr, f)
+export const slice   = i => j => arr => [].slice.call(arr, i, j)
+export const fill    = v => i => j => arr => [].fill.call(arr, v, i, j)
+export const splice  = i => n => vs => arr => _splice(arr)(_args([ i, n ])(vs))
+export const fold    = f => init => arr => [].reduce.call(arr, _folder(f), init)
+export const includes = v => arr => [].includes.call(arr, v)

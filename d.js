@@ -1,4 +1,5 @@
-import { define } from './mutton'
+import { own_descriptors } from './lynchpin'
+import { define_properties } from './mutton'
 
 /* TODO(jordan):
  *
@@ -13,7 +14,7 @@ import { define } from './mutton'
  * descriptor factory
  * borrowing shamelessly from d.js: https://www.npmjs.com/package/d
  */
-const d = define.mut({
+const d = define_properties.mut(own_descriptors({
   /**
    * Internal configuration
    */
@@ -34,7 +35,7 @@ const d = define.mut({
           : c1             ? { [d._.cew[c1]]: true }
           : {}
   },
-})(make_descriptor)
+}))(make_descriptor)
 /**
  * Descriptor factory api
  *
@@ -59,7 +60,7 @@ function make_descriptor (cew) {
  *   d.nothing({ g: ret(4) }) ⇒ { get: ret(4) }
  *   d.iter_only({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
  */
-define.mut({
+define_properties.mut(own_descriptors({
   default    : d('cew'),
   no_conf    : d( 'ew'),
   no_write   : d( 'ce'),
@@ -68,6 +69,6 @@ define.mut({
   iter_only  : d(  'e'),
   conf_only  : d(  'c'),
   nothing    : d(   ''),
-})(d)
+}))(d)
 
 export default d
