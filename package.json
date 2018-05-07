@@ -1,6 +1,6 @@
 {
-  "name": "mutil",
-  "version": "0.0.1",
+  "name": "@prettybad/mutil",
+  "version": "0.0.2",
   "description": "μtil - micro utilities",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,7 @@
   "author": "fluffywaffles <skorlir@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@sisyphus/sisyphus": "0.0.3",
     "rollup": "^0.54.0",
     "rollup-plugin-node-resolve": "^3.0.2"
   }
