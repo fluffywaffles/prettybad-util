@@ -319,7 +319,7 @@ export const split_at = n => fmap([ take(n), skip(n) ])
 export const split_on = v => arr => on(arr)([ index(v), split_at ])
 
 const splicer = derive_mutative(splice)
-export const insert = splicer(splice => v => i => splice(i)(0)(v))
+export const insert = splicer(splice => v => i => splice(i)(0)([v]))
 export const remdex = splicer(splice => i => splice(i)(1)())
 
 // objects & arrays
@@ -613,6 +613,8 @@ export function test (suite) {
         t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
       // 'split: splits on delimeter':
       //   t => t.eq(split(',')('1,2,3,4,5'))(map(v => '' + v)(to6)),
+      'insert: inserts a value at an index':
+        t => t.eq(insert(1)(3)(to6))([ 1, 2, 3, 1, 4, 5 ]),
     }),
     t => t.suite(`strings`, {
       'split: splits a string around a delimiter':
