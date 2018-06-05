@@ -379,7 +379,6 @@ export const mixin = a => b => merge_properties([ a, b ])
 
 // strings
 // NOTE(jordan): most array functions also work on strings
-export const quote  = str => `"${str}"`
 export const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
 
 // pipelining
@@ -618,8 +617,6 @@ export function test (suite) {
     t => t.suite(`strings`, {
       'split: splits a string around a delimiter':
         t => t.eq(split_on(',')('a,b,c'))(['a', 'b', 'c']),
-      'quote: surrounds a string in quotes':
-        t => t.eq(quote('s'))('"s"'),
     }),
     t => t.suite(`None`, {
       'None: perpetuates itself and is None':
