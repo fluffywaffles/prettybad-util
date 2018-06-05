@@ -611,8 +611,6 @@ export function test (suite) {
         t => t.eq(remove(2)(to6))([ 1, 3, 4, 5 ]),
       'remdex: removing index 1 from to6 drops 2':
         t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
-      // 'split: splits on delimeter':
-      //   t => t.eq(split(',')('1,2,3,4,5'))(map(v => '' + v)(to6)),
       'insert: inserts a value at an index':
         t => t.eq(insert(1)(3)(to6))([ 1, 2, 3, 1, 4, 5 ]),
     }),
