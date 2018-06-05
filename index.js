@@ -611,7 +611,8 @@ export function test (suite) {
         t => t.eq(push([ 6 ])(to6))([ 1, 2, 3, 4, 5, [ 6 ] ]),
       'flatten: flattening arbitrarily partitioned to6 is to6':
         t => t.eq(flatten([[1], [2, 3], 4, [5]]))(to6)
-          && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ]),
+          && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ])
+          && t.eq(flatten([[ 1, 2, 3 ]]))([ 1, 2, 3 ]),
       'flatmap: maps then flattens':
         t => t.eq(flatmap(v => [ v, v + 5 ])(to6))([ 1, 6, 2, 7, 3, 8, 4, 9, 5, 10 ]),
       'array_copy: s new copy of array':
