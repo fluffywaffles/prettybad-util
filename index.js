@@ -382,7 +382,7 @@ export const mixin = a => b => merge_properties([ a, b ])
 export const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
 
 // pipelining
-export const ᐅᶠ    = ops => val => fold(call)(val)(ops)
+export const ᐅᶠ    = fns => val => fold(call)(val)(fns)
 export const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
 export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
 export const ᐅeffect = f => target => (f(target), target)
