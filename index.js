@@ -326,6 +326,7 @@ export const filter_indexed = f => _indexed(js.filter)(f)
 const splicer = derive_mutative(splice)
 export const insert = splicer(splice => i => v => splice(i)(0)([v]))
 export const remdex = splicer(splice => i => splice(i)(1)())
+export const replace = splicer(splice => i => v => splice(i)(1)([v]))
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
