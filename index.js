@@ -74,7 +74,7 @@ export {
 
 // general
 export const proxy = traps => target => new Proxy(target, traps)
-export const None  = proxy({
+export const None = proxy({
   get (target, prop, recv) {
     /* EXPLANATION(jordan): Yeah... wtf wrt this next line. Lets None be
      * push/concat/etc.-ed without disappearing in the result array. This is an
@@ -93,21 +93,23 @@ export const None  = proxy({
      * this. We may want to consider if this causes problems, and if so
      * when/how...
      */
-    return ᐅif(has(prop))(get(prop))(ret(None))(target)
+    return get(prop)(target)
   }
 })(define_properties.mut({
-  toString : { value () { return 'None' }, },
+  name: { value: `None` },
+  toString : { value () { return this.name }, },
   [Symbol.toPrimitive]: {
     value (hint) {
-      if (hint === 'string')
-        return 'None'
-      else if (hint === 'number')
-        throw new Error('None is not a number and cannot be used as one')
+      if (hint === `string`)
+        return this.toString()
+      else if (hint === `number`)
+        throw new Error(`None is not a number and cannot be used as one`)
       else
-        throw new Error('None cannot be used here')
+        throw new Error(`None cannot be used here`)
     },
   },
-})(_ => None))
+  [Symbol.toStringTag]: { value () { return this.toString() } }
+})(function () { return None }))
 
 // functions
 export const id = v  => v
