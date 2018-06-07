@@ -391,6 +391,7 @@ export const map_properties = f => on_properties(map(f))
 export const map_entries    = f => on_entries(map(f))
 export const filter_properties = f => on_properties(filter(f))
 export const filter_entries    = f => on_entries(filter(f))
+export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 
 // strings
 // NOTE(jordan): most array functions also work on strings
@@ -557,6 +558,8 @@ export function test (suite) {
         t => t.eq(entries({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
       'from_entries: turns {key,symbol}, value pairs into an object':
         t => t.eq(from_entries([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
+      'swap: swaps the current value of a key for another':
+        t => t.eq(swap(`a`)(14)({ a: 5 }))([ 5, { a: 14 } ]),
     }),
     t => t.suite('arrays', {
       'each: no effect':
