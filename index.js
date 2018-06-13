@@ -407,6 +407,7 @@ export const ᐅᶠ    = fns => val => fold(call)(val)(fns)
 export const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
 export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
 export const ᐅeffect = f => target => (f(target), target)
+export const ᐅlog  = val => ᐅeffect(v => console.log(v))
 
 // 3: depending on at most 3, 2 and 1
 // functions
