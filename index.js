@@ -396,7 +396,11 @@ export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 
 // strings
 // NOTE(jordan): most array functions also work on strings
+export const Str = ''
 export const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
+export const lowercase = str => Str.toLowerCase.call(str)
+export const uppercase = str => Str.toUpperCase.call(str)
+export const string_split = delimiter => str => Str.split.call(str, delimiter)
 
 // pipelining
 export const ᐅᶠ    = fns => val => fold(call)(val)(fns)
@@ -635,8 +639,18 @@ export function test (suite) {
         t => t.eq(insert(3)(1)(to6))([ 1, 2, 3, 1, 4, 5 ]),
     }),
     t => t.suite(`strings`, {
-      'split: splits a string around a delimiter':
-        t => t.eq(split_on(',')('a,b,c'))(['a', 'b', 'c']),
+      'string: stringifies a thing':
+        t => t.eq(string({ toString() { return 'hello' } }))('hello')
+          && t.eq(string(function f () {}))('function f () {}')
+          && t.eq(string(5))('5')
+          && t.eq(string([ `a`, `b`, `c`, ]))('a,b,c')
+          && t.eq(string(true))('true'),
+      'lowercase: lower-cases a string':
+        t => t.eq(lowercase('aBCdEfChgaksldFS'))('abcdefchgaksldfs'),
+      'uppercase: upper-cases a string':
+        t => t.eq(uppercase('aBCdEfChgaksldFS'))('ABCDEFCHGAKSLDFS'),
+      'string_split: splits a string around a delimiter':
+        t => t.eq(string_split(',')('a,b,c'))(['a', 'b', 'c']),
     }),
     t => t.suite(`None`, {
       'None: perpetuates itself and is None':
