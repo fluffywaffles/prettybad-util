@@ -67,6 +67,7 @@ const {
 export {
   d,
   bind,
+  keys,
   of_properties,
   define_property,
   define_properties,
