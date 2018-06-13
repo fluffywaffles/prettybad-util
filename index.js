@@ -512,23 +512,26 @@ export function test (suite) {
       'ᐅif: inline if':
         t => t.eq(ᐅif(id)(_ => 5)(_ => 6)(true))(5) && t.eq(ᐅif(id)(_ => 5)(_ => 6)(false))(6),
       'ᐅwhen: one-armed inline if':
-        t => t.eq(ᐅwhen(v => v % 2 === 0)(_ => 'even')(2))('even')
-          && t.eq(ᐅwhen(v => v % 2 === 0)(_ => 'even')(1))(1),
+        t => {
+          const inc_when_even = ᐅwhen(v => v % 2 === 0)(v => v + 1)
+          return t.eq(inc_when_even(2))(3)
+              && t.eq(inc_when_even(1))(1)
+        },
     }),
     t => t.suite(`objects`, {
       'string_keys: lists string keys':
-        t => t.eq(js.string_keys({ [Symbol.split]: just_hi, a: 4 }))(['a']),
+        t => t.eq(js.string_keys({ [Symbol.for(`a`)]: just_hi, a: 4 }))(['a']),
       'symbol_keys: lists symbol keys':
-        t => t.eq(js.symbol_keys({ [Symbol.split]: just_hi, a: 4 }))([Symbol.split]),
+        t => t.eq(js.symbol_keys({ [Symbol.for(`a`)]: just_hi, a: 4 }))([Symbol.for(`a`)]),
       'keys: lists both string and symbol keys':
-        t => t.eq(js.keys({ [Symbol.split]: just_hi, a: 4 }))(['a', Symbol.split]),
+        t => t.eq(js.keys({ [Symbol.for(`a`)]: just_hi, a: 4 }))(['a', Symbol.for(`a`)]),
       'string_keyed_values: lists string-keyed values':
-        t => t.eq(string_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([4]),
+        t => t.eq(string_keyed_values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([4]),
       'symbol_keyed_values: lists symbol-keyed values':
-        t => t.eq(symbol_keyed_values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi ]),
+        t => t.eq(symbol_keyed_values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ just_hi ]),
       // TODO
       // 'values: lists both symbol values and non-symbol values':
-      //   t => t.eq(values({ [Symbol.split]: just_hi, a: 4 }))([ just_hi, 4 ]),
+      //   t => t.eq(values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ just_hi, 4 ]),
       'get_descriptor: gets property descriptor':
         t => t.eq(get_descriptor('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
       'define_properties.mut: mutably sets properties on an object': t => {
