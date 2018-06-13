@@ -19,6 +19,9 @@ const d = define_properties.mut(own_descriptors({
    * Internal configuration
    */
   _: {
+    /* TODO(jordan): better unknown input handling; defaulting to default
+     * configuration swallows errors.
+     */
     unknown_parse: c => d.default,
     cew: {
       c: 'configurable',
@@ -36,6 +39,7 @@ const d = define_properties.mut(own_descriptors({
           : {}
   },
 }))(make_descriptor)
+
 /**
  * Descriptor factory api
  *
@@ -52,23 +56,35 @@ function make_descriptor (cew) {
     return conf
   }
 }
+
 /**
  * Descriptor configuration option shorthands
  *
  * Usage:
  *   d.default({ v: 5 })      ⇒ { configurable: true, enumerable: true, writable: true, value: 5 }
  *   d.nothing({ g: ret(4) }) ⇒ { get: ret(4) }
- *   d.iter_only({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
+ *   d.enumerable({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
  */
 define_properties.mut(own_descriptors({
-  default    : d('cew'),
-  no_conf    : d( 'ew'),
-  no_write   : d( 'ce'),
-  no_iter    : d( 'cw'),
-  write_only : d(  'w'),
-  iter_only  : d(  'e'),
-  conf_only  : d(  'c'),
-  nothing    : d(   ''),
+  // Default descriptor: all permissions
+  default          : d(`cew`),
+  // Single permission inclusion descriptors
+  configurable     : d(`c`  ),
+  enumerable       : d( `e` ),
+  writable         : d(  `w`),
+  // Single permission exclusion descriptors
+  non_configurable : d( `ew`),
+  non_enumerable   : d( `cw`),
+  non_writable     : d( `ce`),
+  // Nothing descriptor: no permissions
+  nothing          : d(   ``),
+  // DEPRECATED(jordan): shorthands for the above
+  no_conf          : d( 'ew'),
+  no_write         : d( 'ce'),
+  no_iter          : d( 'cw'),
+  write_only       : d(  'w'),
+  iter_only        : d(  'e'),
+  conf_only        : d(  'c'),
 }))(d)
 
 export default d
