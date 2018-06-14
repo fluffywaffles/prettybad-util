@@ -539,9 +539,8 @@ export function test (suite) {
         t => t.eq(string_keyed_values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([4]),
       'symbol_keyed_values: lists symbol-keyed values':
         t => t.eq(symbol_keyed_values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ just_hi ]),
-      // TODO
-      // 'values: lists both symbol values and non-symbol values':
-      //   t => t.eq(values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ just_hi, 4 ]),
+      'values: lists both symbol values and non-symbol values':
+        t => t.eq(values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ 4, just_hi ]),
       'get_descriptor: gets property descriptor':
         t => t.eq(get_descriptor('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
       'define_properties.mut: mutably sets properties on an object': t => {
