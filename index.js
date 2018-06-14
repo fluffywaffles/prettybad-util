@@ -326,6 +326,9 @@ export const insert = splicer(splice => i => v => splice(i)(0)([v]))
 export const remdex = splicer(splice => i => splice(i)(1)())
 export const replace = splicer(splice => i => v => splice(i)(1)([v]))
 
+const remdexer = derive_mutative(remdex)
+export const remove = remdexer(remdex => v => flip(on)([ index(v), remdex ]))
+
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
 export const has     = prop  => obj => js.has_own(prop)(obj)
