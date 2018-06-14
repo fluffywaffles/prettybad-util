@@ -50,28 +50,17 @@ import {
 import * as js from './lynchpin'
 import { source, code } from './fungible'
 
-const {
-  has_own,
-  of_properties,
-  own_descriptors,
-  string_keys,
-  symbol_keys,
-  keys,
-  is_enumerable,
-  enumerable_string_keys,
-  enumerable_string_keyed_values,
-  enumerable_string_keyed_entries,
-  bind,
-} = js
-
+// Re-exports
+export { default as d } from './d'
 export {
-  d,
   bind,
   keys,
   of_properties,
+} from './lynchpin'
+export {
   define_property,
   define_properties,
-}
+} from './mutton'
 
 // general
 export const proxy = traps => target => new Proxy(target, traps)
@@ -128,7 +117,7 @@ export const compose = f => g => v => g(f(v))
 export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
 // constructing functions from strings (for rotten profit)
 export const named = name => def => code.iife(source.let(name)(def.toString()))
-export const method = name => args => obj => apply(bind(obj)(obj[name]))(args)
+export const method = name => args => obj => apply(js.bind(obj)(obj[name]))(args)
 export const method1 = name => arg => obj => method(name)([arg])(obj)
 
 /* Copying Functions
