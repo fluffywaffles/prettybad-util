@@ -528,7 +528,11 @@ export function test (suite) {
       'ᐅᶠ: pipelines functions':
         t => t.eq(ᐅᶠ([ id, x => x + 1 ])(1))(2),
       'ᐅif: inline if':
-        t => t.eq(ᐅif(id)(_ => 5)(_ => 6)(true))(5) && t.eq(ᐅif(id)(_ => 5)(_ => 6)(false))(6),
+        t => {
+          const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
+          return t.eq(approach_10(5))(6)
+              && t.eq(approach_10(12))(11)
+        },
       'ᐅwhen: one-armed inline if':
         t => {
           const inc_when_even = ᐅwhen(v => v % 2 === 0)(v => v + 1)
@@ -583,7 +587,7 @@ export function test (suite) {
           ])
         },
       'from_properties: converts [prop, desc] pairs to an object':
-        t => t.eq(from_properties([['a', { configurable: true, writable: true, enumerable: true, value: 5 }]]))({ a: 5 }),
+        t => t.eq(from_properties([['a', default_descriptor(5)]]))({ a: 5 }),
       'object_copy: (shallowly) clones an object':
         t => t.eq(object_copy({ a: 5 }))({ a: 5 }) && t.refeq(object_copy({ f: to6 }).f)(to6),
       'mixin: creates a new object combining properties of two source objects':
