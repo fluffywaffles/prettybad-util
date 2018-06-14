@@ -128,6 +128,8 @@ export const compose = f => g => v => g(f(v))
 export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
 // constructing functions from strings (for rotten profit)
 export const named = name => def => code.iife(source.let(name)(def.toString()))
+export const method = name => args => obj => apply(bind(obj)(obj[name]))(args)
+export const method1 = name => arg => obj => method(name)([arg])(obj)
 
 /* Copying Functions
  * =================
@@ -505,6 +507,21 @@ export function test (suite) {
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
       'named: names a function':
         t => t.eq(named('hello')(v => `hello, ${v}`).name)('hello'),
+      'method{1}: calls a named method with argument(s)':
+        t => {
+          const obj = {
+            multiply (value) {
+              return mutiplicand => mutiplicand * value
+            },
+            double (value) {
+              return this.multiply(value)(2)
+            },
+          }
+
+          return t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
+              && t.eq(method(`double`)([ 4 ])(obj))(8)
+              && t.eq(method1(`double`)(5)(obj))(10)
+        },
     }),
     t => t.suite('pipelining', {
       'ᐅᶠ: pipelines functions':
