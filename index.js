@@ -590,7 +590,8 @@ export function test (suite) {
       'from_properties: converts [prop, desc] pairs to an object':
         t => t.eq(from_properties([['a', default_descriptor(5)]]))({ a: 5 }),
       'object_copy: (shallowly) clones an object':
-        t => t.eq(object_copy({ a: 5 }))({ a: 5 }) && t.refeq(object_copy({ f: to6 }).f)(to6),
+        t => t.eq(object_copy({ a: 5 }))({ a: 5 })
+          && t.refeq(object_copy({ f: to6 }).f)(to6),
       'mixin: creates a new object combining properties of two source objects':
         t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
       'get: gets a key/index or None if not present':
