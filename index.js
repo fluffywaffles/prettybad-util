@@ -465,11 +465,6 @@ const t = (function () {
 // export const lens = path => object => fold(trace_update)([ object, id ])(path)
 
 // arrays
-const split_pair = fmap([ get(0), get(1) ])
-const _delacer   = ([ a, b ]) => fmap([ ᐅᶠ([ get(0), cons(a) ]), ᐅᶠ([ get(1), cons(b) ]) ])
-export const lace     = a => b => ᐅᶠ([ len, til, fmap([ flip(get)(a), flip(get)(b) ]) ])(a)
-export const delace   = fold(_delacer)([[], []])
-export const remove   = v => arr => on(arr)([ index(v), remdex ])
 
 // ...? special for sisyphus
 export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
