@@ -392,6 +392,7 @@ export const filter_properties = f => on_properties(filter(f))
 export const filter_entries    = f => on_entries(filter(f))
 export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 export const update = k => f => flip(on)([ get(k), v => extend({ [k]: f(v) }) ])
+export const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
 
 // strings
 // NOTE(jordan): most array functions also work on strings
@@ -580,6 +581,13 @@ export function test (suite) {
         t => t.eq(swap(`a`)(14)({ a: 5 }))([ 5, { a: 14 } ]),
       'update: replaces a key by a v -> v function':
         t => t.eq(update(`a`)(v => v + 1)({ a: 4 }))({ a: 5 }),
+      'update_path: replace a nested key by a v -> v function':
+        t => {
+          const example = { a: { b: 2 } }
+          const inc     = v => v + 1
+          const ab      = [ `a`, `b` ]
+          return t.eq(update_path(ab)(inc)(example))({ a: { b : 3 } })
+        },
     }),
     t => t.suite('arrays', {
       'each: no effect':
