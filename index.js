@@ -310,6 +310,10 @@ export const split_at = n => fmap([ take(n), skip(n) ])
 export const split_on = v => arr => on(arr)([ index(v), split_at ])
 export const array_copy = arr => define.mut(arr)([])
 
+const _delacer    = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
+export const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
+export const disinterlace = kvs => fold(_delacer)([[], []])(kvs)
+
 const _indexed = f => g => f((it, ix) => g(ix)(it))
 export const all_indexed = f => _indexed(js.every)(f)
 export const any_indexed = f => _indexed(js.some)(f)
@@ -650,6 +654,10 @@ export function test (suite) {
         t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
       'insert: inserts a value at an index':
         t => t.eq(insert(3)(1)(to6))([ 1, 2, 3, 1, 4, 5 ]),
+      'interlace: make pairs out of same-length arrays':
+        t => t.eq(interlace([1,2,3])([`a`,`b`,`c`]))([[1,`a`],[2,`b`],[3,`c`]]),
+      'disinterlace: make same-length arrays out of pairs':
+        t => t.eq(disinterlace([[1,`a`],[2,`b`],[3,`c`]]))([[1,2,3], [`a`,`b`,`c`]]),
     }),
     t => t.suite(`strings`, {
       'string: stringifies a thing':
