@@ -473,6 +473,14 @@ export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
   const just_hi = _ => "hi"
+  const default_descriptor = value => {
+    return {
+      value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    }
+  }
 
   return suite(`prettybad/μtil: worse than underscore`, [
     t => t.suite('functions', {
@@ -542,7 +550,7 @@ export function test (suite) {
       'values: lists both symbol values and non-symbol values':
         t => t.eq(values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ 4, just_hi ]),
       'get_descriptor: gets property descriptor':
-        t => t.eq(get_descriptor('a')({ a: 4 }))({ value: 4, writable: true, enumerable: true, configurable: true }),
+        t => t.eq(get_descriptor('a')({ a: 4 }))(default_descriptor(4)),
       'define_properties.mut: mutably sets properties on an object': t => {
         const o = { a: 5 }
         define_properties.mut({ b: { value: 3 } })(o)
@@ -556,11 +564,24 @@ export function test (suite) {
         return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
       },
       'string_keyed_properties: gets descriptors for non-symbol properties':
-        t => t.eq(string_keyed_properties({ a: 5 }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }]]),
+        t => {
+          return t.eq(string_keyed_properties({ a: 5 }))([
+            ['a', default_descriptor(5) ],
+          ])
+        },
       'symbol_keyed_properties: gets descriptors for symbol properties':
-        t => t.eq(symbol_keyed_properties({ [Symbol.split]: just_hi }))([[Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
+        t => {
+          return t.eq(symbol_keyed_properties({ [Symbol.split]: just_hi }))([
+            [Symbol.split, default_descriptor(just_hi)],
+          ])
+        },
       'properties: gets all descriptors':
-        t => t.eq(properties({ a: 5, [Symbol.split]: just_hi }))([['a', { value: 5, writable: true, enumerable: true, configurable: true }], [Symbol.split, { value: just_hi, writable: true, enumerable: true, configurable: true }]]),
+        t => {
+          return t.eq(properties({ a: 5, [Symbol.split]: just_hi }))([
+            [ 'a',          default_descriptor(5)       ],
+            [ Symbol.split, default_descriptor(just_hi) ],
+          ])
+        },
       'from_properties: converts [prop, desc] pairs to an object':
         t => t.eq(from_properties([['a', { configurable: true, writable: true, enumerable: true, value: 5 }]]))({ a: 5 }),
       'object_copy: (shallowly) clones an object':
