@@ -473,6 +473,7 @@ export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
   const just_hi = _ => "hi"
+  const sym_a = Symbol(`a`)
   const default_descriptor = value => {
     return {
       value,
@@ -542,17 +543,17 @@ export function test (suite) {
     }),
     t => t.suite(`objects`, {
       'string_keys: lists string keys':
-        t => t.eq(js.string_keys({ [Symbol.for(`a`)]: just_hi, a: 4 }))(['a']),
+        t => t.eq(js.string_keys({ [sym_a]: just_hi, a: 4 }))(['a']),
       'symbol_keys: lists symbol keys':
-        t => t.eq(js.symbol_keys({ [Symbol.for(`a`)]: just_hi, a: 4 }))([Symbol.for(`a`)]),
+        t => t.eq(js.symbol_keys({ [sym_a]: just_hi, a: 4 }))([sym_a]),
       'keys: lists both string and symbol keys':
-        t => t.eq(js.keys({ [Symbol.for(`a`)]: just_hi, a: 4 }))(['a', Symbol.for(`a`)]),
+        t => t.eq(js.keys({ [sym_a]: just_hi, a: 4 }))(['a', sym_a]),
       'string_keyed_values: lists string-keyed values':
-        t => t.eq(string_keyed_values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([4]),
+        t => t.eq(string_keyed_values({ [sym_a]: just_hi, a: 4 }))([4]),
       'symbol_keyed_values: lists symbol-keyed values':
-        t => t.eq(symbol_keyed_values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ just_hi ]),
+        t => t.eq(symbol_keyed_values({ [sym_a]: just_hi, a: 4 }))([ just_hi ]),
       'values: lists both symbol values and non-symbol values':
-        t => t.eq(values({ [Symbol.for(`a`)]: just_hi, a: 4 }))([ 4, just_hi ]),
+        t => t.eq(values({ [sym_a]: just_hi, a: 4 }))([ 4, just_hi ]),
       'get_descriptor: gets property descriptor':
         t => t.eq(get_descriptor('a')({ a: 4 }))(default_descriptor(4)),
       'define_properties.mut: mutably sets properties on an object': t => {
