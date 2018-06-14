@@ -422,7 +422,7 @@ export const get_path = path => obj => fold(get)(obj)(path)
 
 const type        = t => v => typeof v === t
 const instance    = C => v => v instanceof C
-const object_case = ({ array: a, object: o }) => ᐅwhen(type(t.object))(ᐅif(instance(Array))(a)(o))
+const object_case = ({ array, object }) => ᐅwhen(type(t.object))(ᐅif(instance(Array))(array)(object))
 export const reflex = { type, instance, object_case }
 
 // primitive types : boolean, undefined, number, string, symbol, object
