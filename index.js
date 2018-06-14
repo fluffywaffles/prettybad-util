@@ -395,6 +395,7 @@ export const map_entries    = f => on_entries(map(f))
 export const filter_properties = f => on_properties(filter(f))
 export const filter_entries    = f => on_entries(filter(f))
 export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
+export const update = k => f => flip(on)([ get(k), v => extend({ [k]: f(v) }) ])
 
 // strings
 // NOTE(jordan): most array functions also work on strings
@@ -586,6 +587,8 @@ export function test (suite) {
         t => t.eq(from_entries([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
       'swap: swaps the current value of a key for another':
         t => t.eq(swap(`a`)(14)({ a: 5 }))([ 5, { a: 14 } ]),
+      'update: replaces a key by a v -> v function':
+        t => t.eq(update(`a`)(v => v + 1)({ a: 4 }))({ a: 5 }),
     }),
     t => t.suite('arrays', {
       'each: no effect':
