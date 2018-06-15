@@ -10,7 +10,7 @@
   "author": "fluffywaffles <skorlir@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "@sisyphus/sisyphus": "0.0.3",
+    "@sisyphus/sisyphus": "0.0.4",
     "rollup": "^0.54.0",
     "rollup-plugin-node-resolve": "^3.0.2"
   }
