@@ -55,6 +55,9 @@ export { default as d } from './d'
 export {
   bind,
   keys,
+  string_keys,
+  symbol_keys,
+  is_enumerable,
   of_properties,
 } from './lynchpin'
 export {
