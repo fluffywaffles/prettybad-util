@@ -352,6 +352,8 @@ const _from_pairs       = f => pairs => f(pairs)(empty_object())
 const _from_prop_pairs  = pairs => _from_pairs(_def_prop_pairs)(pairs)
 const _from_entry_pairs = pairs => _from_pairs(_def_entry_pairs)(pairs)
 const _combiner = getter => maker => ᐅᶠ([ map(getter), apply(concat), maker ])
+const _enumerable_on = o => flip(js.is_enumerable)(o)
+const _filter_key_enum = o => filter(ᐅᶠ([ get(0), _enumerable_on(o) ]))
 export const is_empty       = obj => len(js.keys(obj)) === 0
 export const empty_object   = _   => js.of_properties({})
 export const get_descriptor = key => obj => js.get_descriptor(key)(obj) || None
@@ -393,6 +395,7 @@ export const filter_entries    = f => on_entries(filter(f))
 export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 export const update = k => f => flip(on)([ get(k), v => extend({ [k]: f(v) }) ])
 export const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
+export const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
 
 // strings
 // NOTE(jordan): most array functions also work on strings
@@ -613,6 +616,14 @@ export function test (suite) {
           const inc     = v => v + 1
           const ab      = [ `a`, `b` ]
           return t.eq(update_path(ab)(inc)(example))({ a: { b : 3 } })
+        },
+      'enumerable_entries: entries, filtered by js.is_enumerable':
+        t => {
+          const example = js.of_properties({
+            a: default_descriptor(5),
+            b: { value: 'hidden' },
+          })
+          return t.eq(enumerable_entries(example))([[ 'a', 5 ]])
         },
     }),
     t => t.suite('arrays', {
