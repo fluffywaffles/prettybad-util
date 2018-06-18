@@ -8,7 +8,6 @@
  * — fin
  */
 import { of_properties, define_property as defprop, define_properties as defprops } from './lynchpin'
-import d from './d'
 
 // mutative function factory
 export const mutative        = fn => of_properties({ mut: { value: fn } })

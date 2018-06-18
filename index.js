@@ -69,16 +69,6 @@ export {
 export const proxy = traps => target => new Proxy(target, traps)
 export const None = proxy({
   get (target, prop, recv) {
-    /* EXPLANATION(jordan): Yeah... wtf wrt this next line. Lets None be
-     * push/concat/etc.-ed without disappearing in the result array. This is an
-     * issue because of the way Symbols were designed for backwards
-     * compatability -- basically, returning undefined is "good" and counts as
-     * the same as if the Symbol (which is a required behavior and so has to be,
-     * in some sense, defined) were set, and set to "false". This is because
-     * undefined is falsy. Fucking falsyness. Falsy fucking falsy. Ugh. May be
-     * worth investigating how and why [].concat refers to isConcatSpreadable in
-     * the first place; is this situation a single special case, or one of many?
-     */
     // TODO(jordan)?: exclude more well-known symbols?
     if (prop === Symbol.isConcatSpreadable) return target[prop]
     /* NOTE(jordan): ironically, valueOf works because its result is None
@@ -89,7 +79,7 @@ export const None = proxy({
     return get(prop)(target)
   }
 })(define_properties.mut({
-  name: { value: `None` },
+  name : { value: `None` },
   toString : { value () { return this.name }, },
   [Symbol.toPrimitive]: {
     value (hint) {
@@ -131,7 +121,7 @@ export const method1 = name => arg => obj => method(name)([arg])(obj)
  * 1. closure (lexical) state
  * 2. identity (own) state
  * 3. instance (prototypal) state
- * 4. contextual (this) state
+ * 4. context (this) state
  *
  * if a copy loses the lexical environment of its closure, undefined errors are going to be
  * introduced when the copy tries to access a member of its (now empty) scope. pure functions are
@@ -171,7 +161,7 @@ export const method1 = name => arg => obj => method(name)([arg])(obj)
  *
  * ```
  * // example:
- * class Rect () {
+ * class Rect {
  *   constructor (length, height) {
  *     this.length = length
  *     this.height = height
@@ -223,6 +213,7 @@ export const method1 = name => arg => obj => method(name)([arg])(obj)
  *    - loses identity state (but this can be mitigated, at least partly, by copying it separately)
  *    - loses instance state (this can probably be mitigated by directly setting prototype)
  *    - loses contextual state (unless it binds the inner function to its own context)
+ *    - high overhead: every function call now becomes (at least) 2 function calls
  *    - complex: all non-closure state must be manually copied
  *    - flexible: permits arbitrary pre- and post-call code execution (separate use-case)
  * 2. (new Function(`return ${source_function.toString()}`))()
@@ -491,12 +482,12 @@ export function test (suite) {
 
   return suite(`prettybad/μtil: worse than underscore`, [
     t => t.suite('functions', {
-      'flip: flips args':
-        t => t.eq(flip(a => b => a - b)(1)(2))(1),
       'id: id(6) is 6':
         t => t.eq(id(6))(6),
       'id: works on objects':
         t => t.eq(id({ a: 5 }))({ a: 5 }),
+      'flip: flips args':
+        t => t.eq(flip(a => b => a - b)(1)(2))(1),
       'call: calls func':
         t => t.eq(call(id)(1))(1),
       'bind: binds ctx':
