@@ -96,7 +96,6 @@ export const None = proxy({
 
 // functions
 export const id = v  => v
-export const on = v  => fold(f => arg => (arg !== None ? f(arg) : f)(v))(None)
 export const ret   = v  =>    _ => v
 export const call  = f  =>    v => f(v)
 export const pass  = v  =>    f => f(v)
@@ -297,11 +296,11 @@ export const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
 export const thru     = n => til(n + 1)
 export const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
 export const take     = j => slice(0)(j)
-export const skip     = i => arr => on(arr)([ len, slice(i) ])
+export const skip     = i => arr => ᐅdo([ len, slice(i) ])(arr)
 export const rest     = a => skip(1)(a)
 export const last     = a => ᐅᶠ([ skip(-1), first ])(a)
 export const split_at = n => fmap([ take(n), skip(n) ])
-export const split_on = v => arr => on(arr)([ index(v), split_at ])
+export const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 export const array_copy = arr => define.mut(arr)([])
 
 const _delacer    = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
@@ -330,8 +329,8 @@ export const get     = prop  => obj => has(prop)(obj) ? obj[prop] : None
 export const get_all = props => fmap(map(get)(props))
 
 // objects
-const _on_str_keys = f => obj => on(obj)([ js.string_keys, f ])
-const _on_sym_keys = f => obj => on(obj)([ js.symbol_keys, f ])
+const _on_str_keys = f => obj => ᐅdo([ js.string_keys, f ])(obj)
+const _on_sym_keys = f => obj => ᐅdo([ js.symbol_keys, f ])(obj)
 const _str_props   = obj => string_keyed_properties(obj)
 const _sym_props   = obj => symbol_keyed_properties(obj)
 const _str_entries = obj => string_keyed_entries(obj)
@@ -400,7 +399,9 @@ export const uppercase = str => Str.toUpperCase.call(str)
 export const string_split = delimiter => str => Str.split.call(str, delimiter)
 
 // pipelining
+const _do_folder = f => arg => (arg !== None ? f(arg) : f)(target)
 export const ᐅᶠ    = fns => val => fold(call)(val)(fns)
+export const ᐅdo   = fns => target => fold(_do_folder)(None)(fns)
 export const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
 export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
 export const ᐅeffect = f => target => (f(target), target)
@@ -525,6 +526,8 @@ export function test (suite) {
     t => t.suite('pipelining', {
       'ᐅᶠ: pipelines functions':
         t => t.eq(ᐅᶠ([ id, x => x + 1 ])(1))(2),
+      'ᐅdo: chains together calls on a common target':
+        t => t.eq(ᐅdo([ keys, get_all ])({ a: 0, b: `c`, d: true }))([ 0, `c`, true ]),
       'ᐅif: inline if':
         t => {
           const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
