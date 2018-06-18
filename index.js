@@ -428,7 +428,7 @@ export const reflex = { type, instance, object_case }
 //                   NaN  (NaN != NaN, typeof NaN === 'number', but NaN instanceof Number === false)
 // object types    : literally everything else (boxed types, user objects, etc.)
 // REFACTOR(jordan): module
-const t = (function () {
+export const types = (function () {
   const number    = 'number'    // number literals, Number(), but not new Number (which is object)
   const object    = 'object'    // constructed instances (e.g. new class), literal objects
   const string    = 'string'    // string literals, String(), but not new String (which is object)
