@@ -320,7 +320,7 @@ export const remdex = splicer(splice => i => splice(i)(1)())
 export const replace = splicer(splice => i => v => splice(i)(1)([v]))
 
 const remdexer = derive_mutative(remdex)
-export const remove = remdexer(remdex => v => flip(on)([ index(v), remdex ]))
+export const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
@@ -386,7 +386,7 @@ export const map_entries    = f => on_entries(map(f))
 export const filter_properties = f => on_properties(filter(f))
 export const filter_entries    = f => on_entries(filter(f))
 export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
-export const update = k => f => flip(on)([ get(k), v => extend({ [k]: f(v) }) ])
+export const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
 export const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
 export const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
 
@@ -399,9 +399,9 @@ export const uppercase = str => Str.toUpperCase.call(str)
 export const string_split = delimiter => str => Str.split.call(str, delimiter)
 
 // pipelining
-const _do_folder = f => arg => (arg !== None ? f(arg) : f)(target)
+const _do_folder = target => f => arg => (arg !== None ? f(arg) : f)(target)
 export const ᐅᶠ    = fns => val => fold(call)(val)(fns)
-export const ᐅdo   = fns => target => fold(_do_folder)(None)(fns)
+export const ᐅdo   = fns => target => fold(_do_folder(target))(None)(fns)
 export const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
 export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
 export const ᐅeffect = f => target => (f(target), target)
@@ -527,7 +527,7 @@ export function test (suite) {
       'ᐅᶠ: pipelines functions':
         t => t.eq(ᐅᶠ([ id, x => x + 1 ])(1))(2),
       'ᐅdo: chains together calls on a common target':
-        t => t.eq(ᐅdo([ keys, get_all ])({ a: 0, b: `c`, d: true }))([ 0, `c`, true ]),
+        t => t.eq(ᐅdo([ js.keys, get_all ])({ a: 0, b: `c`, d: true }))([ 0, `c`, true ]),
       'ᐅif: inline if':
         t => {
           const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
