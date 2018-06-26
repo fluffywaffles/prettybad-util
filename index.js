@@ -306,6 +306,8 @@ export const rest     = a => skip(1)(a)
 export const last     = a => ᐅᶠ([ skip(-1), first ])(a)
 export const split_at = n => fmap([ take(n), skip(n) ])
 export const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
+export const first    = arr => get(0)(arr)
+export const pop      = arr => fmap([ first, rest ])(arr)
 export const array_copy = arr => define.mut(arr)([])
 
 const _delacer    = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
@@ -334,6 +336,8 @@ export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
 export const get_all  = props => fmap(map(get)(props))
 export const get_in   = obj => flip(get)(obj)
 export const get_all_in = obj => flip(get_all)(obj)
+export const get_path = path  => obj => fold(get)(obj)(path)
+export const get_path_in = obj => flip(get_path)(obj)
 
 // objects
 const _on_str_keys = f => obj => ᐅdo([ js.string_keys, f ])(obj)
@@ -421,10 +425,6 @@ export const ᐅlog    = v => ᐅeffect(call(console.log))(v)
  */
 
 // TODO(jordan): untested
-export const first    = arr => get(0)(arr)
-export const pop      = arr => fmap([ first, rest ])(arr)
-export const get_path = path => obj => fold(get)(obj)(path)
-
 const type        = t => v => typeof v === t
 const instance    = C => v => v instanceof C
 const object_case = ({ array, object }) => ᐅwhen(type(t.object))(ᐅif(instance(Array))(array)(object))
