@@ -427,7 +427,7 @@ export const ᐅlog    = v => ᐅeffect(call(console.log))(v)
 // TODO(jordan): untested
 const type        = t => v => typeof v === t
 const instance    = C => v => v instanceof C
-const object_case = ({ array, object }) => ᐅwhen(type(t.object))(ᐅif(instance(Array))(array)(object))
+const object_case = ({ array, object }) => ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
 export const reflex = { type, instance, object_case }
 
 // primitive types : boolean, undefined, number, string, symbol, object
