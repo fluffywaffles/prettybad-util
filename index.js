@@ -109,8 +109,13 @@ export const compose = f => g => v => g(f(v))
 export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
 // constructing functions from strings (for rotten profit)
 export const named = name => def => code.iife(source.let(name)(def.toString()))
-export const method = name => args => obj => apply(js.bind(obj)(obj[name]))(args)
-export const method1 = name => arg => obj => method(name)([arg])(obj)
+
+// binding and calling methods
+export const method_of = obj => name => js.bind(obj)(get(name)(obj))
+export const method  = name => args => obj => apply(method_of(obj)(name))(args)
+export const method1 = name => a => obj => method(name)([a])(obj)
+export const method2 = name => a => b => obj => method(name)([a,b])(obj)
+export const method3 = name => a => b => c => obj => method(name)([a,b,c])(obj)
 
 /* Copying Functions
  * =================
