@@ -329,9 +329,11 @@ export const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
-export const has     = prop  => obj => js.has_own(prop)(obj)
-export const get     = prop  => obj => has(prop)(obj) ? obj[prop] : None
-export const get_all = props => fmap(map(get)(props))
+export const has      = prop  => obj => js.has_own(prop)(obj)
+export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
+export const get_all  = props => fmap(map(get)(props))
+export const get_in   = obj => flip(get)(obj)
+export const get_all_in = obj => flip(get_all)(obj)
 
 // objects
 const _on_str_keys = f => obj => ᐅdo([ js.string_keys, f ])(obj)
