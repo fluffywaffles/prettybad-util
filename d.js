@@ -78,13 +78,6 @@ define_properties.mut(own_descriptors({
   non_writable     : d( `ce`),
   // Nothing descriptor: no permissions
   nothing          : d(   ``),
-  // DEPRECATED(jordan): shorthands for the above
-  no_conf          : d( 'ew'),
-  no_write         : d( 'ce'),
-  no_iter          : d( 'cw'),
-  write_only       : d(  'w'),
-  iter_only        : d(  'e'),
-  conf_only        : d(  'c'),
 }))(d)
 
 export default d
