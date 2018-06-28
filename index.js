@@ -422,16 +422,16 @@ export const ᐅlog    = v => ᐅeffect(call(console.log))(v)
 // TODO(jordan): make this Map wrapper return immutable instances
 export const Map = define.mut({
   // non-mutative native APIs that can be passed through
-  get: js.map_get,
   has: js.map_has,
   keys: js.map_keys,
   values: js.map_values,
   entries: js.map_entries,
+  unsafe_get: js.map_get,
   // mutative APIs that must be wrapped
   set: with_mutative(js.map_set)(k => v => map => js.map_set(k)(v)(new js.Map(map))),
   // extensions
+  get: k => ᐅif(Map.has(k))(Map.get(k))(ret(None)),
   update: k => fn => map => Map.set(k)(fn(Map.safe_get(k)(map)))(map),
-  safe_get: k => ᐅif(Map.has(k))(Map.get(k))(ret(None)),
 })(it => new js.Map(it))
 
 // 3: depending on at most 3, 2 and 1
