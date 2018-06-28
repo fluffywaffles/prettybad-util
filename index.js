@@ -430,8 +430,8 @@ export const Map = define.mut({
   // mutative APIs that must be wrapped
   set: with_mutative(js.map_set)(k => v => map => js.map_set(k)(v)(new js.Map(map))),
   // extensions
-  get: k => ᐅif(Map.has(k))(Map.get(k))(ret(None)),
-  update: k => fn => map => Map.set(k)(fn(Map.safe_get(k)(map)))(map),
+  get: k => ᐅif(Map.has(k))(Map.unsafe_get(k))(ret(None)),
+  update: k => fn => map => Map.set(k)(fn(Map.get(k)(map)))(map),
 })(it => new js.Map(it))
 
 // 3: depending on at most 3, 2 and 1
