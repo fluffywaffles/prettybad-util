@@ -103,9 +103,10 @@ export const arity = f   => f.length
 export const bind  = ctx => f => Fn.bind.call(f, ctx)
 export const call_context  = ctx => f =>  arg => Fn.call .call(f, ctx,  arg)
 export const apply_context = ctx => f => args => Fn.apply.call(f, ctx, args)
+export const method = name => args => o => Fn.apply.call(o[name], o, args)
 
 // array affordances
-const _ap     = f => ctx => args => f.apply(ctx, args)
+const _ap     = f => ctx => args => apply_context(ctx)(f)(args)
 const _splice = arr => args => _ap([].splice)(arr)(args)
 const _args   = (a=[]) => (b=[]) => concat(a)(b)
 const _folder = f => (acc, v) => f(v)(acc)
@@ -131,3 +132,21 @@ export const fill    = v => i => j => arr => [].fill.call(arr, v, i, j)
 export const splice  = i => n => vs => arr => _splice(arr)(_args([ i, n ])(vs))
 export const fold    = f => init => arr => [].reduce.call(arr, _folder(f), init)
 export const includes = v => arr => [].includes.call(arr, v)
+
+// ES6 (Weak)Map affordances
+/* NOTE(jordan): this funny juggling works around rollup's name-mangling so that
+ * we can export the Map built-in under its own name.
+ */
+const jsMap = Map
+export { jsMap as Map }
+/* NOTE(jordan): we cannot use the name Map here, otherwise every reference to
+ * Map will get rewritten by Rollup to terms like Map$$1, which of course won't
+ * work because the JavaScript built-in is called Map, not Map$$1.
+ */
+export const map_get = key => method(`get`)([key])
+export const map_has = key => method(`has`)([key])
+export const map_set = key => value => method(`set`)([key, value])
+export const map_keys = method(`keys`)([])
+export const map_clear = method(`clear`)([])
+export const map_values = method(`values`)([])
+export const map_entries = method(`entries`)([])
