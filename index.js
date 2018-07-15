@@ -301,6 +301,7 @@ export const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
 export const thru     = n => til(n + 1)
 export const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
 export const take     = j => slice(0)(j)
+export const drop_end = n => take(-n)
 export const skip     = i => arr => ᐅdo([ len, slice(i) ])(arr)
 export const rest     = a => skip(1)(a)
 export const last     = a => ᐅᶠ([ skip(-1), first ])(a)
@@ -721,6 +722,8 @@ export function test (suite) {
         t => t.eq(interlace([1,2,3])([`a`,`b`,`c`]))([[1,`a`],[2,`b`],[3,`c`]]),
       'disinterlace: make same-length arrays out of pairs':
         t => t.eq(disinterlace([[1,`a`],[2,`b`],[3,`c`]]))([[1,2,3], [`a`,`b`,`c`]]),
+      'drop_end: drops n items from end of array':
+        t => t.eq(drop_end(2)([ 1, 2, 3 ]))([ 1 ]),
     }),
     t => t.suite(`strings`, {
       'string: stringifies a thing':
