@@ -113,9 +113,10 @@ export const named = name => def => code.iife(source.let(name)(def.toString()))
 // binding and calling methods
 export const method_of = obj => name => js.bind(obj)(get(name)(obj))
 export const method  = name => args => obj => apply(method_of(obj)(name))(args)
-export const method1 = name => a => obj => method(name)([a])(obj)
-export const method2 = name => a => b => obj => method(name)([a,b])(obj)
-export const method3 = name => a => b => c => obj => method(name)([a,b,c])(obj)
+export const method0 = name => method(name)([])
+export const method1 = name => a => method(name)([a])
+export const method2 = name => a => b => method(name)([a,b])
+export const method3 = name => a => b => c => method(name)([a,b,c])
 
 /* Copying Functions
  * =================
