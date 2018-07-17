@@ -312,7 +312,7 @@ export const first    = arr => get(0)(arr)
 export const pop      = arr => fmap([ first, rest ])(arr)
 export const array_copy = arr => define.mut(arr)([])
 
-const _delacer    = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
+const _delacer = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
 export const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
 export const disinterlace = kvs => fold(_delacer)([[], []])(kvs)
 
