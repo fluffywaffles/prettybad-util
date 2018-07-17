@@ -547,6 +547,8 @@ export function test (suite) {
               && t.eq(method(`double`)([ 4 ])(obj))(8)
               && t.eq(method1(`double`)(5)(obj))(10)
         },
+      'fmap: runs a series of functions on an object':
+        t => t.eq(fmap([ v => v + 1, v => v / 2 ])(4))([ 5, 2 ]),
     }),
     t => t.suite('pipelining', {
       'ᐅᶠ: pipelines functions':
