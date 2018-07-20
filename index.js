@@ -29,10 +29,6 @@
  *   - d (descriptor factory)
  *   - internal APIs (mutative)
  *   - define_prop.mut, define_props.mut
- * less awful lenses
- *   - lens, today, is largely useless
- *   - involves a ton of boilerplate
- *   - doesn't interoperate as neatly as i'd hoped with insert/update APIs
  * μ.time.wait, μ.time.every, μ.time.asap
  *   - wait  ⇔ setTimeout
  *   - every ⇔ setInterval
@@ -71,11 +67,6 @@ export const None = proxy({
   get (target, prop, recv) {
     // TODO(jordan)?: exclude more well-known symbols?
     if (prop === Symbol.isConcatSpreadable) return target[prop]
-    /* NOTE(jordan): ironically, valueOf works because its result is None
-     * anyway, but in general prototype dispatch on properties is borked by
-     * this. We may want to consider if this causes problems, and if so
-     * when/how...
-     */
     return get(prop)(target)
   }
 })(define_properties.mut({
@@ -128,9 +119,9 @@ export const method3 = name => a => b => c => method(name)([a,b,c])
  * 3. instance (prototypal) state
  * 4. context (this) state
  *
- * if a copy loses the lexical environment of its closure, undefined errors are going to be
- * introduced when the copy tries to access a member of its (now empty) scope. pure functions are
- * immune to this.
+ * if a copy loses the lexical environment of its closure, undefined
+ * errors are going to be introduced when the copy tries to access a
+ * member of its (now empty) scope. pure functions are immune to this.
  *
  * ```
  * // example:
@@ -147,9 +138,11 @@ export const method3 = name => a => b => c => method(name)([a,b,c])
  * copy_next() // ⇒ ++value ⇒ ++undefined ⇒ NaN
  * ```
  *
- * if a copy loses identity state (that is, if `name`, `toString()`, other implicit properties set
- * by the runtime during function definition change), introspection is crippled, and any form of
- * copy-to-source comparison (not just direct equality comparison) becomes nigh impossible.
+ * if a copy loses identity state (that is, if `name`, `toString()`, other
+ * implicit properties set by the runtime during function definition
+ * change), introspection is crippled, and any form of copy-to-source
+ * comparison (not just direct equality comparison) becomes nigh
+ * impossible.
  *
  * ```
  * // example:
@@ -157,12 +150,14 @@ export const method3 = name => a => b => c => method(name)([a,b,c])
  *   console.log(`${f.name}: ${f.toString()}`)
  * }
  * function add (a, b) { return a + b }
- * debug_log_function(add)       // ⇒ logs: "add: function add (a, b) { return a + b }"
- * debug_log_function(copy(add)) // unknown behavior (implementation and js engine specific)
+ * debug_log_function(add)
+ * // ⇒ logs: "add: function add (a, b) { return a + b }"
+ * debug_log_function(copy(add))
+ * // ⇒ unknown behavior (implementation and js engine specific)
  * ```
  *
- * if a copy loses instance state (the prototype changes), its inheritance chain is broken, and
- * instanceof checks that should succeed will fail.
+ * if a copy loses instance state (the prototype changes), its inheritance
+ * chain is broken, and instanceof checks that should succeed will fail.
  *
  * ```
  * // example:
@@ -180,13 +175,14 @@ export const method3 = name => a => b => c => method(name)([a,b,c])
  * size5_square.area()                // ⇒ 25
  * size5_square instanceof Rect       // ⇒ true
  * copy(size5_square) instanceof Rect // ⇒ false
- * copy(size5_square).area()          // ⇒ TypeError: undefined is not a function
+ * copy(size5_square).area() // ⇒ TypeError: undefined is not a function
  * ```
  *
- * if a copy loses contextual state (that is, if it is bound to a context using bind() and can no
- * longer be implicitly rebound to a new context), it is no longer usable as, for example, a mixin
- * definition for an object, because its `this` value will not change when its runtime context
- * changes.
+ * if a copy loses contextual state (that is, if it is bound to a context
+ * using bind() and can no longer be implicitly rebound to a new context),
+  * it is no longer usable as, for example, a mixin definition for an
+  * object, because its `this` value will not change when its runtime
+  * context changes.
  *
  * ```
  * // example:
@@ -201,68 +197,80 @@ export const method3 = name => a => b => c => method(name)([a,b,c])
  * const debuggable_C = Object.create(class C { }, {
  *   debug: { value: debug_mixin }
  * })
- * debuggable_C.debug() // ⇒ { type: "object", proto: C.prototype, valueOf: Function {...} }
+ * debuggable_C.debug()
+ * // ⇒ { type: "object", proto: C.prototype, valueOf: Function {...} }
  *
  * const not_so_debuggable_C = Object.create(class C { }, {
  *   debug: { value: copy(debug_mixin) }
  * })
- * not_so_debuggable_C.debug() // ⇒ { type: "object", proto: Object.prototype, valueOf: {} }
+ * not_so_debuggable_C.debug()
+ * // ⇒ { type: "object", proto: Object.prototype, valueOf: {} }
  * ```
  *
- * there is no elegant method of copying functions that can avoid every pitfall.
+ * There is no elegant method of copying functions that can avoid every
+ * pitfall. Here are known methods for copying functions, and trade-offs
+ * they introduce:
  *
- * here are known methods for copying functions, and trade-offs they introduce:
- *
- * 1. create a wrapper function (not truly a copy, but a 'mimic') that calls the source function
+ * 1. create a wrapper function  that calls the source function
  *    - preserves closure state
- *    - loses identity state (but this can be mitigated, at least partly, by copying it separately)
- *    - loses instance state (this can probably be mitigated by directly setting prototype)
- *    - loses contextual state (unless it binds the inner function to its own context)
- *    - high overhead: every function call now becomes (at least) 2 function calls
+ *    - loses identity state (but this can be copied separately)
+ *    - loses instance state (but can directly set prototype)
+ *    - loses contextual state (but can bind context from the wrapper)
+ *    - high overhead: every function call now becomes 2+ function calls
  *    - complex: all non-closure state must be manually copied
- *    - flexible: permits arbitrary pre- and post-call code execution (separate use-case)
+ *    - flexible: permits pre- and post-call code execution
  * 2. (new Function(`return ${source_function.toString()}`))()
- *    - loses closure state (and there's no way to access a closure's lexical state to copy it)
- *    - preserves identity state (cleanly; it evaluates a 2nd definition of the original function)
- *    - loses instance state (can be mitigated by directly setting prototype)
- *    - preserves contextual state (the function is not rebound or moved into a new scope)
- *    - simple: preserves most of a function's state without manual copying
- *    - inefficient: evaluates a source string, triggering a parse/compile sequence in the runtime
- *    - problem: there's no way to copy the lexical environment of the original closure
+ *    - loses closure state (no way to mitigate)
+ *    - preserves identity state (cleanly; re-evaluates the original)
+ *    - loses instance state (but can directly set prototype)
+ *    - preserves contextual state (the function is not rebound)
+ *    - simple: preserves most function state without manual copying
+ *    - inefficient: evaluates source, triggering a parse/compile
+ *    - problems: closure state cannot be save this way; eval is "evil"
  * 3. rebind the function to a new (empty) context
  *    - preserves closure state
  *    - loses identity state (but this can be mitigated at least partly)
  *    - preserves instance state (afaict)
- *    - loses contextual state (only an explicit rebind can change the copy's context)
- *    - problem: there's no way to restore normal contextual state behavior to the copy
+ *    - loses contextual state (only an explicit rebind has any effect)
+ *    - problem: there's no way to save normal contextual state behavior
  *
- * if lexical state and copy efficiency are unimportant, method 2 is superior. if lexical state is
- * important, only methods 1 and 3 are applicable. of the two, method 1 is more hacky, more complex,
- * and yet generally superior, because it is able to preserve the most state. method 3 clobbers
- * contextual state, with no way to restore normal runtime contextual state behavior. if it is known
- * that runtime contextual state behavior is unimportant, then method 3 is acceptable; however, it
- * is only a side effect of function rebinding that the source function is 'copied,' not the intent
- * of function rebinding. while it can generally be relied upon that function rebinding will cause
- * the javascript engine to replicate the source function's behavior (including lexical state), it
- * is purposefully designed to *replace* contextual state, and that's all it has to do.
+ * if lexical state and copy efficiency are unimportant, method 2 is
+ * superior. if lexical state is important, only methods 1 and 3 are
+ * applicable. of the two, method 1 is more hacky, more complex, and yet
+ * generally superior, because it is able to preserve the most state.
+ * method 3 clobbers contextual state, with no way to restore normal
+ * runtime contextual state behavior. if it is known that runtime
+ * contextual state behavior is unimportant, then method 3 is acceptable;
+ * however, it is only a side effect of function rebinding that the source
+ * function is 'copied,' not the intent of function rebinding. while it
+ * can generally be relied upon that function rebinding will cause the
+ * javascript engine to replicate the source function's behavior
+ * (including lexical state), it is purposefully designed to *replace*
+ * contextual state, and that's all it has to do.
  *
- * the best method for copying a function is to re-evaluate its definition, then copy the lexical
- * environment from its source. unfortunately, we cannot access the lexical environment of a closure
- * in javascript. mimicking a function (method 1) is not quite the same, and rebinding a function
- * (method 3) is a different operation that happens to copy a function as a byproduct. method 2,
- * which does re-evaluate the function definition, cannot be adapted to copy the source function's
- * lexical environment, making it suitable only for copying pure functions.
+ * the best method for copying a function is to re-evaluate its
+ * definition, then copy the lexical environment from its source.
+ * unfortunately, we cannot access the lexical environment of a closure in
+ * javascript. mimicking a function (method 1) is not quite the same, and
+ * rebinding a function (method 3) is a different operation that happens
+ * to copy a function as a byproduct. method 2, which does re-evaluate the
+ * function definition, cannot be adapted to copy the source function's
+ * lexical environment, making it suitable only for copying pure
+ * functions.
  *
- * also worth considering: native runtime functions (whose source is not introspectable, due to its
- * likely not being expressible in javascript in the first place) and/or node-gyp style
- * foreign-functions cannot be copied using function re-evaluation, because the source is not
- * available. but this begs the question: when and why are you copying non-user functions that are
- * not part of your codebase in the first place? why would you copy, for example, Math.cos? or a
- * function from an external library? it should never be seen as acceptable practice to mutate the
- * standard library, or anyone's library for that matter, when extending them.
+ * also worth considering: native runtime functions (whose source is not
+ * introspectable, due to its likely not being expressible in javascript
+ * in the first place) and/or node-gyp style foreign-functions cannot be
+ * copied using function re-evaluation, because the source is not
+ * available. but this begs the question: when and why are you copying
+ * non-user functions that are not part of your codebase in the first
+ * place? why would you copy, for example, Math.cos? or a function from an
+ * external library? it should never be seen as acceptable practice to
+ * mutate the standard library, or anyone's library for that matter, when
+ * extending them.
  *
- * so we are at an impasse. if we were going to expose a single API for copying functions, which
- * trade-offs should it choose?
+ * so we are at an impasse. if we were going to expose a single API for
+ * copying functions, which trade-offs should it choose?
  */
 
 // arrays
