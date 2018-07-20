@@ -503,34 +503,8 @@ export const types = (function () {
   }
 })()
 
+// FIXME(jordan): what`s wrong with this polymorphic copy?
 // export const copy = object_case({ array: array_copy, object: object_copy })
-
-// GOAL(jordan): update functions:
-// update_path :: path   -> updater -> obj -> obj; updater is a ᐅdropn of the update arity / number of items you want
-// update_walk :: walker -> updater -> obj -> obj; similar to path, but more choice: walker outlines many paths
-// Examples: update_path([ 0, 0 ])(inc)([ [ 1 ] ]) => [ [ 2 ] ]
-//           update_path([ 'items', 3, 'size' ])(sz => 2*sz)({ items: [ {}, {}, { name: 'thing', size: 1 } ] })... you
-//            get the idea.
-//          update_path(path)(updater) === update_walk(drill(path))(surface(updater))
-//          in order to do more interesting things, we need a form of ᐅdrop that doesn't necessarily consume all the
-//          results; ᐅdrop should be renamed ᐅconsume, and ᐅdrop should mean "end up with a lens". You can end the lens
-//          by just taking the first value; I guess that's ᐅextract or something.
-
-// // FIXME(jordan): these should take v => v functions...
-// const update_array  = i => v => splice(i)(1)([ v ])
-// const update_object = k => v => obj => mixin(obj)({ [k]: v })
-// export const update = k => v => object_case({ array: update_array(k)(v), object: update_object(k)(v) })
-
-// export const trace = adder => tracker => ᐅᶠ([ fmap([ adder, tracker ]), apply(cons) ])
-
-// const update_tracker = k => ([ o, fill_hole ]) => (v => fill_hole(update(k)(v)(o)))
-// export const trace_update = k => trace(ᐅᶠ([ first, get(k) ]))(update_tracker(k))
-// export const lens = path => object => fold(trace_update)([ object, id ])(path)
-
-// arrays
-
-// ...? special for sisyphus
-export const simple = v => v === null || incl(typeof v)([ 'function', 'number', 'string', 'boolean', 'undefined' ])
 
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
