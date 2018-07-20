@@ -180,9 +180,9 @@ export const method3 = m => a => b => c => method(m)([a,b,c])
  *
  * if a copy loses contextual state (that is, if it is bound to a context
  * using bind() and can no longer be implicitly rebound to a new context),
-  * it is no longer usable as, for example, a mixin definition for an
-  * object, because its `this` value will not change when its runtime
-  * context changes.
+ * it is no longer usable as, for example, a mixin definition for an
+ * object, because its `this` value will not change when its runtime
+ * context changes.
  *
  * ```
  * // example:
