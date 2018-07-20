@@ -456,20 +456,51 @@ const instance    = C => v => v instanceof C
 const object_case = ({ array, object }) => ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
 export const reflex = { type, instance, object_case }
 
-// primitive types : boolean, undefined, number, string, symbol, object
-// weirdo types    : null (typeof null === 'object' but null is not an instance of an object)
-//                   NaN  (NaN != NaN, typeof NaN === 'number', but NaN instanceof Number === false)
-// object types    : literally everything else (boxed types, user objects, etc.)
+// primitive types
+//    boolean
+//    undefined
+//    number
+//    string
+//    symbol
+//    object
+// weirdo types
+//    null
+//      - typeof null === 'object'
+//      - null instanceof Object === false
+//    NaN
+//      - NaN != NaN
+//      - typeof NaN === 'number'
+//      - NaN instanceof Number === false
+// object types
+//    literally everything else
+//      - boxed types (Number, Boolean, String, Function, ...)
+//      - user objects (function, class, ...)
+//      - etc.
 // REFACTOR(jordan): module
 export const types = (function () {
-  const number    = 'number'    // number literals, Number(), but not new Number (which is object)
-  const object    = 'object'    // constructed instances (e.g. new class), literal objects
-  const string    = 'string'    // string literals, String(), but not new String (which is object)
-  const symbol    = 'symbol'    // symbols, well-known Symbols (e.g. Symbol.iterator)
-  const boolean   = 'boolean'   // true, false, Boolean(), but not new Boolean (which is object)
-  const function_ = 'function'  // functions, classes
-  const undefined = 'undefined' // free variables, literal undefined
-  return { number, object, string, symbol, boolean, function: function_, undefined }
+  // number literals, Number(), but not new Number (which is object)
+  const number = 'number'
+  // constructed instances (e.g. new class), literal objects
+  const object = 'object'
+  // string literals, String(), but not new String (which is object)
+  const string = 'string'
+  // symbols, well-known Symbols (e.g. Symbol.iterator)
+  const symbol = 'symbol'
+  // true, false, Boolean(), but not new Boolean (which is object)
+  const boolean = 'boolean'
+  // functions, classes
+  const function_ = 'function'
+  // free variables, literal undefined
+  const undefined = 'undefined'
+  return {
+    number,
+    object,
+    string,
+    symbol,
+    boolean,
+    undefined,
+    function: function_,
+  }
 })()
 
 // export const copy = object_case({ array: array_copy, object: object_copy })
