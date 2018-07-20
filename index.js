@@ -456,26 +456,27 @@ const instance    = C => v => v instanceof C
 const object_case = ({ array, object }) => ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
 export const reflex = { type, instance, object_case }
 
-// primitive types
-//    boolean
-//    undefined
-//    number
-//    string
-//    symbol
-//    object
-// weirdo types
-//    null
-//      - typeof null === 'object'
-//      - null instanceof Object === false
-//    NaN
-//      - NaN != NaN
-//      - typeof NaN === 'number'
-//      - NaN instanceof Number === false
-// object types
-//    literally everything else
-//      - boxed types (Number, Boolean, String, Function, ...)
-//      - user objects (function, class, ...)
-//      - etc.
+/* primitive types
+ *    boolean
+ *    undefined
+ *    number
+ *    string
+ *    symbol
+ *    object
+ * weirdo types
+ *    null
+ *      - typeof null === 'object'
+ *      - null instanceof Object === false
+ *    NaN
+ *      - NaN != NaN
+ *      - typeof NaN === 'number'
+ *      - NaN instanceof Number === false
+ * object types
+ *    literally everything else
+ *      - boxed types (Number, Boolean, String, Function, ...)
+ *      - user objects (function, class, ...)
+ *      - etc.
+ */
 // REFACTOR(jordan): module
 export const types = (function () {
   // number literals, Number(), but not new Number (which is object)
