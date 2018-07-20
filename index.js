@@ -103,11 +103,11 @@ export const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
 
 // binding and calling methods
 export const method_of = obj => name => js.bind(obj)(get(name)(obj))
-export const method  = name => args => obj => apply(method_of(obj)(name))(args)
-export const method0 = name => method(name)([])
-export const method1 = name => a => method(name)([a])
-export const method2 = name => a => b => method(name)([a,b])
-export const method3 = name => a => b => c => method(name)([a,b,c])
+export const method  = m => args => obj => apply(method_of(obj)(m))(args)
+export const method0 = m => method(m)([])
+export const method1 = m => a => method(m)([a])
+export const method2 = m => a => b => method(m)([a,b])
+export const method3 = m => a => b => c => method(m)([a,b,c])
 
 /* Copying Functions
  * =================
