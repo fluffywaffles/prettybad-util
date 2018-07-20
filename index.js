@@ -544,8 +544,6 @@ export function test (suite) {
         t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0, x => x < 10 ])(6)),
       'or: true if any predicate is true':
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
-      'named: names a function':
-        t => t.eq(named('hello')(v => `hello, ${v}`).name)('hello'),
       'method{1}: calls a named method with argument(s)':
         t => {
           const obj = {
