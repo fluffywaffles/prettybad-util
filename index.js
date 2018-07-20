@@ -90,7 +90,6 @@ export const id = v  => v
 export const ret   = v  =>    _ => v
 export const call  = f  =>    v => f(v)
 export const pass  = v  =>    f => f(v)
-export const loop  = n  =>    f => { let i = 0; while (i !== n) { f(i); i++ } }
 export const apply = f  => args => fold(pass)(f)(args)
 export const and   = fs =>    v => all(pass(v))(fs)
 export const or    = fs =>    v => any(pass(v))(fs)
@@ -98,8 +97,9 @@ export const fmap  = fs =>    v => map(pass(v))(fs)
 export const flip    = f => a => b => f(b)(a)
 export const compose = f => g => v => g(f(v))
 export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
-// constructing functions from strings (for rotten profit)
-export const named = name => def => code.iife(source.let(name)(def.toString()))
+
+// utility for hiding some imperative code
+export const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
 
 // binding and calling methods
 export const method_of = obj => name => js.bind(obj)(get(name)(obj))
