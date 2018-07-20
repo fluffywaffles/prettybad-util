@@ -62,8 +62,8 @@ export {
 } from './mutton'
 
 // general
-export const proxy = traps => target => new Proxy(target, traps)
-export const None = proxy({
+const proxy = traps => target => new Proxy(target, traps)
+const None = proxy({
   get (target, prop, recv) {
     // TODO(jordan)?: exclude more well-known symbols?
     if (prop === Symbol.isConcatSpreadable) return target[prop]
@@ -85,29 +85,61 @@ export const None = proxy({
   [Symbol.toStringTag]: { value () { return this.toString() } }
 })(function () { return None }))
 
+export {
+  proxy,
+  None,
+}
+
 // functions
-export const id = v  => v
-export const ret   = v  =>    _ => v
-export const call  = f  =>    v => f(v)
-export const pass  = v  =>    f => f(v)
-export const apply = f  => args => fold(pass)(f)(args)
-export const and   = fs =>    v => all(pass(v))(fs)
-export const or    = fs =>    v => any(pass(v))(fs)
-export const fmap  = fs =>    v => map(pass(v))(fs)
-export const flip    = f => a => b => f(b)(a)
-export const compose = f => g => v => g(f(v))
-export const times   = n => f => v => fold(call)(v)(n_of(f)(n))
+const id = v  => v
+const ret   = v  =>    _ => v
+const call  = f  =>    v => f(v)
+const pass  = v  =>    f => f(v)
+const apply = f  => args => fold(pass)(f)(args)
+const and   = fs =>    v => all(pass(v))(fs)
+const or    = fs =>    v => any(pass(v))(fs)
+const fmap  = fs =>    v => map(pass(v))(fs)
+const flip    = f => a => b => f(b)(a)
+const compose = f => g => v => g(f(v))
+const times   = n => f => v => fold(call)(v)(n_of(f)(n))
+
+export {
+  id,
+  ret,
+  call,
+  pass,
+  apply,
+  and,
+  or,
+  fmap,
+  flip,
+  compose,
+  times,
+}
 
 // utility for hiding some imperative code
-export const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
+const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
+
+export {
+  loop,
+}
 
 // binding and calling methods
-export const method_of = obj => name => js.bind(obj)(get(name)(obj))
-export const method  = m => args => obj => apply(method_of(obj)(m))(args)
-export const method0 = m => method(m)([])
-export const method1 = m => a => method(m)([a])
-export const method2 = m => a => b => method(m)([a,b])
-export const method3 = m => a => b => c => method(m)([a,b,c])
+const method_of = obj => name => js.bind(obj)(get(name)(obj))
+const method  = name => args => obj => apply(method_of(obj)(name))(args)
+const method0 = name => method(name)([])
+const method1 = name => a => method(name)([a])
+const method2 = name => a => b => method(name)([a,b])
+const method3 = name => a => b => c => method(name)([a,b,c])
+
+export {
+  method_of,
+  method,
+  method0,
+  method1,
+  method2,
+  method3,
+}
 
 /* Copying Functions
  * =================
@@ -274,80 +306,152 @@ export const method3 = m => a => b => c => method(m)([a,b,c])
  */
 
 // arrays
-const _offset = o => ᐅeffect(arr => loop(len(arr))(i => arr[i] = arr[i + o]))
-const _map    = f => ᐅeffect(arr => loop(len(arr))(i => arr[i] = f(arr[i])))
-const _til    = n => ᐅeffect(arr => loop(n)(i => arr[i] = i))
-const _push   = v => ᐅeffect(js.push(v))
-const _cons   = v => ᐅeffect(js.unshift(v))
-const _splice = i => n => vs => ᐅeffect(js.splice(i)(n)(vs))
+const ᐅeff = e => ᐅeffect(e)
+const _offset = o => ᐅeff(arr => loop(len(arr))(i => arr[i] = arr[i + o]))
+const _map    = f => ᐅeff(arr => loop(len(arr))(i => arr[i] = f(arr[i])))
+const _til    = n => ᐅeff(arr => loop(n)(i => arr[i] = i))
+const _push   = v => ᐅeff(js.push(v))
+const _cons   = v => ᐅeff(js.unshift(v))
+const _splice = i => n => vs => ᐅeff(js.splice(i)(n)(vs))
 const _resize = len => ᐅeffect(arr => arr.length = len)
 const _slice  = start => end => arr => __slice(start)(end)(len(arr))(arr)
 const __slice = s => e => l => apply(__slicepos)(map(__slicewrap(l))([ s, e ]))
 const __slicepos  = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
 const __slicewrap = l => n => n < 0 ? n + l : n
-export const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
-export const map     = f => js.map(f)
-export const find    = f => arr => js.find(f)(arr) || None
-export const join    = v => js.join(v)
-export const any     = f => js.some(f)
-export const sort    = f => ᐅᶠ([ array_copy, js.sort(f) ])
-export const all     = f => js.every(f)
-export const concat  = a => b => js.concat(a)(b)
-export const slice   = i => j => js.slice(i)(j)
-export const filter  = f => js.filter(f)
-export const index   = v => js.index(v)
-export const incl    = v => js.includes(v)
-export const findex  = f => js.findex(f)
-export const fold    = f => js.fold(f)
-export const len     = a => js.len(a)
-export const n_of    = x => n => js.fill(x)(/*start*/)(/*end*/)(new Array(n))
-export const cons    = v => ᐅᶠ([ array_copy, _cons(v) ])
-export const push    = v => ᐅᶠ([ array_copy, _push(v) ])
-export const flatten = a => fold(flip(concat))([])(a)
-export const flatmap = f => ᐅᶠ([ map(f), flatten ])
-export const reverse  = a => ᐅᶠ([ array_copy, js.reverse ])(a)
-export const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
-export const thru     = n => til(n + 1)
-export const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
-export const take     = j => slice(0)(j)
-export const drop_end = n => take(-n)
-export const skip     = i => arr => ᐅdo([ len, slice(i) ])(arr)
-export const rest     = a => skip(1)(a)
-export const last     = a => ᐅᶠ([ skip(-1), first ])(a)
-export const split_at = n => fmap([ take(n), skip(n) ])
-export const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
-export const first    = arr => get(0)(arr)
-export const pop      = arr => fmap([ first, rest ])(arr)
-export const array_copy = arr => define.mut(arr)([])
+
+const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
+const map     = f => js.map(f)
+const find    = f => arr => js.find(f)(arr) || None
+const join    = v => js.join(v)
+const any     = f => js.some(f)
+const sort    = f => ᐅᶠ([ array_copy, js.sort(f) ])
+const all     = f => js.every(f)
+const concat  = a => b => js.concat(a)(b)
+const slice   = i => j => js.slice(i)(j)
+const filter  = f => js.filter(f)
+const index   = v => js.index(v)
+const incl    = v => js.includes(v)
+const findex  = f => js.findex(f)
+const fold    = f => js.fold(f)
+const len     = a => js.len(a)
+const n_of    = x => n => js.fill(x)(/*start*/)(/*end*/)(new Array(n))
+const cons    = v => ᐅᶠ([ array_copy, _cons(v) ])
+const push    = v => ᐅᶠ([ array_copy, _push(v) ])
+const flatten = a => fold(flip(concat))([])(a)
+const flatmap = f => ᐅᶠ([ map(f), flatten ])
+const reverse  = a => ᐅᶠ([ array_copy, js.reverse ])(a)
+const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
+const thru     = n => til(n + 1)
+const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
+const take     = j => slice(0)(j)
+const drop_end = n => take(-n)
+const skip     = i => arr => ᐅdo([ len, slice(i) ])(arr)
+const rest     = a => skip(1)(a)
+const last     = a => ᐅᶠ([ skip(-1), first ])(a)
+const split_at = n => fmap([ take(n), skip(n) ])
+const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
+const first    = arr => get(0)(arr)
+const pop      = arr => fmap([ first, rest ])(arr)
+const array_copy = arr => define.mut(arr)([])
+
+export {
+  each,
+  map,
+  find,
+  join,
+  any,
+  sort,
+  all,
+  concat,
+  slice,
+  filter,
+  index,
+  incl,
+  findex,
+  fold,
+  len,
+  n_of,
+  cons,
+  push,
+  flatten,
+  flatmap,
+  reverse,
+  til,
+  thru,
+  splice,
+  take,
+  drop_end,
+  skip,
+  rest,
+  last,
+  split_at,
+  split_on,
+  first,
+  pop,
+  array_copy,
+}
 
 const _delacer = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
-export const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
-export const disinterlace = kvs => fold(_delacer)([[], []])(kvs)
+const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
+const disinterlace = kvs => fold(_delacer)([[], []])(kvs)
+
+export {
+  interlace,
+  disinterlace,
+}
 
 const _indexed = f => g => f((it, ix) => g(ix)(it))
-export const all_indexed = f => _indexed(js.every)(f)
-export const any_indexed = f => _indexed(js.some)(f)
-export const map_indexed = f => _indexed(js.map)(f)
-export const each_indexed = f => _indexed(js.each)(f)
-export const filter_indexed = f => _indexed(js.filter)(f)
+const all_indexed = f => _indexed(js.every)(f)
+const any_indexed = f => _indexed(js.some)(f)
+const map_indexed = f => _indexed(js.map)(f)
+const each_indexed = f => _indexed(js.each)(f)
+const filter_indexed = f => _indexed(js.filter)(f)
+
+export {
+  all_indexed,
+  any_indexed,
+  map_indexed,
+  each_indexed,
+  filter_indexed,
+}
 
 const splicer = derive_mutative(splice)
-export const insert = splicer(splice => i => v => splice(i)(0)([v]))
-export const remdex = splicer(splice => i => splice(i)(1)())
-export const replace = splicer(splice => i => v => splice(i)(1)([v]))
+const insert = splicer(splice => i => v => splice(i)(0)([v]))
+const remdex = splicer(splice => i => splice(i)(1)())
+const replace = splicer(splice => i => v => splice(i)(1)([v]))
+
+export {
+  insert,
+  remdex,
+  replace,
+}
 
 const remdexer = derive_mutative(remdex)
-export const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
+const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
+
+export {
+  remove,
+}
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
-export const has      = prop  => obj => js.has_own(prop)(obj)
-export const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
-export const get_all  = props => fmap(map(get)(props))
-export const get_in   = obj => flip(get)(obj)
-export const get_all_in = obj => flip(get_all)(obj)
-export const get_path = path  => obj => fold(get)(obj)(path)
-export const get_path_in = obj => flip(get_path)(obj)
+const has      = prop  => obj => js.has_own(prop)(obj)
+const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
+const get_all  = props => fmap(map(get)(props))
+const get_in   = obj => flip(get)(obj)
+const get_all_in = obj => flip(get_all)(obj)
+const get_path = path  => obj => fold(get)(obj)(path)
+const get_path_in = obj => flip(get_path)(obj)
+
+export {
+  has,
+  get,
+  get_all,
+  get_in,
+  get_all_in,
+  get_path,
+  get_path_in,
+}
 
 // objects
 const _on_str_keys = f => obj => ᐅdo([ js.string_keys, f ])(obj)
@@ -368,68 +472,131 @@ const _from_entry_pairs = pairs => _from_pairs(_def_entry_pairs)(pairs)
 const _combiner = getter => maker => ᐅᶠ([ map(getter), apply(concat), maker ])
 const _enumerable_on = o => flip(js.is_enumerable)(o)
 const _filter_key_enum = o => filter(ᐅᶠ([ get(0), _enumerable_on(o) ]))
-export const is_empty       = obj => len(js.keys(obj)) === 0
-export const empty_object   = _   => js.of_properties({})
-export const get_descriptor = key => obj => js.get_descriptor(key)(obj) || None
-export const get_entry      = key => obj => [ key, get(key)(obj) ]
-export const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
-export const pairs_getter   = get =>  ks => obj => map(k => get(k)(obj))(ks)
-export const get_entries    = keys => pairs_getter(get_entry)(keys)
-export const get_properties = keys => pairs_getter(get_property)(keys)
-export const string_keyed_values     = obj => _on_str_keys(get_all)(obj)
-export const symbol_keyed_values     = obj => _on_sym_keys(get_all)(obj)
-export const string_keyed_entries    = obj => _on_str_keys(get_entries)(obj)
-export const symbol_keyed_entries    = obj => _on_sym_keys(get_entries)(obj)
-export const string_keyed_properties = obj => _on_str_keys(get_properties)(obj)
-export const symbol_keyed_properties = obj => _on_sym_keys(get_properties)(obj)
-export const get_both   = g1 => g2 => ᐅᶠ([ fmap([ g1, g2 ]), apply(concat) ])
-export const properties = obj => get_both(_str_props)(_sym_props)(obj)
-export const entries    = obj => get_both(_str_entries)(_sym_entries)(obj)
-export const values     = obj => get_both(_str_values)(_sym_values)(obj)
-export const define_property_pair  = mutative(_def_prop_pair)
-export const define_entry_pair     = mutative(_def_entry_pair)
-export const define_property_pairs = mutative(_def_prop_pairs)
-export const define_entry_pairs    = mutative(_def_entry_pairs)
-export const from_properties = properties => _from_prop_pairs(properties)
-export const from_entries    = entries    => _from_entry_pairs(entries)
-export const object_copy    = obj => ᐅᶠ([ properties, from_properties ])(obj)
-export const define = mutative(meta => _def_prop_pairs(properties(meta)))
-export const merge_entries    = vs => _combiner(entries)(from_entries)(vs)
-export const merge_properties = vs => _combiner(properties)(from_properties)(vs)
-export const mixin = a => b => merge_properties([ a, b ])
-export const extend = extension => flip(mixin)(extension)
-export const of_entries = obj => object_copy(obj)
-export const map_as = convert => undo => f => ᐅᶠ([ convert, f, undo ])
-export const on_properties = f => map_as(properties)(from_properties)(f)
-export const on_entries    = f => map_as(entries)(from_entries)(f)
-export const map_properties = f => on_properties(map(f))
-export const map_entries    = f => on_entries(map(f))
-export const filter_properties = f => on_properties(filter(f))
-export const filter_entries    = f => on_entries(filter(f))
-export const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
-export const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
-export const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
-export const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
+
+const is_empty       = obj => len(js.keys(obj)) === 0
+const empty_object   = _   => js.of_properties({})
+const get_descriptor = key => obj => js.get_descriptor(key)(obj) || None
+const get_entry      = key => obj => [ key, get(key)(obj) ]
+const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
+const pairs_getter   = get =>  ks => obj => map(k => get(k)(obj))(ks)
+const get_entries    = keys => pairs_getter(get_entry)(keys)
+const get_properties = keys => pairs_getter(get_property)(keys)
+const string_keyed_values     = obj => _on_str_keys(get_all)(obj)
+const symbol_keyed_values     = obj => _on_sym_keys(get_all)(obj)
+const string_keyed_entries    = obj => _on_str_keys(get_entries)(obj)
+const symbol_keyed_entries    = obj => _on_sym_keys(get_entries)(obj)
+const string_keyed_properties = obj => _on_str_keys(get_properties)(obj)
+const symbol_keyed_properties = obj => _on_sym_keys(get_properties)(obj)
+const get_both   = g1 => g2 => ᐅᶠ([ fmap([ g1, g2 ]), apply(concat) ])
+const properties = obj => get_both(_str_props)(_sym_props)(obj)
+const entries    = obj => get_both(_str_entries)(_sym_entries)(obj)
+const values     = obj => get_both(_str_values)(_sym_values)(obj)
+const define_property_pair  = mutative(_def_prop_pair)
+const define_entry_pair     = mutative(_def_entry_pair)
+const define_property_pairs = mutative(_def_prop_pairs)
+const define_entry_pairs    = mutative(_def_entry_pairs)
+const from_properties = properties => _from_prop_pairs(properties)
+const from_entries    = entries    => _from_entry_pairs(entries)
+const object_copy    = obj => ᐅᶠ([ properties, from_properties ])(obj)
+const define = mutative(meta => _def_prop_pairs(properties(meta)))
+const merge_entries    = vs => _combiner(entries)(from_entries)(vs)
+const merge_properties = vs => _combiner(properties)(from_properties)(vs)
+const mixin = a => b => merge_properties([ a, b ])
+const extend = extension => flip(mixin)(extension)
+const of_entries = obj => object_copy(obj)
+const map_as = convert => undo => f => ᐅᶠ([ convert, f, undo ])
+const on_properties = f => map_as(properties)(from_properties)(f)
+const on_entries    = f => map_as(entries)(from_entries)(f)
+const map_properties = f => on_properties(map(f))
+const map_entries    = f => on_entries(map(f))
+const filter_properties = f => on_properties(filter(f))
+const filter_entries    = f => on_entries(filter(f))
+const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
+const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
+const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
+const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
+
+export {
+  is_empty,
+  empty_object,
+  get_descriptor,
+  get_entry,
+  get_property,
+  pairs_getter,
+  get_entries,
+  get_properties,
+  string_keyed_values,
+  symbol_keyed_values,
+  string_keyed_entries,
+  symbol_keyed_entries,
+  string_keyed_properties,
+  symbol_keyed_properties,
+  get_both,
+  properties,
+  entries,
+  values,
+  define_property_pair,
+  define_entry_pair,
+  define_property_pairs,
+  define_entry_pairs,
+  from_properties,
+  from_entries,
+  object_copy,
+  define,
+  merge_entries,
+  merge_properties,
+  mixin,
+  extend,
+  of_entries,
+  map_as,
+  on_properties,
+  map_entries,
+  filter_properties,
+  filter_entries,
+  swap,
+  update,
+  update_path,
+  enumerable_entries,
+}
 
 // strings
 // NOTE(jordan): most array functions also work on strings
-export const Str = ''
-export const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
-export const lowercase = str => Str.toLowerCase.call(str)
-export const uppercase = str => Str.toUpperCase.call(str)
-export const string_split = delimiter => str => Str.split.call(str, delimiter)
+const Str = ''
+const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
+const lowercase = str => Str.toLowerCase.call(str)
+const uppercase = str => Str.toUpperCase.call(str)
+const string_split = delimiter => str => Str.split.call(str, delimiter)
+
+export {
+  Str,
+  string,
+  lowercase,
+  uppercase,
+  string_split,
+}
 
 // pipelining
-const _do_folder = target => f => arg => (arg !== None ? f(arg) : f)(target)
-export const ᐅᶠ    = fns => val => fold(call)(val)(fns)
-export const ᐅdo   = fns => target => fold(_do_folder(target))(None)(fns)
-export const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
-export const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
-export const ᐅeffect = f => target => (f(target), target)
-export const ᐅlog    = v => ᐅeffect(call(console.log))(v)
+const _do_folder = target => f => a => (a !== None ? f(a) : f)(target)
+
+const ᐅᶠ    = fns => val => fold(call)(val)(fns)
+const ᐅdo   = fns => target => fold(_do_folder(target))(None)(fns)
+const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
+const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
+const ᐅeffect = f => target => (f(target), target)
+const ᐅlog    = v => ᐅeffect(call(console.log))(v)
+
+export {
+  ᐅᶠ,
+  ᐅdo,
+  ᐅif,
+  ᐅwhen,
+  ᐅeffect,
+  ᐅlog,
+}
 
 // (Weak)Maps
 // TODO(jordan): make this Map wrapper return immutable instances
+// TODO(jordan): don`t define functions in the map; extract and reference
 export const Map = define.mut({
   // non-mutative native APIs that can be passed through
   has: js.map_has,
@@ -453,8 +620,14 @@ export const Map = define.mut({
 // TODO(jordan): untested
 const type        = t => v => typeof v === t
 const instance    = C => v => v instanceof C
-const object_case = ({ array, object }) => ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
-export const reflex = { type, instance, object_case }
+function object_case ({ array, object }) {
+  return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
+}
+export const reflex = {
+  type,
+  instance,
+  object_case,
+}
 
 /* primitive types
  *    boolean
