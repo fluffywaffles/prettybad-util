@@ -313,10 +313,10 @@ const _push   = v => ᐅeff(js.push(v))
 const _cons   = v => ᐅeff(js.unshift(v))
 const _splice = i => n => vs => ᐅeff(js.splice(i)(n)(vs))
 const _resize = len => ᐅeffect(arr => arr.length = len)
-const _slice  = start => end => arr => __slice(start)(end)(len(arr))(arr)
-const __slice = s => e => l => apply(__slicepos)(map(__slicewrap(l))([ s, e ]))
-const __slicepos  = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
-const __slicewrap = l => n => n < 0 ? n + l : n
+const _js_slice  = start => end => ᐅdo([ len, _slice_len(start)(end) ])
+const _slice_len = s => e => l => apply(_slice)(map(_wrap(l))([ s, e ]))
+const _slice = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
+const _wrap  = l => n => n < 0 ? n + l : n
 
 const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
 const map     = f => js.map(f)
