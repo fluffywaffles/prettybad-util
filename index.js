@@ -38,7 +38,7 @@
 import d from './d'
 import {
   mutative,
-  with_mutative,
+  from_mutative,
   derive_mutative,
   define_property,
   define_properties,
@@ -604,7 +604,9 @@ export const Map = define.mut({
   entries: js.map_entries,
   unsafe_get: js.map_get,
   // mutative APIs that must be wrapped
-  set: with_mutative(js.map_set)(k => v => map => js.map_set(k)(v)(new js.Map(map))),
+  set: from_mutative(js.map_set)(set => k => v => map => {
+    return set(k)(v)(new js.Map(map))
+  }),
   // extensions
   get: k => ᐅif(Map.has(k))(Map.unsafe_get(k))(ret(None)),
   update: k => fn => map => Map.set(k)(fn(Map.get(k)(map)))(map),

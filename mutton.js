@@ -7,13 +7,30 @@
  *
  * — fin
  */
-import { of_properties, define_property as defprop, define_properties as defprops } from './lynchpin'
+import {
+  of_properties,
+  define_property as defprop,
+  define_properties as defprops,
+} from './lynchpin'
 
 // mutative function factory
-export const mutative        = fn => of_properties({ mut: { value: fn } })
-export const with_mutative   = mutative_fn => defprop(`mut`)({ value: mutative_fn })
-export const derive_mutative = fn => derivation => with_mutative(derivation(fn.mut))(derivation(fn))
+const mutative        = fn => of_properties({ mut: { value: fn } })
+const def_mutative    = fn => defprop(`mut`)({ value: fn })
+const from_mutative   = mut => drv => def_mutative(mut)(drv(mut))
+const derive_mutative = fn => drv => def_mutative(drv(fn.mut))(drv(fn))
+
+export {
+  mutative,
+  def_mutative,
+  from_mutative,
+  derive_mutative,
+}
 
 // descriptor writers
-export const define_property   = mutative(defprop)
-export const define_properties = mutative(defprops)
+const define_property   = mutative(defprop)
+const define_properties = mutative(defprops)
+
+export {
+  define_property,
+  define_properties,
+}
