@@ -3,10 +3,11 @@ import { define_properties } from './mutton'
 
 /* TODO(jordan):
  *
- * distinguish data descriptors (value) from accessor descriptors (get/set)
+ * distinguish data descriptors (value) from accessor descriptors
+ * (get/set)
  *
- * the 'writable' option is only applicable to data descriptors
- * you'll get a TypeError if you have { writable: true } with an accessor descriptor
+ * the 'writable' option is only applicable to data descriptors you'll get
+ * a TypeError if you have { writable: true } with an accessor descriptor
  * ... which right now is possible to do with d, and it shouldn't be
  */
 
@@ -47,7 +48,9 @@ const d = define_properties.mut(own_descriptors({
  *   d('ew')({ v: 'drops' }) ⇒ { enumerable: true, writable: true, value: 'drops' }
  */
 function make_descriptor (cew) {
-  const parse = typeof cew === 'string' ? d.parse_cew_string : d._.unknown_parse
+  const parse = typeof cew === 'string'
+    ? d.parse_cew_string
+    : d._.unknown_parse
   return ({ v, g, s }) => {
     const conf = parse(cew)
     if (v !== undefined) conf.value = v
