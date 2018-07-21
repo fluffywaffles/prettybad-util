@@ -44,7 +44,6 @@ import {
   define_properties,
 } from './mutton'
 import * as js from './lynchpin'
-import { source, code } from './fungible'
 
 // Re-exports
 export { default as d } from './d'
