@@ -516,6 +516,7 @@ const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
 const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
 const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
+const update_with = ups => o => fold(apply_pair(update))(o)(entries(ups))
 
 export {
   is_empty,
@@ -558,6 +559,7 @@ export {
   update,
   update_path,
   enumerable_entries,
+  update_with,
 }
 
 // strings
@@ -838,6 +840,20 @@ export function test (suite) {
             b: { value: 'hidden' },
           })
           return t.eq(enumerable_entries(example))([[ 'a', 5 ]])
+        },
+      'update_with: update with an object of updaters':
+        t => {
+          const example = { a: 3, b: { c: 'd' }, hi: true }
+          const updaters = {
+            a: v => v + 1,
+            b: update(`c`)(v => v.toUpperCase()),
+            hi: v => !v,
+          }
+          return t.eq(update_with(updaters)(example))({
+            a: 4,
+            b: { c: `D` },
+            hi: false,
+          })
         },
     }),
     t => t.suite('arrays', {
