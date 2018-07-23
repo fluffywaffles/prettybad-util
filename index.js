@@ -101,6 +101,7 @@ const fmap  = fs =>    v => map(pass(v))(fs)
 const flip    = f => a => b => f(b)(a)
 const compose = f => g => v => g(f(v))
 const times   = n => f => v => fold(call)(v)(n_of(f)(n))
+const apply_pair = f => ([ p0, p1 ]) => f(p0)(p1)
 
 export {
   id,
@@ -114,6 +115,7 @@ export {
   flip,
   compose,
   times,
+  apply_pair,
 }
 
 // utility for hiding some imperative code
@@ -735,6 +737,8 @@ export function test (suite) {
         },
       'fmap: runs a series of functions on an object':
         t => t.eq(fmap([ v => v + 1, v => v / 2 ])(4))([ 5, 2 ]),
+      'apply_pair: partially applies a function given a pair':
+        t => t.eq(apply_pair(a => b => a + b)([ 1, 2 ]))(3),
     }),
     t => t.suite('pipelining', {
       'ᐅᶠ: pipelines functions':
