@@ -322,7 +322,7 @@ const _wrap  = l => n => n < 0 ? n + l : n
 
 const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
 const map     = f => js.map(f)
-const find    = f => arr => ᐅwhen(is_null)(ret(None))(js.find(f)(arr))
+const find    = f => arr => ᐅwhen(is_nonvalue)(ret(None))(js.find(f)(arr))
 const join    = v => js.join(v)
 const any     = f => js.some(f)
 const sort    = f => ᐅᶠ([ array_copy, js.sort(f) ])
@@ -925,7 +925,8 @@ export function test (suite) {
         t => t.eq(find(v => v % 2 == 0)(to6))(2)
           && t.eq(find(v => v === 0)([ 0, false ]))(0)
           && t.eq(find(v => v === false)([ 0, false ]))(false)
-          && t.eq(find(v => !v)([ 0, false ]))(0),
+          && t.eq(find(v => !v)([ 0, false ]))(0)
+          && t.eq(find(v => !v)([ 14, true ]))(None),
       'findex: first even of to6 is at index 1':
         t => t.eq(findex(v => v % 2 == 0)(to6))(1),
       'join: joins an array into a string':
