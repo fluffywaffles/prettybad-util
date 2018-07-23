@@ -682,6 +682,18 @@ export const types = (function () {
   }
 })()
 
+const is_null      = v => v === null
+const is_undefined = v => v === undefined
+const is_value     = v => v != null // NOTE(jordan): single = on purpose!
+const is_nonvalue  = v => !is_value(v)
+
+export {
+  is_null,
+  is_undefined,
+  is_value,
+  is_nonvalue,
+}
+
 // FIXME(jordan): what`s wrong with this polymorphic copy?
 // export const copy = object_case({ array: array_copy, object: object_copy })
 
@@ -855,6 +867,32 @@ export function test (suite) {
             hi: false,
           })
         },
+    }),
+    t => t.suite('value/nonvalue predicates', {
+      'is_null':
+        t => t.ok(is_null(null))
+          && !t.ok(is_null(undefined))
+          && !t.ok(is_null(0))
+          && !t.ok(is_null(false))
+          && !t.ok(is_null(NaN)),
+      'is_undefined':
+        t => t.ok(is_undefined(undefined))
+          && !t.ok(is_undefined(null))
+          && !t.ok(is_undefined(0))
+          && !t.ok(is_undefined(false))
+          && !t.ok(is_undefined(NaN)),
+      'is_value':
+        t => t.ok(is_value(0))
+          && t.ok(is_value(false))
+          && t.ok(is_value(NaN))
+          && !t.ok(is_value(undefined))
+          && !t.ok(is_value(null)),
+      'is_nonvalue':
+        t => t.ok(is_nonvalue(undefined))
+          && t.ok(is_nonvalue(null))
+          && !t.ok(is_nonvalue(NaN))
+          && !t.ok(is_nonvalue(false))
+          && !t.ok(is_nonvalue(0)),
     }),
     t => t.suite('arrays', {
       'each: no effect':
