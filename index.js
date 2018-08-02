@@ -436,7 +436,10 @@ export {
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
-const has      = prop  => obj => js.has_own(prop)(obj)
+const _key_types = [ `string`, `number`, `symbol` ]
+const _key_ok    = k     => or(map(reflex.type)(_key_types))(k)
+
+const has      = prop  => obj => _key_ok(prop) && js.has_own(prop)(obj)
 const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
 const get_all  = props => fmap(map(get)(props))
 const get_in   = obj => flip(get)(obj)
@@ -826,11 +829,20 @@ export function test (suite) {
           && t.refeq(object_copy({ f: to6 }).f)(to6),
       'mixin: creates a new object combining properties of two source objects':
         t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
+      'has: returns true is a key is valid and present in an object':
+        t => !t.ok(has([`a`])({ a: `b` }))
+          && t.ok(has(`a`)({ a: `b` }))
+          && !t.ok(has(0)([]))
+          && t.ok(has(0)([1])),
       'get: gets a key/index or None if not present':
-        t => t.eq(get(0)([5]))(5) && t.eq(get('a')({}))(None),
+        t => t.eq(get(0)([5]))(5)
+          && t.eq(get('a')({}))(None)
+          && !t.eq(get(['a'])({ 'a': 'b' }))('b'),
       'get_path: gets a path of keys/indices or None if any part of path is not present':
         t => t.eq(get_path([ 'a', 'b', 'c' ])({ 'a': { 'b': { 'c': 5 } } }))(5)
           && t.eq(get_path([ 'a', 'b', 'd' ])({ 'a': { 'b': { 'c': 5 } } }))(None),
+      'get_path_in: gets a path of keys/indices in a target object':
+        t => t.eq(get_path_in({ 'a': { 'b': { 'c': 5 } } })([ 'a', 'b', 'c' ]))(5),
       'entries: gets {key,symbol}, value pairs':
         t => t.eq(entries({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
       'from_entries: turns {key,symbol}, value pairs into an object':
