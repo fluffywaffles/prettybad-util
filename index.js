@@ -84,9 +84,12 @@ const None = proxy({
   [Symbol.toStringTag]: { value () { return this.toString() } }
 })(function () { return None }))
 
+const not_none = (v) => v !== None;
+
 export {
   proxy,
   None,
+  not_none,
 }
 
 // functions
@@ -1012,6 +1015,14 @@ export function test (suite) {
             // NOTE(jordan): see definition of None for why these tests make sense.
             && t.eq(concat(None)(5))([ None, 5 ])
             && t.eq(flatten([ id, None, flatten ]))([ id, None, flatten ])
+      },
+      'not_none: false for None, true for other types':
+      t => {
+        return t.eq(not_none(None))(false)
+            && t.eq(not_none(3))(true)
+            && t.eq(not_none("hi"))(true)
+            && t.eq(not_none(() => () => undefined))(true)
+            && t.eq(not_none({none: None}))(true)
       },
     }),
   ])
