@@ -84,9 +84,12 @@ const None = proxy({
   [Symbol.toStringTag]: { value () { return this.toString() } }
 })(function () { return None }))
 
+const not_none = (v) => v !== None;
+
 export {
   proxy,
   None,
+  not_none,
 }
 
 // functions
