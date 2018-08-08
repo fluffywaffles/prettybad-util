@@ -1016,6 +1016,14 @@ export function test (suite) {
             && t.eq(concat(None)(5))([ None, 5 ])
             && t.eq(flatten([ id, None, flatten ]))([ id, None, flatten ])
       },
+      'not_none: false for None, true for other types':
+      t => {
+        return t.eq(not_none(None))(false)
+            && t.eq(not_none(3))(true)
+            && t.eq(not_none("hi"))(true)
+            && t.eq(not_none(() => () => undefined))(true)
+            && t.eq(not_none({none: None}))(true)
+      },
     }),
   ])
 }
