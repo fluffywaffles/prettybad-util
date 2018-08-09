@@ -609,9 +609,9 @@ export {
 export const Map = define.mut({
   // non-mutative native APIs that can be passed through
   has: js.map_has,
-  keys: js.map_keys,
-  values: js.map_values,
-  entries: js.map_entries,
+  keys: ᐅᶠ([ js.map_keys, Array.from ]),
+  values: ᐅᶠ([ js.map_values, Array.from ]),
+  entries: ᐅᶠ([ js.map_entries, Array.from ]),
   unsafe_get: js.map_get,
   // mutative APIs that must be wrapped
   set: from_mutative(js.map_set)(set => k => v => map => {
