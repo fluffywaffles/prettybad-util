@@ -688,12 +688,14 @@ export const types = (function () {
   }
 })()
 
+const not          = f => v => !f(v)
 const is_null      = v => v === null
 const is_undefined = v => v === undefined
 const is_value     = v => v != null // NOTE(jordan): single = on purpose!
 const is_nonvalue  = v => !is_value(v)
 
 export {
+  not,
   is_null,
   is_undefined,
   is_value,
