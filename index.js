@@ -560,6 +560,7 @@ export {
   of_entries,
   map_as,
   on_properties,
+  map_properties,
   map_entries,
   filter_properties,
   filter_entries,

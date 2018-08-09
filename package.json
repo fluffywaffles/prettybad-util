@@ -1,6 +1,6 @@
 {
   "name": "@prettybad/util",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "μtil - micro utilities",
   "main": "index.js",
   "scripts": {
