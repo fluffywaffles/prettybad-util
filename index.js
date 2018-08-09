@@ -572,8 +572,16 @@ export {
 
 // strings
 // NOTE(jordan): most array functions also work on strings
+// REFACTOR(jordan): _is_object should probably be a predicate we export
+// IDEA(jordan): we should have a type_is.{object,&c} predicate object
+const _is_object    = v => reflex.type(types.object)(v)
+const _is_symbol    = v => reflex.type(types.symbol)(v)
+const _has_toString = o => method_exists(`toString`)(o)
+const _stringable_object = v => and([ _is_object, _has_toString ])(v)
+const _stringable = v => or([ _stringable_object, _is_symbol ])(v)
+
 const Str = ''
-const string = obj => has('toString')(obj) ? obj.toString() : `${obj}`
+const string = v => `${ᐅwhen(_stringable)(v => v.toString())(v)}`
 const lowercase = str => Str.toLowerCase.call(str)
 const uppercase = str => Str.toUpperCase.call(str)
 const string_split = delimiter => str => Str.split.call(str, delimiter)
@@ -1002,7 +1010,8 @@ export function test (suite) {
           && t.eq(string(function f () {}))('function f () {}')
           && t.eq(string(5))('5')
           && t.eq(string([ `a`, `b`, `c`, ]))('a,b,c')
-          && t.eq(string(true))('true'),
+          && t.eq(string(true))('true')
+          && t.eq(string(Symbol(`abc`)))('Symbol(abc)'),
       'lowercase: lower-cases a string':
         t => t.eq(lowercase('aBCdEfChgaksldFS'))('abcdefchgaksldfs'),
       'uppercase: upper-cases a string':
