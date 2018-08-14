@@ -630,8 +630,11 @@ export const Map = define.mut({
   }),
   // extensions
   get: k => ᐅif(Map.has(k))(Map.unsafe_get(k))(ret(None)),
-  update: k => fn => map => Map.set(k)(fn(Map.get(k)(map)))(map),
 })(it => new js.Map(it))
+
+Map.update = derive_mutative(Map.set)(set => k => fn => map => {
+  return set(k)(fn(Map.get(k)(map)))(map)
+})
 
 // 3: depending on at most 3, 2 and 1
 // functions
