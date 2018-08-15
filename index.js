@@ -38,6 +38,7 @@
 import d from './d'
 import {
   mutative,
+  def_mutative,
   from_mutative,
   derive_mutative,
   define_property,
@@ -326,7 +327,7 @@ const _slice = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
 const _wrap  = l => n => n < 0 ? n + l : n
 
 const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
-const map     = f => js.map(f)
+const map     = def_mutative(_map)(f => js.map(f))
 const find    = f => arr => ᐅwhen(is_nonvalue)(ret(None))(js.find(f)(arr))
 const join    = v => js.join(v)
 const any     = f => js.some(f)
