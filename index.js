@@ -69,8 +69,8 @@ const None = proxy({
     return get(prop)(target)
   }
 })(define_properties.mut({
-  name : { value: `None` },
-  toString : { value () { return this.name }, },
+  name     : { get: _ => None },
+  toString : { value () { return `None` }, },
   [Symbol.toPrimitive]: {
     value (hint) {
       if (hint === `string`)
@@ -82,7 +82,7 @@ const None = proxy({
     },
   },
   [Symbol.toStringTag]: { value () { return this.toString() } }
-})(function () { return None }))
+})(function _None () { return None }))
 
 const not_none = v => v !== None;
 
@@ -1040,6 +1040,12 @@ export function test (suite) {
             && t.eq(not_none("hi"))(true)
             && t.eq(not_none(() => () => undefined))(true)
             && t.eq(not_none({none: None}))(true)
+      },
+      'get(`name`)(None) should just return None':
+      t => {
+        return t.eq(get(`name`)(None))(None)
+            && t.eq(None.toString())(`None`)
+            && t.eq(None[Symbol.toStringTag]())(`None`)
       },
     }),
   ])
