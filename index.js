@@ -359,7 +359,7 @@ const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 const first    = arr => get(0)(arr)
 const pop      = arr => fmap([ first, rest ])(arr)
-const array_copy = arr => define.mut(arr)([])
+const array_copy = arr => concat(arr)([])//Array.from(arr)//define.mut(arr)([])
 
 export {
   each,
