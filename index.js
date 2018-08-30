@@ -443,7 +443,7 @@ export {
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
 const _key_types = [ `string`, `number`, `symbol` ]
-const _key_ok    = k     => or(map(reflex.type)(_key_types))(k)
+const _key_ok    = k => or(map(reflex.type)(_key_types))(k)
 
 const has      = prop  => obj => _key_ok(prop) && js.has_own(prop)(obj)
 const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
