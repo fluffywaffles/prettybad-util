@@ -95,7 +95,7 @@ export {
 
 // functions
 const id = v  => v
-const apply = f  => ᐅif(args => len(args) === 0)(_ => f())(fold(pass)(f))
+const apply = f  => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
 const ret   = v  =>    _ => v
 const call  = f  =>    v => f(v)
 const pass  = v  =>    f => f(v)
@@ -751,7 +751,7 @@ export function test (suite) {
         t => t.eq(ret(5)())(5),
       'apply: applies function to array of args':
         t => t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3)
-          && t.eq(apply(_ => 5)([]))(5),
+          && t.eq(apply(_ => 5)([])())(5),
       'times: repeats a function a set number of times':
         t => t.eq(times(3)(x => x * 2)(2))(16),
       'and: true if all predicates are true':
