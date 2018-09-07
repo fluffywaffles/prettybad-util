@@ -440,16 +440,15 @@ export {
 
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
-const _key_types = [ `string`, `number`, `symbol` ]
-const _key_ok    = k => or(map(reflex.type)(_key_types))(k)
 
-const has      = prop  => obj => _key_ok(prop) && js.has_own(prop)(obj)
-const get      = prop  => obj => has(prop)(obj) ? obj[prop] : None
-const get_all  = props => fmap(map(get)(props))
-const get_in   = obj => flip(get)(obj)
-const get_all_in = obj => flip(get_all)(obj)
-const get_path = path  => obj => fold(get)(obj)(path)
-const get_path_in = obj => flip(get_path)(obj)
+const is_key = key => incl(typeof key)([`string`,`number`,`symbol`])
+const has    = key => obj => is_key(key) && js.has_own(key)(obj)
+const get    = key => or_none(has(key))(obj => obj[key])
+const get_all  = keys => fmap(map(get)(keys))
+const get_path = path => obj => fold(get)(obj)(path)
+const get_in      = obj  => key  => get(key)(obj)
+const get_all_in  = obj  => keys => get_all(keys)(obj)
+const get_path_in = obj  => path => get_path(path)(obj)
 
 export {
   has,
