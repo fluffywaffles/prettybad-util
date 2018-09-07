@@ -38,7 +38,7 @@
 import d from './d'
 import {
   mutative,
-  def_mutative,
+  with_mutative,
   from_mutative,
   derive_mutative,
   define_property,
@@ -321,84 +321,84 @@ const _splice = i => n => vs => ᐅeff(js.splice(i)(n)(vs))
 const _resize = len => ᐅeffect(arr => arr.length = len)
 const _js_slice  = start => end => ᐅdo([ len, _slice_len(start)(end) ])
 const _slice_len = s => e => l => apply(_slice)(map(_wrap(l))([ s, e ]))
-const _slice = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
-const _wrap  = l => n => n < 0 ? n + l : n
+const _slice  = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
+const _wrap   = l => n => n < 0 ? n + l : n
+const _fill   = v => js.fill(v)(/*start*/)(/*end*/)
+const _concat = as => bs => (each(b => _push(b)(as))(bs), as)
+
+const array_copy_and    = f => arr => ᐅᶠ([ array_copy, f ])(arr)
+const array_copy_apply1 = f => a => array_copy_and(f(a))
+const array_copy_apply2 = f => a => b => array_copy_and(f(a)(b))
+const array_copy_apply3 = f => a => b => c => array_copy_and(f(a)(b)(c))
 
 const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
-const map     = def_mutative(_map)(f => js.map(f))
-const find    = f => arr => ᐅwhen(is_nonvalue)(ret(None))(js.find(f)(arr))
+const find    = f => arr => ᐅwhen(not(is_value))(ret(None))(js.find(f)(arr))
 const join    = v => js.join(v)
 const any     = f => js.some(f)
-const sort    = f => ᐅᶠ([ array_copy, js.sort(f) ])
 const all     = f => js.every(f)
-const concat  = a => b => js.concat(a)(b)
-const slice   = i => j => js.slice(i)(j)
 const filter  = f => js.filter(f)
 const index   = v => js.index(v)
 const incl    = v => js.includes(v)
 const findex  = f => js.findex(f)
 const fold    = f => js.fold(f)
 const len     = a => js.len(a)
-const n_of    = x => n => js.fill(x)(/*start*/)(/*end*/)(new Array(n))
-const cons    = v => ᐅᶠ([ array_copy, _cons(v) ])
-const push    = v => ᐅᶠ([ array_copy, _push(v) ])
+const n_of    = x => n => fill.mut(x)(new Array(n))
+const slice   = with_mutative(_slice)(i => j => js.slice(i)(j))
+const concat  = with_mutative(_concat)(a => b => js.concat(a)(b))
+const map     = with_mutative(_map)(f => js.map(f))
+const sort    = from_mutative(js.sort)(array_copy_apply1)
+const fill    = from_mutative(_fill)(array_copy_apply1)
+const cons    = from_mutative(_cons)(array_copy_apply1)
+const push    = from_mutative(_push)(array_copy_apply1)
 const flatten = a => fold(flip(concat))([])(a)
 const flatmap = f => ᐅᶠ([ map(f), flatten ])
-const reverse  = a => ᐅᶠ([ array_copy, js.reverse ])(a)
-const til      = n => ᐅᶠ([ n_of(0), _til(n) ])(n)
-const thru     = n => til(n + 1)
-const splice   = i => n => vs => ᐅᶠ([ array_copy, _splice(i)(n)(vs) ])
-const take     = j => slice(0)(j)
-const drop_end = n => take(-n)
-const skip     = i => arr => ᐅdo([ len, slice(i) ])(arr)
-const rest     = a => skip(1)(a)
 const last     = a => ᐅᶠ([ skip(-1), first ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 const first    = arr => get(0)(arr)
 const pop      = arr => fmap([ first, rest ])(arr)
-const array_copy = arr => concat(arr)([])//Array.from(arr)//define.mut(arr)([])
+const reverse  = from_mutative(js.reverse)(array_copy_and)
+const til      = from_mutative(_til)(til => n => til(n)(new Array(n)))
+const thru     = derive_mutative(til)(til => n => til(n + 1))
+const splice   = from_mutative(_splice)(array_copy_apply3)
+const array_copy = arr => concat(arr)([])//Array.from(arr)
 
 export {
-  each,
-  map,
-  find,
-  join,
-  any,
-  sort,
   all,
-  concat,
-  slice,
-  filter,
-  index,
-  incl,
-  findex,
-  fold,
+  any,
   len,
-  n_of,
-  cons,
-  push,
-  flatten,
-  flatmap,
-  reverse,
+  map,
+  pop,
   til,
-  thru,
-  splice,
-  take,
-  drop_end,
-  skip,
-  rest,
+  cons,
+  each,
+  find,
+  fold,
+  incl,
+  join,
   last,
+  n_of,
+  push,
+  sort,
+  thru,
+  first,
+  index,
+  slice,
+  concat,
+  filter,
+  findex,
+  splice,
+  flatmap,
+  flatten,
+  reverse,
   split_at,
   split_on,
-  first,
-  pop,
   array_copy,
 }
 
-const _delacer = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
+const _delace = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
 const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
-const disinterlace = kvs => fold(_delacer)([[], []])(kvs)
+const disinterlace = kvs => fold(_delace)([[], []])(kvs)
 
 export {
   interlace,
@@ -418,6 +418,29 @@ export {
   map_indexed,
   each_indexed,
   filter_indexed,
+}
+
+const slicer = derive_mutative(slice)
+const take = slicer(slice => j => slice(0)(j))
+const skip = slicer(slc => i => ᐅdo([ len, slc(i) ]))
+
+export {
+  skip,
+  take,
+}
+
+const taker = derive_mutative(take)
+const drop_end = taker(take => n => take(-n))
+
+export {
+  drop_end,
+}
+
+const skipper = derive_mutative(skip)
+const rest = skipper(skip => a => skip(1)(a))
+
+export {
+  rest,
 }
 
 const splicer = derive_mutative(splice)

@@ -15,13 +15,13 @@ import {
 
 // mutative function factory
 const mutative        = fn => of_properties({ mut: { value: fn } })
-const def_mutative    = fn => defprop(`mut`)({ value: fn })
-const from_mutative   = mut => drv => def_mutative(mut)(drv(mut))
-const derive_mutative = fn => drv => def_mutative(drv(fn.mut))(drv(fn))
+const with_mutative   = fn => defprop(`mut`)({ value: fn })
+const from_mutative   = mut => drv => with_mutative(mut)(drv(mut))
+const derive_mutative = fn => drv => with_mutative(drv(fn.mut))(drv(fn))
 
 export {
   mutative,
-  def_mutative,
+  with_mutative,
   from_mutative,
   derive_mutative,
 }
