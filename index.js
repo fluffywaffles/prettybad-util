@@ -969,6 +969,9 @@ export function test (suite) {
         t => t.eq(cons([ 0 ])(to6))([ [ 0 ], 1, 2, 3, 4, 5 ]),
       'len: len of to6 is 5':
         t => t.eq(len(to6))(5),
+      'fill: fills an array with a value':
+        t => t.eq(fill(5)(to6))([ 5, 5, 5, 5, 5 ])
+          && t.eq(to6)([ 1, 2, 3, 4, 5 ]),
       'n_of: n_of 0 where n is 5 gives 5 zeroes':
         t => t.eq(n_of(0)(5))([ 0, 0, 0, 0, 0 ]),
       'push: to6 push [6] is 1..5,[6]':
