@@ -104,6 +104,7 @@ const or    = fs =>    v => any(pass(v))(fs)
 const fmap  = fs =>    v => map(pass(v))(fs)
 const flip    = f => a => b => f(b)(a)
 const times   = n => f => v => fold(call)(v)(n_of(f)(n))
+const or_none = cond => fn => ᐅif(cond)(fn)(ret(None))
 
 export {
   id,
@@ -116,6 +117,7 @@ export {
   pass,
   apply,
   times,
+  or_none,
 }
 
 // utility for hiding some imperative code
@@ -748,6 +750,9 @@ export function test (suite) {
           && t.eq(apply(_ => 5)([])())(5),
       'times: repeats a function a set number of times':
         t => t.eq(times(3)(x => x * 2)(2))(16),
+      'or_none: if <cond>, do <fn>; otherwise return None':
+        t => t.eq(or_none(a => a.length > 0)(a => a[0])([1]))(1)
+          && t.eq(or_none(a => a.length > 0)(a => a[0])([]))(None),
       'and: true if all predicates are true':
         t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0, x => x < 10 ])(6)),
       'or: true if any predicate is true':
