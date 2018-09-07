@@ -94,7 +94,7 @@ export {
 }
 
 // functions
-const id = v  => v
+const id = v => v
 const apply = f  => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
 const ret   = v  =>    _ => v
 const call  = f  =>    v => f(v)
@@ -103,23 +103,19 @@ const and   = fs =>    v => all(pass(v))(fs)
 const or    = fs =>    v => any(pass(v))(fs)
 const fmap  = fs =>    v => map(pass(v))(fs)
 const flip    = f => a => b => f(b)(a)
-const compose = f => g => v => g(f(v))
 const times   = n => f => v => fold(call)(v)(n_of(f)(n))
-const apply_pair = f => ([ p0, p1 ]) => f(p0)(p1)
 
 export {
   id,
+  or,
+  and,
   ret,
   call,
+  flip,
+  fmap,
   pass,
   apply,
-  and,
-  or,
-  fmap,
-  flip,
-  compose,
   times,
-  apply_pair,
 }
 
 // utility for hiding some imperative code
@@ -525,7 +521,7 @@ const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
 const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
 const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
-const update_with = ups => o => fold(apply_pair(update))(o)(entries(ups))
+const update_with = ups => o => fold(apply(update))(o)(entries(ups))
 
 export {
   is_empty,
@@ -745,8 +741,6 @@ export function test (suite) {
         t => t.eq(call(id)(1))(1),
       'bind: binds ctx':
         t => t.eq(js.bind({ a: 7 })(function (v) { return this[v] })('a'))(7),
-      'compose: composes':
-        t => t.eq(compose(x => x + 5)(x => 2 * x)(1))(12),
       'ret: returns':
         t => t.eq(ret(5)())(5),
       'apply: applies function to array of args':
@@ -775,8 +769,6 @@ export function test (suite) {
         },
       'fmap: runs a series of functions on an object':
         t => t.eq(fmap([ v => v + 1, v => v / 2 ])(4))([ 5, 2 ]),
-      'apply_pair: partially applies a function given a pair':
-        t => t.eq(apply_pair(a => b => a + b)([ 1, 2 ]))(3),
     }),
     t => t.suite('pipelining', {
       'ᐅᶠ: pipelines functions':
