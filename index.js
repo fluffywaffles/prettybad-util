@@ -481,7 +481,6 @@ const _combiner = getter => maker => ᐅᶠ([ map(getter), apply(concat), maker 
 const _enumerable_on = o => flip(js.is_enumerable)(o)
 const _filter_key_enum = o => filter(ᐅᶠ([ get(0), _enumerable_on(o) ]))
 
-const is_empty       = obj => len(js.keys(obj)) === 0
 const empty_object   = _   => js.of_properties({})
 const get_descriptor = key => obj => js.get_descriptor(key)(obj) || None
 const get_entry      = key => obj => [ key, get(key)(obj) ]
@@ -526,7 +525,6 @@ const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
 const update_with = ups => o => fold(apply(update))(o)(entries(ups))
 
 export {
-  is_empty,
   empty_object,
   get_descriptor,
   get_entry,
