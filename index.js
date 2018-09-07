@@ -884,13 +884,15 @@ export function test (suite) {
       'swap: swaps the current value of a key for another':
         t => t.eq(swap(`a`)(14)({ a: 5 }))([ 5, { a: 14 } ]),
       'update: replaces a key by a v -> v function':
-        t => t.eq(update(`a`)(v => v + 1)({ a: 4 }))({ a: 5 }),
+        t => t.eq(update(`a`)(v => v + 1)({ a: 4 }))({ a: 5 })
+          && t.eq(update(`a`)(v => v + 1)({}))({}),
       'update_path: replace a nested key by a v -> v function':
         t => {
           const example = { a: { b: 2 } }
           const inc     = v => v + 1
           const ab      = [ `a`, `b` ]
           return t.eq(update_path(ab)(inc)(example))({ a: { b : 3 } })
+              && t.eq(update_path(ab)(inc)({ a: 3 }))(None)
         },
       'enumerable_entries: entries, filtered by js.is_enumerable':
         t => {
