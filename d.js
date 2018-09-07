@@ -23,7 +23,11 @@ const d = define_properties.mut(own_descriptors({
     /* TODO(jordan): better unknown input handling; defaulting to default
      * configuration swallows errors.
      */
-    unknown_parse: c => d.default,
+    unknown_parse: c => _ => ({
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    }),
     cew: {
       c: 'configurable',
       e:   'enumerable',
@@ -31,9 +35,10 @@ const d = define_properties.mut(own_descriptors({
     },
   },
   /**
-   * Parse a string of cew into its descriptor configuration map
+   * Parse a string of cew into a constructor for its descriptor
+   * configuration object.
    */
-  parse_cew_string: ([ c1, c2, c3 ]) => {
+  parse_cew_string: ([ c1, c2, c3 ]) => _ => {
     return  c1 && c2 && c3 ? { [d._.cew[c1]]: true, [d._.cew[c2]]: true, [d._.cew[c3]]: true }
           : c1 && c2       ? { [d._.cew[c1]]: true, [d._.cew[c2]]: true }
           : c1             ? { [d._.cew[c1]]: true }
@@ -51,12 +56,13 @@ function make_descriptor (cew) {
   const parse = typeof cew === 'string'
     ? d.parse_cew_string
     : d._.unknown_parse
+  const Conf = parse(cew)
   return ({ v, g, s }) => {
-    const conf = parse(cew)
-    if (v !== undefined) conf.value = v
-    if (g !== undefined) conf.get   = g
-    if (s !== undefined) conf.set   = s
-    return conf
+    const inst = Conf()
+    if (v !== undefined) inst.value = v
+    if (g !== undefined) inst.get   = g
+    if (s !== undefined) inst.set   = s
+    return inst
   }
 }
 
