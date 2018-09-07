@@ -703,14 +703,12 @@ const not          = f => v => !f(v)
 const is_null      = v => v === null
 const is_undefined = v => v === undefined
 const is_value     = v => v != null // NOTE(jordan): single = on purpose!
-const is_nonvalue  = v => !is_value(v)
 
 export {
   not,
   is_null,
   is_undefined,
   is_value,
-  is_nonvalue,
 }
 
 // FIXME(jordan): what`s wrong with this polymorphic copy?
@@ -896,7 +894,7 @@ export function test (suite) {
           })
         },
     }),
-    t => t.suite('value/nonvalue predicates', {
+    t => t.suite('value predicates', {
       'is_null':
         t => t.ok(is_null(null))
           && !t.ok(is_null(undefined))
@@ -915,12 +913,6 @@ export function test (suite) {
           && t.ok(is_value(NaN))
           && !t.ok(is_value(undefined))
           && !t.ok(is_value(null)),
-      'is_nonvalue':
-        t => t.ok(is_nonvalue(undefined))
-          && t.ok(is_nonvalue(null))
-          && !t.ok(is_nonvalue(NaN))
-          && !t.ok(is_nonvalue(false))
-          && !t.ok(is_nonvalue(0)),
     }),
     t => t.suite('arrays', {
       'each: no effect':
