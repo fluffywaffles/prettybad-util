@@ -214,20 +214,20 @@ export { jsMap as Map }
  * which of course won't work because the JavaScript built-in is called
  * Map, not Map$$1.
  */
-const map_get = key => method(`get`)([key])
-const map_has = key => method(`has`)([key])
-const map_set = key => value => method(`set`)([key, value])
-const map_keys = method(`keys`)([])
-const map_clear = method(`clear`)([])
-const map_values = method(`values`)([])
-const map_entries = method(`entries`)([])
+const Map_get = key => method(`get`)([key])
+const Map_has = key => method(`has`)([key])
+const Map_set = key => value => method(`set`)([key, value])
+const Map_keys = method(`keys`)([])
+const Map_clear = method(`clear`)([])
+const Map_values = method(`values`)([])
+const Map_entries = method(`entries`)([])
 
 export {
-  map_get,
-  map_has,
-  map_set,
-  map_keys,
-  map_clear,
-  map_values,
-  map_entries,
+  Map_get,
+  Map_has,
+  Map_set,
+  Map_keys,
+  Map_clear,
+  Map_values,
+  Map_entries,
 }

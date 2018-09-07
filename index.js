@@ -616,17 +616,16 @@ export {
 // TODO(jordan): don`t define functions in the map; extract and reference
 export const Map = define.mut({
   // non-mutative native APIs that can be passed through
-  has: js.map_has,
-  keys: ᐅᶠ([ js.map_keys, Array.from ]),
-  values: ᐅᶠ([ js.map_values, Array.from ]),
-  entries: ᐅᶠ([ js.map_entries, Array.from ]),
-  unsafe_get: js.map_get,
+  has: js.Map_has,
+  keys: ᐅᶠ([ js.Map_keys, Array.from ]),
+  values: ᐅᶠ([ js.Map_values, Array.from ]),
+  entries: ᐅᶠ([ js.Map_entries, Array.from ]),
   // mutative APIs that must be wrapped
-  set: from_mutative(js.map_set)(set => k => v => map => {
+  set: from_mutative(js.Map_set)(set => k => v => map => {
     return set(k)(v)(new js.Map(map))
   }),
   // extensions
-  get: k => ᐅif(Map.has(k))(Map.unsafe_get(k))(ret(None)),
+  get: k => or_none(Map.has(k))(js.Map_get(k)),//ᐅif(Map.has(k))(js.map_get(k))(ret(None)),
 })(it => new js.Map(it))
 
 Map.update = derive_mutative(Map.set)(set => k => fn => map => {
