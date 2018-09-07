@@ -6,26 +6,25 @@
  * — fin
  */
 // descriptor affordances
-const _has_own_prop = Object.hasOwnProperty
-const _get_own_prop = Object.getOwnPropertyDescriptor
-
+const Obj             = Object
+const has_own         = key => o => Obj.hasOwnProperty.call(o, key)
+const of_properties   = descriptors => Object.create(null, descriptors)
+const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
 const own_descriptors = Object.getOwnPropertyDescriptors
-const of_properties   = descs => Object.create(null, descs)
-const has_own         = name  => o => _has_own_prop.call(o, name)
-const get_descriptor  = name  => o => _get_own_prop(o, name)
 
 export {
-  own_descriptors,
-  of_properties,
+  Obj,
   has_own,
+  of_properties,
   get_descriptor,
+  own_descriptors,
 }
 
 // descriptor mutators
-const _defprop = Object.defineProperty
-const _defprops = Object.defineProperties
-const define_property = key => desc => o => (_defprop(o, key, desc), o)
-const define_properties = props => o => (_defprops(o, props), o)
+const _defprop  = Obj.defineProperty
+const _defprops = Obj.defineProperties
+const define_property   = key => desc => o => (_defprop(o, key, desc), o)
+const define_properties = descs => o => (_defprops(o, descs), o)
 
 export {
   define_property,
@@ -104,8 +103,8 @@ export {
  * for Object.protoype.propertyIsEnumerable that can be combined with
  * filter.
  */
-const string_keys   = Object.getOwnPropertyNames
-const symbol_keys   = Object.getOwnPropertySymbols
+const string_keys   = Obj.getOwnPropertyNames
+const symbol_keys   = Obj.getOwnPropertySymbols
 const keys          = Reflect.ownKeys
 
 export {
@@ -114,11 +113,10 @@ export {
   keys,
 }
 
-const _prop_is_enumerable  = Object.propertyIsEnumerable
-const is_enumerable = key => o => _prop_is_enumerable.call(o, key)
-const enumerable_string_keys          = Object.keys
-const enumerable_string_keyed_values  = Object.values
-const enumerable_string_keyed_entries = Object.entries
+const is_enumerable = key => o => Obj.propertyIsEnumerable.call(o, key)
+const enumerable_string_keys          = Obj.keys
+const enumerable_string_keyed_values  = Obj.values
+const enumerable_string_keyed_entries = Obj.entries
 
 export {
   is_enumerable,
@@ -139,22 +137,21 @@ export {
 const Fn    = Function
 const arity = f   => f.length
 const bind  = ctx => f => Fn.bind.call(f, ctx)
-const call_context  = ctx => f =>  arg => Fn.call .call(f, ctx,  arg)
-const apply_context = ctx => f => args => Fn.apply.call(f, ctx, args)
-const method = name => args => o => Fn.apply.call(o[name], o, args)
+const call  = ctx => f =>  arg => Fn.call.call(f, ctx,  arg)
+const apply = ctx => f => args => Fn.apply.call(f, ctx, args)
+const method = name => args => obj => apply(obj)(o[name])(args)
 
 export {
   Fn,
   arity,
   bind,
-  call_context,
-  apply_context,
+  call,
+  apply,
   method,
 }
 
 // array affordances
-const _ap     = f => ctx => args => apply_context(ctx)(f)(args)
-const _splice = arr => args => _ap([].splice)(arr)(args)
+const _splice = arr => args => apply(arr)([].splice)(args)
 const _args   = (a=[]) => (b=[]) => concat(a)(b)
 const _folder = f => (acc, v) => f(v)(acc)
 
