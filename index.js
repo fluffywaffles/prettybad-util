@@ -338,7 +338,6 @@ const any     = f => js.some(f)
 const all     = f => js.every(f)
 const filter  = f => js.filter(f)
 const index   = v => js.index(v)
-const incl    = v => js.includes(v)
 const findex  = f => js.findex(f)
 const fold    = f => js.fold(f)
 const len     = a => js.len(a)
@@ -352,6 +351,7 @@ const cons    = from_mutative(_cons)(array_copy_apply1)
 const push    = from_mutative(_push)(array_copy_apply1)
 const flatten = a => fold(flip(concat))([])(a)
 const flatmap = f => ᐅᶠ([ map(f), flatten ])
+const includes = v => js.includes(v)
 const last     = a => ᐅᶠ([ skip(-1), first ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
@@ -374,7 +374,6 @@ export {
   each,
   find,
   fold,
-  incl,
   join,
   last,
   n_of,
@@ -391,6 +390,7 @@ export {
   flatmap,
   flatten,
   reverse,
+  includes,
   split_at,
   split_on,
   array_copy,
@@ -464,7 +464,7 @@ export {
 // objects & arrays
 // NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
 
-const is_key = key => incl(typeof key)([`string`,`number`,`symbol`])
+const is_key = key => includes(typeof key)([`string`,`number`,`symbol`])
 const has    = key => obj => is_key(key) && js.has_own(key)(obj)
 const get    = key => or_none(has(key))(obj => obj[key])
 const get_all  = keys => fmap(map(get)(keys))
@@ -954,10 +954,10 @@ export function test (suite) {
         t => !t.ok(any(v => v % 10 == 0)(to6)),
       'sort: sort() (default algorithm) of shuffled to6 is to6':
         t => t.eq(sort()([3, 1, 5, 4, 2]))(to6),
-      'incl: to6 includes 5':
-        t => t.ok(incl(5)(to6)),
-      'incl: to6 does not include 0':
-        t => !t.ok(incl(0)(to6)),
+      'includes: to6 includes 5':
+        t => t.ok(includes(5)(to6)),
+      'includes: to6 does not include 0':
+        t => !t.ok(includes(0)(to6)),
       'index: 3 is index 2 in to6':
         t => t.eq(index(3)(to6))(2),
       'index: -1 when not found':
