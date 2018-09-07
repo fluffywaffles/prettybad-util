@@ -137,12 +137,12 @@ const method3 = name => a => b => c => method(name)([a,b,c])
 const method_exists = name => obj => name in obj
 
 export {
-  method_of,
   method,
   method0,
   method1,
   method2,
   method3,
+  method_of,
   method_exists,
 }
 
