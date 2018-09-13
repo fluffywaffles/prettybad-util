@@ -618,6 +618,8 @@ export {
 const _do_folder = target => f => a => (a !== None ? f(a) : f)(target)
 
 const ᐅᶠ    = fns => val => fold(call)(val)(fns)
+const ᐅf    = ᐅᶠ
+const ᐅ     = ᐅᶠ
 const ᐅdo   = fns => target => fold(_do_folder(target))(None)(fns)
 const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
 const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
@@ -625,7 +627,9 @@ const ᐅeffect = f => target => (f(target), target)
 const ᐅlog    = v => ᐅeffect(call(console.log))(v)
 
 export {
+  ᐅ,
   ᐅᶠ,
+  ᐅf,
   ᐅdo,
   ᐅif,
   ᐅwhen,
