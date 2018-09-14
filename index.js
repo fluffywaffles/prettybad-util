@@ -677,6 +677,12 @@ const properties = obj => get_both(_str_props)(_sym_props)(obj)
 const entries    = obj => get_both(_str_entries)(_sym_entries)(obj)
 const values     = obj => get_both(_str_values)(_sym_values)(obj)
 
+export {
+  values,
+  entries,
+  properties,
+}
+
 // Object mutators
 const _def_prop_pair   = ([ key, desc ]) => define_property.mut(key)(desc)
 const _def_entry_pair  = ([k,v]) => define_property.mut(k)(d.default({v}))
