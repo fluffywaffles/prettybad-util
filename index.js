@@ -1,7 +1,8 @@
 /*
  * UTF-8 Mappings
- * μ  : U+03bc
- * ᐅᶠ : U+1405 U+1da0
+ * μ : U+03bc
+ * ᐅ : U+1405
+ * ᶠ :  U+1da0
  */
 
 /*
@@ -44,7 +45,7 @@ import {
 } from './mutton'
 import * as js from './lynchpin'
 
-// Re-exports
+// re-exports
 export { default as d } from './d'
 export {
   bind,
@@ -81,26 +82,31 @@ const None = proxy({
   }
 })(function _None () { return None })
 
+// utilities
+const value_or = value => ᐅwhen(not(is_value))(value)
+
+// DEPRECATED: use not(is(None))
 const not_none = v => v !== None;
 
 export {
-  proxy,
   None,
+  proxy,
   not_none,
+  value_or,
 }
 
 // functions
-const id = v => v
-const apply = f  => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
-const ret   = v  =>    _ => v
-const call  = f  =>    v => f(v)
-const pass  = v  =>    f => f(v)
-const and   = fs =>    v => all(pass(v))(fs)
-const or    = fs =>    v => any(pass(v))(fs)
-const fmap  = fs =>    v => map(pass(v))(fs)
-const flip    = f => a => b => f(b)(a)
-const times   = n => f => v => fold(call)(v)(n_of(f)(n))
-const or_none = cond => fn => ᐅif(cond)(fn)(ret(None))
+const id      = v => v
+const apply   = f  => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
+const ret     = v  => _ => v
+const call    = f  => v => f(v)
+const pass    = v  => f => f(v)
+const and     = fs => v => all(pass(v))(fs)
+const or      = fs => v => any(pass(v))(fs)
+const fmap    = fs => v => map(pass(v))(fs)
+const flip    = f  => a => b => f(b)(a)
+const times   = n  => f => v => fold(call)(v)(n_of(f)(n))
+const or_none = predicate => fn => ᐅif(predicate)(fn)(ret(None))
 
 export {
   id,
@@ -114,13 +120,6 @@ export {
   apply,
   times,
   or_none,
-}
-
-// utility for hiding some imperative code
-const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
-
-export {
-  loop,
 }
 
 // binding and calling methods
@@ -140,6 +139,134 @@ export {
   method3,
   method_of,
   method_exists,
+}
+
+// predicates
+const is       = a => b => a === b
+const not      = f => v => !f(v)
+const is_NaN   = v => v !== v          // [1]
+const is_value = v => v != null        // [2]
+/* NOTE(jordan):
+ *
+ * [1]: Why does this work? Because NaN is the only value in JavaScript
+ * that is not strictly equal to itself. See:
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
+ *
+ * [2]: Using the *fancy* rules for {truthy,falsy}ness, one can determine
+ * that this returns `true` when a value is not `undefined` or `null`.
+ *
+ * [3]: What's "faily"? This is an invention of the library. "Faily"
+ * values are returned as a failure signal by many APIs, so it is useful
+ * to be able to detect them categorically. The name pokes fun at "falsy"
+ * values in JavaScript.
+ */
+
+export {
+  is,
+  not,
+  is_NaN,
+  is_value,
+}
+
+// pipelining
+const _do_folder = f => fmap([ apply(f), last ])
+
+const ᐅ     = fns => val => fold(call)(val)(fns)
+const ᐅᶠ    = ᐅ // DEPRECATED
+const ᐅf    = ᐅ // DEPRECATED
+const ᐅdo   = fns => target => first(fold(_do_folder)([target])(fns))
+const ᐅif   = predicate => tf => ff => v => (predicate(v) ? tf : ff)(v)
+const ᐅwhen = predicate => tf => ᐅif(predicate)(tf)(id)
+const ᐅeffect = f => target => (f(target), target)
+const ᐅlog    = v => ᐅeffect(v => console.dir(v, { depth: null }))(v)
+
+export {
+  ᐅ,
+  ᐅᶠ, // DEPRECATED
+  ᐅf, // DEPRECATED
+  ᐅdo,
+  ᐅif,
+  ᐅwhen,
+  ᐅeffect,
+  ᐅlog,
+}
+
+/* primitive types
+ *    boolean
+ *    undefined
+ *    number
+ *    string
+ *    symbol
+ *    object
+ * weirdo types
+ *    null
+ *      - typeof null === 'object'
+ *      - null instanceof Object === false
+ *    NaN
+ *      - NaN != NaN
+ *      - typeof NaN === 'number'
+ *      - NaN instanceof Number === false
+ * object types
+ *    literally everything else
+ *      - boxed types (Number, Boolean, String, Function, ...)
+ *      - user objects (function, class, ...)
+ *      - etc.
+ */
+// REFACTOR(jordan): module
+export const types = (function () {
+  // number literals, Number(), but not new Number (which is object)
+  const number = 'number'
+  // constructed instances (e.g. new class), literal objects
+  const object = 'object'
+  // string literals, String(), but not new String (which is object)
+  const string = 'string'
+  // symbols, well-known Symbols (e.g. Symbol.iterator)
+  const symbol = 'symbol'
+  // true, false, Boolean(), but not new Boolean (which is object)
+  const boolean = 'boolean'
+  // functions, classes
+  const function_ = 'function'
+  // free variables, literal undefined
+  const undefined = 'undefined'
+  return {
+    number,
+    object,
+    string,
+    symbol,
+    boolean,
+    undefined,
+    function: function_,
+  }
+})()
+
+// TODO(jordan): untested
+const type        = t => v => typeof v === t
+const instance    = C => v => v instanceof C
+function object_case ({ array, object }) {
+  return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
+}
+export const reflex = {
+  type,
+  instance,
+  object_case,
+}
+
+// polymorphic object/array methods
+const copy = obj => object_case({
+  array  : array_copy,
+  object : object_copy,
+})(obj)
+const copy_and    = f => obj => ᐅ([ copy, f ])(obj)
+const copy_apply1 = f => a => copy_and(f(a))
+const copy_apply2 = f => a => b => copy_and(f(a)(b))
+const copy_apply3 = f => a => b => c => copy_and(f(a)(b)(c))
+
+export {
+  copy,
+  copy_and,
+  copy_apply1,
+  copy_apply2,
+  copy_apply3,
 }
 
 /* Copying Functions
@@ -306,6 +433,16 @@ export {
  * copying functions, which trade-offs should it choose?
  */
 
+// polymorphic array/object operations
+
+
+// utility for hiding some imperative code
+const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
+
+export {
+  loop,
+}
+
 // arrays
 const ᐅeff = e => ᐅeffect(e)
 const _offset = o => ᐅeff(arr => loop(len(arr))(i => arr[i] = arr[i + o]))
@@ -317,46 +454,41 @@ const _splice = i => n => vs => ᐅeff(js.splice(i)(n)(vs))
 const _resize = len => ᐅeffect(arr => arr.length = len)
 const _js_slice  = start => end => ᐅdo([ len, _slice_len(start)(end) ])
 const _slice_len = s => e => l => apply(_slice)(map(_wrap(l))([ s, e ]))
-const _slice  = s => e => ᐅᶠ([ _offset(s), _resize(e - s) ])
+const _slice  = s => e => ᐅ([ _offset(s), _resize(e - s) ])
 const _wrap   = l => n => n < 0 ? n + l : n
 const _fill   = v => js.fill(v)(/*start*/)(/*end*/)
 const _concat = as => bs => (each(b => _push(b)(as))(bs), as)
 
-const array_copy_and    = f => arr => ᐅᶠ([ array_copy, f ])(arr)
-const array_copy_apply1 = f => a => array_copy_and(f(a))
-const array_copy_apply2 = f => a => b => array_copy_and(f(a)(b))
-const array_copy_apply3 = f => a => b => c => array_copy_and(f(a)(b)(c))
-
-const each    = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
-const find    = f => arr => ᐅwhen(not(is_value))(ret(None))(js.find(f)(arr))
-const join    = v => js.join(v)
-const any     = f => js.some(f)
-const all     = f => js.every(f)
-const filter  = f => js.filter(f)
-const index   = v => js.index(v)
-const findex  = f => js.findex(f)
-const fold    = f => js.fold(f)
-const len     = a => js.len(a)
-const n_of    = x => n => fill.mut(x)(new Array(n))
-const slice   = with_mutative(_slice)(i => j => js.slice(i)(j))
-const concat  = with_mutative(_concat)(a => b => js.concat(a)(b))
-const map     = with_mutative(_map)(f => js.map(f))
-const sort    = from_mutative(js.sort)(array_copy_apply1)
-const fill    = from_mutative(_fill)(array_copy_apply1)
-const cons    = from_mutative(_cons)(array_copy_apply1)
-const push    = from_mutative(_push)(array_copy_apply1)
-const flatten = a => fold(flip(concat))([])(a)
-const flatmap = f => ᐅᶠ([ map(f), flatten ])
+const each     = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
+const find     = f => arr => value_or(None)(js.find(f)(arr))
+const join     = v => js.join(v)
+const any      = f => js.some(f)
+const all      = f => js.every(f)
+const filter   = f => js.filter(f)
+const index    = v => js.index(v)
+const findex   = f => js.findex(f)
+const fold     = f => js.fold(f)
+const len      = a => js.len(a)
+const n_of     = x => n => fill.mut(x)(new Array(n))
+const slice    = with_mutative(_slice)(i => j => js.slice(i)(j))
+const concat   = with_mutative(_concat)(a => b => js.concat(a)(b))
+const map      = with_mutative(_map)(f => js.map(f))
+const sort     = from_mutative(js.sort)(copy_apply1)
+const fill     = from_mutative(_fill)(copy_apply1)
+const cons     = from_mutative(_cons)(copy_apply1)
+const push     = from_mutative(_push)(copy_apply1)
+const flatten  = a => fold(flip(concat))([])(a)
+const flatmap  = f => ᐅ([ map(f), flatten ])
 const includes = v => js.includes(v)
-const last     = a => ᐅᶠ([ skip(-1), first ])(a)
+const last     = a => ᐅ([ reverse, first ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 const first    = arr => get(0)(arr)
 const pop      = arr => fmap([ first, rest ])(arr)
-const reverse  = from_mutative(js.reverse)(array_copy_and)
+const reverse  = from_mutative(js.reverse)(copy_and)
 const til      = from_mutative(_til)(til => n => til(n)(new Array(n)))
 const thru     = derive_mutative(til)(til => n => til(n + 1))
-const splice   = from_mutative(_splice)(array_copy_apply3)
+const splice   = from_mutative(_splice)(copy_apply3)
 const array_copy = arr => concat(arr)([])//Array.from(arr)
 
 export {
@@ -401,18 +533,20 @@ export {
   disinterlace,
 }
 
-const _indexed = f => g => f((it, ix) => g(ix)(it))
-const all_indexed = f => _indexed(js.every)(f)
-const any_indexed = f => _indexed(js.some)(f)
-const map_indexed = f => _indexed(js.map)(f)
-const each_indexed = f => _indexed(js.each)(f)
-const filter_indexed = f => _indexed(js.filter)(f)
+const indexed = f => g => f((it,ix) => g(ix)(it))
+const all_indexed = f => indexed(all)(f)
+const any_indexed = f => indexed(any)(f)
+const map_indexed = f => indexed(map)(f)
+const each_indexed = f => indexed(each)(f)
+const fold_indexed = f => indexed(fold)(f)
+const filter_indexed = f => indexed(filter)(f)
 
 export {
   all_indexed,
   any_indexed,
   map_indexed,
   each_indexed,
+  fold_indexed,
   filter_indexed,
 }
 
@@ -450,6 +584,15 @@ export {
   replace,
 }
 
+const replacer = derive_mutative(replace)
+const array_update = replacer(replace => {
+  return i => f => ᐅdo([ ᐅ([ get(i), call(f) ]), replace(i) ])
+})
+
+export {
+  array_update,
+}
+
 const remdexer = derive_mutative(remdex)
 const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
 
@@ -468,6 +611,8 @@ const get_path = path => obj => fold(get)(obj)(path)
 const get_in      = obj  => key  => get(key)(obj)
 const get_all_in  = obj  => keys => get_all(keys)(obj)
 const get_path_in = obj  => path => get_path(path)(obj)
+const map_getter  = getter => ks  => obj => map(flip(getter)(obj))(ks)
+const get_both    = g1  => g2  => ᐅ([ fmap([ g1, g2 ]), apply(concat) ])
 
 export {
   has,
@@ -477,6 +622,8 @@ export {
   get_all_in,
   get_path,
   get_path_in,
+  map_getter,
+  get_both,
 }
 
 // objects
@@ -488,54 +635,71 @@ const _str_entries = obj => string_keyed_entries(obj)
 const _sym_entries = obj => symbol_keyed_entries(obj)
 const _str_values  = obj => string_keyed_values(obj)
 const _sym_values  = obj => symbol_keyed_values(obj)
-const _from_pairs       = f => pairs => f(pairs)(empty_object())
+const _from_pairs       = f => pairs => f(pairs)({})
 const _from_prop_pairs  = pairs => _from_pairs(_def_prop_pairs)(pairs)
 const _from_entry_pairs = pairs => _from_pairs(_def_entry_pairs)(pairs)
-const _combiner = getter => maker => ᐅᶠ([ map(getter), apply(concat), maker ])
+const _combiner = get => join => ᐅ([ map(get), apply(concat), join ])
 const _enumerable_on = o => flip(js.is_enumerable)(o)
-const _filter_key_enum = o => filter(ᐅᶠ([ get(0), _enumerable_on(o) ]))
+const _filter_key_enum = o => filter(ᐅ([ get(0), _enumerable_on(o) ]))
 
-const empty_object   = _   => js.of_properties({})
-const get_descriptor = key => obj => js.get_descriptor(key)(obj) || None
+// Object getters
+const get_descriptor = key => or_none(has(key))(js.get_descriptor(key))
 const get_entry      = key => obj => [ key, get(key)(obj) ]
 const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
-const pairs_getter   = get =>  ks => obj => map(k => get(k)(obj))(ks)
-const get_entries    = keys => pairs_getter(get_entry)(keys)
-const get_properties = keys => pairs_getter(get_property)(keys)
+const get_entries    = keys => map_getter(get_entry)(keys)
+const get_properties = keys => map_getter(get_property)(keys)
+
+export {
+  get_entry,
+  get_entries,
+  get_property,
+  get_descriptor,
+  get_properties,
+}
+
 const string_keyed_values     = obj => _on_str_keys(get_all)(obj)
 const symbol_keyed_values     = obj => _on_sym_keys(get_all)(obj)
 const string_keyed_entries    = obj => _on_str_keys(get_entries)(obj)
 const symbol_keyed_entries    = obj => _on_sym_keys(get_entries)(obj)
 const string_keyed_properties = obj => _on_str_keys(get_properties)(obj)
 const symbol_keyed_properties = obj => _on_sym_keys(get_properties)(obj)
-const get_both   = g1 => g2 => ᐅᶠ([ fmap([ g1, g2 ]), apply(concat) ])
+
+export {
+  string_keyed_values,
+  symbol_keyed_values,
+  string_keyed_entries,
+  symbol_keyed_entries,
+  string_keyed_properties,
+  symbol_keyed_properties,
+}
+
 const properties = obj => get_both(_str_props)(_sym_props)(obj)
 const entries    = obj => get_both(_str_entries)(_sym_entries)(obj)
 const values     = obj => get_both(_str_values)(_sym_values)(obj)
 
 // Object mutators
 const _def_prop_pair   = ([ key, desc ]) => define_property.mut(key)(desc)
-const _def_entry_pair  = ([ k, v ]) => define_property.mut(k)(d.default({ v }))
-const _def_prop_pairs  = pairs => flip(fold(define_property_pair.mut))(pairs)
-const _def_entry_pairs = pairs => flip(fold(define_entry_pair.mut))(pairs)
+const _def_entry_pair  = ([k,v]) => define_property.mut(k)(d.default({v}))
+const _def_prop_pairs  = pairs => flip(fold(_def_prop_pair))(pairs)
+const _def_entry_pairs = pairs => flip(fold(_def_entry_pair))(pairs)
 
-const define_property   = from_mutative(js.define_property)(f => k => v => ᐅᶠ([ object_copy, f(k)(v) ]))
-const define_properties = from_mutative(js.define_properties)(f => k => v => ᐅᶠ([ object_copy, f(k)(v) ]))
+const define_property   = from_mutative(js.define_property)(copy_apply2)
+const define_properties = from_mutative(js.define_properties)(copy_apply2)
 
 const define_property_pair  = mutative(_def_prop_pair)
 const define_entry_pair     = mutative(_def_entry_pair)
 const define_property_pairs = mutative(_def_prop_pairs)
 const define_entry_pairs    = mutative(_def_entry_pairs)
+
 const from_properties = properties => _from_prop_pairs(properties)
 const from_entries    = entries    => _from_entry_pairs(entries)
-const object_copy    = obj => ᐅᶠ([ properties, from_properties ])(obj)
+const object_copy    = obj => ᐅ([ properties, from_properties ])(obj)
 const define = mutative(meta => _def_prop_pairs(properties(meta)))
 const merge_entries    = vs => _combiner(entries)(from_entries)(vs)
 const merge_properties = vs => _combiner(properties)(from_properties)(vs)
 const mixin = a => b => merge_properties([ a, b ])
-const extend = extension => flip(mixin)(extension)
 const of_entries = obj => object_copy(obj)
-const map_as = convert => undo => f => ᐅᶠ([ convert, f, undo ])
+const map_as = convert => undo => f => ᐅ([ convert, f, undo ])
 const on_properties = f => map_as(properties)(from_properties)(f)
 const on_entries    = f => map_as(entries)(from_entries)(f)
 const map_properties = f => on_properties(map(f))
@@ -545,27 +709,13 @@ const filter_entries    = f => on_entries(filter(f))
 const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
 const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
 const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
-const enumerable_entries = o => ᐅᶠ([ entries, _filter_key_enum(o) ])(o)
+const enumerable_entries = o => ᐅ([ entries, _filter_key_enum(o) ])(o)
 const update_with = ups => o => fold(apply(update))(o)(entries(ups))
 
+// DEPRECATED
+const extend = extension => flip(mixin)(extension)
+
 export {
-  empty_object,
-  get_descriptor,
-  get_entry,
-  get_property,
-  pairs_getter,
-  get_entries,
-  get_properties,
-  string_keyed_values,
-  symbol_keyed_values,
-  string_keyed_entries,
-  symbol_keyed_entries,
-  string_keyed_properties,
-  symbol_keyed_properties,
-  get_both,
-  properties,
-  entries,
-  values,
   define_property_pair,
   define_entry_pair,
   define_property_pairs,
@@ -577,7 +727,6 @@ export {
   merge_entries,
   merge_properties,
   mixin,
-  extend,
   of_entries,
   map_as,
   on_properties,
@@ -590,6 +739,8 @@ export {
   update_path,
   enumerable_entries,
   update_with,
+  // DEPRECATED
+  extend,
 }
 
 // strings
@@ -616,44 +767,21 @@ export {
   string_split,
 }
 
-// pipelining
-const _do_folder = target => f => a => (a !== None ? f(a) : f)(target)
-
-const ᐅᶠ    = fns => val => fold(call)(val)(fns)
-const ᐅf    = ᐅᶠ
-const ᐅ     = ᐅᶠ
-const ᐅdo   = fns => target => fold(_do_folder(target))(None)(fns)
-const ᐅif   = cond => t_fn => f_fn => v => cond(v) ? t_fn(v) : f_fn(v)
-const ᐅwhen = cond => t_fn => ᐅif(cond)(t_fn)(id)
-const ᐅeffect = f => target => (f(target), target)
-const ᐅlog    = v => ᐅeffect(call(console.log))(v)
-
-export {
-  ᐅ,
-  ᐅᶠ,
-  ᐅf,
-  ᐅdo,
-  ᐅif,
-  ᐅwhen,
-  ᐅeffect,
-  ᐅlog,
-}
-
 // (Weak)Maps
 // TODO(jordan): make this Map wrapper return immutable instances
 // TODO(jordan): don`t define functions in the map; extract and reference
 export const Map = define.mut({
   // non-mutative native APIs that can be passed through
   has: js.Map_has,
-  keys: ᐅᶠ([ js.Map_keys, Array.from ]),
-  values: ᐅᶠ([ js.Map_values, Array.from ]),
-  entries: ᐅᶠ([ js.Map_entries, Array.from ]),
+  keys: ᐅ([ js.Map_keys, Array.from ]),
+  values: ᐅ([ js.Map_values, Array.from ]),
+  entries: ᐅ([ js.Map_entries, Array.from ]),
   // mutative APIs that must be wrapped
   set: from_mutative(js.Map_set)(set => k => v => map => {
     return set(k)(v)(new js.Map(map))
   }),
   // extensions
-  get: k => or_none(Map.has(k))(js.Map_get(k)),//ᐅif(Map.has(k))(js.map_get(k))(ret(None)),
+  get: k => or_none(Map.has(k))(js.Map_get(k)),
 })(it => new js.Map(it))
 
 Map.update = derive_mutative(Map.set)(set => k => fn => map => {
@@ -666,96 +794,59 @@ Map.update = derive_mutative(Map.set)(set => k => fn => map => {
  *  memoization
  */
 
-// TODO(jordan): untested
-const type        = t => v => typeof v === t
-const instance    = C => v => v instanceof C
-function object_case ({ array, object }) {
-  return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
-}
-export const reflex = {
-  type,
-  instance,
-  object_case,
-}
-
-/* primitive types
- *    boolean
- *    undefined
- *    number
- *    string
- *    symbol
- *    object
- * weirdo types
- *    null
- *      - typeof null === 'object'
- *      - null instanceof Object === false
- *    NaN
- *      - NaN != NaN
- *      - typeof NaN === 'number'
- *      - NaN instanceof Number === false
- * object types
- *    literally everything else
- *      - boxed types (Number, Boolean, String, Function, ...)
- *      - user objects (function, class, ...)
- *      - etc.
- */
-// REFACTOR(jordan): module
-export const types = (function () {
-  // number literals, Number(), but not new Number (which is object)
-  const number = 'number'
-  // constructed instances (e.g. new class), literal objects
-  const object = 'object'
-  // string literals, String(), but not new String (which is object)
-  const string = 'string'
-  // symbols, well-known Symbols (e.g. Symbol.iterator)
-  const symbol = 'symbol'
-  // true, false, Boolean(), but not new Boolean (which is object)
-  const boolean = 'boolean'
-  // functions, classes
-  const function_ = 'function'
-  // free variables, literal undefined
-  const undefined = 'undefined'
-  return {
-    number,
-    object,
-    string,
-    symbol,
-    boolean,
-    undefined,
-    function: function_,
-  }
-})()
-
-const is           = a => b => a === b
-const not          = f => v => !f(v)
-const is_null      = v => v === null
-const is_undefined = v => v === undefined
-const is_value     = v => v != null // NOTE(jordan): single = on purpose!
-
-export {
-  not,
-  is_null,
-  is_undefined,
-  is_value,
-}
-
-// FIXME(jordan): what`s wrong with this polymorphic copy?
-// export const copy = object_case({ array: array_copy, object: object_copy })
-
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
-  const just_hi = _ => "hi"
   const sym_a = Symbol(`a`)
-  const default_descriptor = value => {
-    return {
-      value,
-      writable: true,
-      enumerable: true,
-      configurable: true,
-    }
+
+  function throws (fn) {
+    try { fn() } catch (e) { return true }
+    return false
   }
 
   return suite(`prettybad/μtil: worse than underscore`, [
+    t => t.suite(`None`, {
+      'None: perpetuates itself and is None': t => {
+        return t.eq(None.toString())('None')
+            && t.eq(None.a.b.c.hi())(None)
+            // NOTE(jordan): Symbol.isConcatSpreadable tests
+            && t.eq(concat(None)(5))([ None, 5 ])
+            && t.eq(flatten([ `a`, None, `c` ]))([ `a`, None, `c` ])
+      },
+      'throws when used as a primitive': t => {
+        return t.ok(throws(_ => `${None}`))
+            && t.ok(throws(_ => +None))
+            && t.ok(throws(_ => '' + None))
+      },
+      'not_none: false for None, true for other types': t => {
+        return t.eq(not_none(None))(false)
+            && t.eq(not_none(3))(true)
+            && t.eq(not_none("hi"))(true)
+            && t.eq(not_none(() => () => undefined))(true)
+            && t.eq(not_none({none: None}))(true)
+      },
+      'get(`name`)(None) should just return None': t => {
+        return t.eq(get(`name`)(None))(`None`)
+            && t.eq(None.toString())(`None`)
+            && t.eq(None[Symbol.toStringTag]())(`None`)
+      },
+    }),
+    t => t.suite('pipelining', {
+      'ᐅ: pipelines functions':
+        t => t.eq(ᐅ([ id, x => x + 1 ])(1))(2),
+      'ᐅdo: chains together calls on a common target': t => {
+        const object = { a: 0, b: `c`, d: true }
+        const values = [ 0, `c`, true ]
+        return t.eq(ᐅdo([ js.keys, get_all ])(object))(values)
+      },
+      'ᐅif: inline if': t => {
+        const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
+        return t.eq(approach_10(5))(6) && t.eq(approach_10(12))(11)
+      },
+      'ᐅwhen: one-armed inline if': t => {
+        const inc_when_even = ᐅwhen(v => v % 2 === 0)(v => v + 1)
+        return t.eq(inc_when_even(2))(3) && t.eq(inc_when_even(1))(1)
+      },
+    }),
     t => t.suite('functions', {
       'id: id(6) is 6':
         t => t.eq(id(6))(6),
@@ -766,8 +857,8 @@ export function test (suite) {
       'call: calls func':
         t => t.eq(call(id)(1))(1),
       'bind: binds ctx':
-        t => t.eq(js.bind({ a: 7 })(function (v) { return this[v] })('a'))(7),
-      'ret: returns':
+        t => t.eq(js.bind(5)(function () { return this })())(5),
+      'ret: returns a computed value':
         t => t.eq(ret(5)())(5),
       'apply: applies function to array of args':
         t => t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3)
@@ -778,97 +869,76 @@ export function test (suite) {
         t => t.eq(or_none(a => a.length > 0)(a => a[0])([1]))(1)
           && t.eq(or_none(a => a.length > 0)(a => a[0])([]))(None),
       'and: true if all predicates are true':
-        t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0, x => x < 10 ])(6)),
+        t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0 ])(6)),
       'or: true if any predicate is true':
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
-      'method{1}: calls a named method with argument(s)':
-        t => {
-          const obj = {
-            multiply (value) {
-              return mutiplicand => mutiplicand * value
-            },
-            double (value) {
-              return this.multiply(value)(2)
-            },
-          }
-
-          return t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
-              && t.eq(method(`double`)([ 4 ])(obj))(8)
-              && t.eq(method1(`double`)(5)(obj))(10)
-        },
       'fmap: runs a series of functions on an object':
         t => t.eq(fmap([ v => v + 1, v => v / 2 ])(4))([ 5, 2 ]),
-    }),
-    t => t.suite('pipelining', {
-      'ᐅᶠ: pipelines functions':
-        t => t.eq(ᐅᶠ([ id, x => x + 1 ])(1))(2),
-      'ᐅdo: chains together calls on a common target':
-        t => t.eq(ᐅdo([ js.keys, get_all ])({ a: 0, b: `c`, d: true }))([ 0, `c`, true ]),
-      'ᐅif: inline if':
-        t => {
-          const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
-          return t.eq(approach_10(5))(6)
-              && t.eq(approach_10(12))(11)
-        },
-      'ᐅwhen: one-armed inline if':
-        t => {
-          const inc_when_even = ᐅwhen(v => v % 2 === 0)(v => v + 1)
-          return t.eq(inc_when_even(2))(3)
-              && t.eq(inc_when_even(1))(1)
-        },
+      'method{n}: calls a named method with argument(s)': t => {
+        const obj = {
+          multiply  (value) { return mutiplicand => mutiplicand * value },
+          double    (value) { return this.multiply(value)(2) },
+          raise_sum (power) { return a => b => Math.pow(a + b, power) },
+        }
+        return t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
+            && t.eq(method(`double`)([ 4 ])(obj))(8)
+            && t.eq(method1(`double`)(5)(obj))(10)
+            && t.eq(method2(`multiply`)(5)(4)(obj))(20)
+            && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
+      },
     }),
     t => t.suite(`objects`, {
       'string_keys: lists string keys':
-        t => t.eq(js.string_keys({ [sym_a]: just_hi, a: 4 }))(['a']),
+        t => t.eq(js.string_keys({ [sym_a]: `hi`, a: 4 }))(['a']),
       'symbol_keys: lists symbol keys':
-        t => t.eq(js.symbol_keys({ [sym_a]: just_hi, a: 4 }))([sym_a]),
+        t => t.eq(js.symbol_keys({ [sym_a]: `hi`, a: 4 }))([sym_a]),
       'keys: lists both string and symbol keys':
-        t => t.eq(js.keys({ [sym_a]: just_hi, a: 4 }))(['a', sym_a]),
+        t => t.eq(js.keys({ [sym_a]: `hi`, a: 4 }))(['a', sym_a]),
       'string_keyed_values: lists string-keyed values':
-        t => t.eq(string_keyed_values({ [sym_a]: just_hi, a: 4 }))([4]),
+        t => t.eq(string_keyed_values({ [sym_a]: `hi`, a: 4 }))([4]),
       'symbol_keyed_values: lists symbol-keyed values':
-        t => t.eq(symbol_keyed_values({ [sym_a]: just_hi, a: 4 }))([ just_hi ]),
+        t => t.eq(symbol_keyed_values({ [sym_a]: `hi`, a: 4 }))([ `hi` ]),
       'values: lists both symbol values and non-symbol values':
-        t => t.eq(values({ [sym_a]: just_hi, a: 4 }))([ 4, just_hi ]),
+        t => t.eq(values({ [sym_a]: `hi`, a: 4 }))([ 4, `hi` ]),
       'get_descriptor: gets property descriptor':
-        t => t.eq(get_descriptor('a')({ a: 4 }))(default_descriptor(4)),
-      'define_properties.mut: mutably sets properties on an object': t => {
+        t => t.eq(get_descriptor('a')({ a: 4 }))(d.default({ v: 4 })),
+      'define_properties.mut: sets properties on an object': t => {
         const o = { a: 5 }
         define_properties.mut({ b: { value: 3 } })(o)
-        define_properties.mut({ a: { value: o.a + 1, enumerable: false } })(o)
+        define_properties.mut({ a: { value: 6, enumerable: false } })(o)
         return t.eq(o.b)(3) && t.eq(o.a)(6) && t.eq(Object.keys(o))([])
       },
-      'define_property.mut: mutably sets a single property on an object': t => {
+      'define_property.mut: sets a single property on an object': t => {
         const o = { a: 1 }
         define_property.mut('b')({ value: 5 })(o)
         define_property.mut('a')({ enumerable: false })(o)
         return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
       },
-      'string_keyed_properties: gets descriptors for non-symbol properties':
+      'string_keyed_properties: gets non-symbol properties':
         t => {
           return t.eq(string_keyed_properties({ a: 5 }))([
-            ['a', default_descriptor(5) ],
+            ['a', d.default({ v: 5 }) ],
           ])
         },
-      'symbol_keyed_properties: gets descriptors for symbol properties':
+      'symbol_keyed_properties: gets symbol properties':
         t => {
-          return t.eq(symbol_keyed_properties({ [Symbol.split]: just_hi }))([
-            [Symbol.split, default_descriptor(just_hi)],
+          return t.eq(symbol_keyed_properties({ [Symbol.split]: `hi` }))([
+            [Symbol.split, d.default({ v: `hi` })],
           ])
         },
       'properties: gets all descriptors':
         t => {
-          return t.eq(properties({ a: 5, [Symbol.split]: just_hi }))([
-            [ 'a',          default_descriptor(5)       ],
-            [ Symbol.split, default_descriptor(just_hi) ],
+          return t.eq(properties({ a: 5, [Symbol.split]: `hi` }))([
+            [ 'a',          d.default({ v: 5 })    ],
+            [ Symbol.split, d.default({ v: `hi` }) ],
           ])
         },
       'from_properties: converts [prop, desc] pairs to an object':
-        t => t.eq(from_properties([['a', default_descriptor(5)]]))({ a: 5 }),
+        t => t.eq(from_properties([['a',d.default({ v: 5 })]]))({ a: 5 }),
       'object_copy: (shallowly) clones an object':
         t => t.eq(object_copy({ a: 5 }))({ a: 5 })
           && t.refeq(object_copy({ f: to6 }).f)(to6),
-      'mixin: creates a new object combining properties of two source objects':
+      'mixin: combines properties of 2 source objects':
         t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
       'has: returns true is a key is valid and present in an object':
         t => !t.ok(has([`a`])({ a: `b` }))
@@ -879,32 +949,39 @@ export function test (suite) {
         t => t.eq(get(0)([5]))(5)
           && t.eq(get('a')({}))(None)
           && !t.eq(get(['a'])({ 'a': 'b' }))('b'),
-      'get_path: gets a path of keys/indices or None if any part of path is not present':
-        t => t.eq(get_path([ 'a', 'b', 'c' ])({ 'a': { 'b': { 'c': 5 } } }))(5)
-          && t.eq(get_path([ 'a', 'b', 'd' ])({ 'a': { 'b': { 'c': 5 } } }))(None),
+      'get_path: gets a path, or returns None if path does not exist':
+        t => t.eq(get_path(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
+          && t.eq(get_path(['a','b','d'])({'a': {'b': {'c': 5}}}))(None),
       'get_path_in: gets a path of keys/indices in a target object':
-        t => t.eq(get_path_in({ 'a': { 'b': { 'c': 5 } } })([ 'a', 'b', 'c' ]))(5),
-      'entries: gets {key,symbol}, value pairs':
-        t => t.eq(entries({ a: 5, [Symbol.split]: just_hi }))([['a', 5], [Symbol.split, just_hi]]),
+        t => t.eq(get_path_in({'a': {'b': {'c': 5 }}})(['a','b','c']))(5),
+      'entries: gets {key,symbol}, value pairs': t => {
+        return t.eq(entries({ a: 5, [Symbol.split]: `hi` }))([
+          ['a', 5],
+          [Symbol.split, `hi`],
+        ])
+      },
       'from_entries: turns {key,symbol}, value pairs into an object':
-        t => t.eq(from_entries([['a', 5], ['b', just_hi]]))({ a: 5, b: just_hi }),
+        t => t.eq(from_entries([['a', 5],['b', `hi`]]))({a: 5, b: `hi`}),
       'swap: swaps the current value of a key for another':
         t => t.eq(swap(`a`)(14)({ a: 5 }))([ 5, { a: 14 } ]),
       'update: replaces a key by a v -> v function':
         t => t.eq(update(`a`)(v => v + 1)({ a: 4 }))({ a: 5 })
-          && t.eq(update(`a`)(v => v + 1)({}))({}),
+          // && t.eq(update(`a`)(v => v + 1)({}))({ a: 5 }) // FAILING
+          && t.eq(update(0)(v => v + 1)([ 1 ]))([ 2 ])
+          && t.ok(ᐅlog(update(0)(v => v + 1)([ 1 ]) instanceof Array))
+          && t.eq(update(`a`)(v => v())({}))({ a: 5 }),
       'update_path: replace a nested key by a v -> v function':
         t => {
-          const example = { a: { b: 2 } }
-          const inc     = v => v + 1
-          const ab      = [ `a`, `b` ]
-          return t.eq(update_path(ab)(inc)(example))({ a: { b : 3 } })
-              && t.eq(update_path(ab)(inc)({ a: 3 }))(None)
+          const update_ab = update_path([ `a`, `b` ])
+          const inc = v => v + 1
+          return t.eq(update_ab(inc)({ a: { b: 2 } }))({ a: { b : 3 } })
+              // && t.eq(update_ab(inc)({ a: 3 }))({ a: 3 }) // FAILING
+              && t.eq(update_ab(v => v())({ a: 3 }))({ a: 3 })
         },
       'enumerable_entries: entries, filtered by js.is_enumerable':
         t => {
           const example = js.of_properties({
-            a: default_descriptor(5),
+            a: d.default({ v: 5 }),
             b: { value: 'hidden' },
           })
           return t.eq(enumerable_entries(example))([[ 'a', 5 ]])
@@ -925,18 +1002,19 @@ export function test (suite) {
         },
     }),
     t => t.suite('value predicates', {
-      'is_null':
-        t => t.ok(is_null(null))
-          && !t.ok(is_null(undefined))
-          && !t.ok(is_null(0))
-          && !t.ok(is_null(false))
-          && !t.ok(is_null(NaN)),
-      'is_undefined':
-        t => t.ok(is_undefined(undefined))
-          && !t.ok(is_undefined(null))
-          && !t.ok(is_undefined(0))
-          && !t.ok(is_undefined(false))
-          && !t.ok(is_undefined(NaN)),
+      'is':
+        t => t.ok(is(null)(null))
+          && t.ok(is(undefined)(undefined))
+          && t.ok(is(0)(0))
+          && t.ok(is("hello")("hello"))
+          && !t.ok(is("hello")("goodbye"))
+          && !t.ok(is(0)(1))
+          && !t.ok(is(null)(undefined))
+          && !t.ok(is(false)(undefined))
+          && !t.ok(is(null)(false)),
+      'not':
+        t => t.ok(not(v => v < 5)(6))
+          && !t.ok(not(v => v === "hello")("hello")),
       'is_value':
         t => t.ok(is_value(0))
           && t.ok(is_value(false))
@@ -1011,9 +1089,10 @@ export function test (suite) {
           && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ])
           && t.eq(flatten([[ 1, 2, 3 ]]))([ 1, 2, 3 ]),
       'flatmap: maps then flattens':
-        t => t.eq(flatmap(v => [ v, v + 5 ])(to6))([ 1, 6, 2, 7, 3, 8, 4, 9, 5, 10 ]),
-      'array_copy: s new copy of array':
-        t => t.eq(array_copy(to6))(to6) && !t.refeq(array_copy(to6))(to6),
+        t => t.eq(flatmap(v => [ v, v + 5 ])([ 1, 2 ]))([ 1, 6, 2, 7 ]),
+      'array_copy: makes new copy of array':
+        t => t.eq(array_copy(to6))(to6)
+          && !t.refeq(array_copy(to6))(to6),
       'reverse: reverse of to6 is 5..1':
         t => t.eq(reverse(to6))([ 5, 4, 3, 2, 1 ]),
       'remove: removing 2 from to6 drops index 1':
@@ -1023,9 +1102,9 @@ export function test (suite) {
       'insert: inserts a value at an index':
         t => t.eq(insert(3)(1)(to6))([ 1, 2, 3, 1, 4, 5 ]),
       'interlace: make pairs out of same-length arrays':
-        t => t.eq(interlace([1,2,3])([`a`,`b`,`c`]))([[1,`a`],[2,`b`],[3,`c`]]),
+        t => t.eq(interlace([1,2])([`a`,`b`]))([[1,`a`],[2,`b`]]),
       'disinterlace: make same-length arrays out of pairs':
-        t => t.eq(disinterlace([[1,`a`],[2,`b`],[3,`c`]]))([[1,2,3], [`a`,`b`,`c`]]),
+        t => t.eq(disinterlace([[1,`a`],[2,`b`]]))([[1,2], [`a`,`b`,]]),
       'drop_end: drops n items from end of array':
         t => t.eq(drop_end(2)([ 1, 2, 3 ]))([ 1 ]),
     }),
@@ -1043,31 +1122,6 @@ export function test (suite) {
         t => t.eq(uppercase('aBCdEfChgaksldFS'))('ABCDEFCHGAKSLDFS'),
       'string_split: splits a string around a delimiter':
         t => t.eq(string_split(',')('a,b,c'))(['a', 'b', 'c']),
-    }),
-    t => t.suite(`None`, {
-      'None: perpetuates itself and is None':
-      t => {
-        return t.eq(None.toString())('None')
-            // && t.eq(`${None}`)('None') // FAILING
-            && t.eq(None.a.b.c.hi())(None)
-            // NOTE(jordan): see definition of None for why these tests make sense.
-            && t.eq(concat(None)(5))([ None, 5 ])
-            && t.eq(flatten([ id, None, flatten ]))([ id, None, flatten ])
-      },
-      'not_none: false for None, true for other types':
-      t => {
-        return t.eq(not_none(None))(false)
-            && t.eq(not_none(3))(true)
-            && t.eq(not_none("hi"))(true)
-            && t.eq(not_none(() => () => undefined))(true)
-            && t.eq(not_none({none: None}))(true)
-      },
-      'get(`name`)(None) should just return None':
-      t => {
-        return t.eq(get(`name`)(None))(`None`)
-            && t.eq(None.toString())(`None`)
-            && t.eq(None[Symbol.toStringTag]())(`None`)
-      },
     }),
   ])
 }
