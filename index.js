@@ -716,6 +716,8 @@ const update_with = ups => o => fold(apply(update))(o)(entries(ups))
 const extend = extension => flip(mixin)(extension)
 
 export {
+  define_property,
+  define_properties,
   define_property_pair,
   define_entry_pair,
   define_property_pairs,
