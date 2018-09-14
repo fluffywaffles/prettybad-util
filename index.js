@@ -41,8 +41,6 @@ import {
   with_mutative,
   from_mutative,
   derive_mutative,
-  define_property,
-  define_properties,
 } from './mutton'
 import * as js from './lynchpin'
 
@@ -56,10 +54,6 @@ export {
   is_enumerable,
   of_properties,
 } from './lynchpin'
-export {
-  define_property,
-  define_properties,
-} from './mutton'
 
 // general
 const proxy = traps => target => new Proxy(target, traps)
@@ -494,10 +488,6 @@ const _str_entries = obj => string_keyed_entries(obj)
 const _sym_entries = obj => symbol_keyed_entries(obj)
 const _str_values  = obj => string_keyed_values(obj)
 const _sym_values  = obj => symbol_keyed_values(obj)
-const _def_prop_pair   = ([ key, desc ]) => define_property.mut(key)(desc)
-const _def_entry_pair  = ([ k, v ]) => define_property.mut(k)(d.default({ v }))
-const _def_prop_pairs  = pairs => flip(fold(define_property_pair.mut))(pairs)
-const _def_entry_pairs = pairs => flip(fold(define_entry_pair.mut))(pairs)
 const _from_pairs       = f => pairs => f(pairs)(empty_object())
 const _from_prop_pairs  = pairs => _from_pairs(_def_prop_pairs)(pairs)
 const _from_entry_pairs = pairs => _from_pairs(_def_entry_pairs)(pairs)
@@ -522,6 +512,16 @@ const get_both   = g1 => g2 => ᐅᶠ([ fmap([ g1, g2 ]), apply(concat) ])
 const properties = obj => get_both(_str_props)(_sym_props)(obj)
 const entries    = obj => get_both(_str_entries)(_sym_entries)(obj)
 const values     = obj => get_both(_str_values)(_sym_values)(obj)
+
+// Object mutators
+const _def_prop_pair   = ([ key, desc ]) => define_property.mut(key)(desc)
+const _def_entry_pair  = ([ k, v ]) => define_property.mut(k)(d.default({ v }))
+const _def_prop_pairs  = pairs => flip(fold(define_property_pair.mut))(pairs)
+const _def_entry_pairs = pairs => flip(fold(define_entry_pair.mut))(pairs)
+
+const define_property   = from_mutative(js.define_property)(f => k => v => ᐅᶠ([ object_copy, f(k)(v) ]))
+const define_properties = from_mutative(js.define_properties)(f => k => v => ᐅᶠ([ object_copy, f(k)(v) ]))
+
 const define_property_pair  = mutative(_def_prop_pair)
 const define_entry_pair     = mutative(_def_entry_pair)
 const define_property_pairs = mutative(_def_prop_pairs)

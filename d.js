@@ -1,5 +1,7 @@
-import { own_descriptors } from './lynchpin'
-import { define_properties } from './mutton'
+import {
+  own_descriptors,
+  define_properties,
+} from './lynchpin'
 
 /* TODO(jordan):
  *
@@ -15,7 +17,7 @@ import { define_properties } from './mutton'
  * descriptor factory
  * borrowing shamelessly from d.js: https://www.npmjs.com/package/d
  */
-const d = define_properties.mut(own_descriptors({
+const d = define_properties(own_descriptors({
   /**
    * Internal configuration
    */
@@ -74,7 +76,7 @@ function make_descriptor (cew) {
  *   d.nothing({ g: ret(4) }) ⇒ { get: ret(4) }
  *   d.enumerable({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
  */
-define_properties.mut(own_descriptors({
+define_properties(own_descriptors({
   // Default descriptor: all permissions
   default          : d(`cew`),
   // Single permission inclusion descriptors
