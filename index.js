@@ -63,7 +63,6 @@ const None = proxy({
     // stringify cases
     if (or([
       is(`toString`),
-      is(Symbol.toStringTag),
     ])(key)) return ret(`None`)
     // error cases
     if (or([
@@ -72,12 +71,14 @@ const None = proxy({
     // name cases
     if (or([
       is(`name`),
+      is(Symbol.toStringTag),
     ])(key)) return `None`
     // prototype-traversing passthrough cases
     if (or([
       is(Symbol.isConcatSpreadable),
     ])(key)) return target[key]
     // default: passthrough
+    // NOTE: `get` returns `None` if `key` is not an "own-property"
     return get(key)(target)
   }
 })(function _None () { return None })
@@ -835,7 +836,7 @@ export function test (suite) {
       'get(`name`)(None) should just return None': t => {
         return t.eq(get(`name`)(None))(`None`)
             && t.eq(None.toString())(`None`)
-            && t.eq(None[Symbol.toStringTag]())(`None`)
+            && t.eq(None[Symbol.toStringTag])(`None`)
       },
     }),
     t => t.suite('pipelining', {
