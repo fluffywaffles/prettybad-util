@@ -1110,6 +1110,8 @@ export function test (suite) {
         t => t.eq(remdex(1)(to6))([ 1, 3, 4, 5 ]),
       'insert: inserts a value at an index':
         t => t.eq(insert(3)(1)(to6))([ 1, 2, 3, 1, 4, 5 ]),
+          // Here's a fun FAILING test: sparse arrays are only accidental!
+          // && t.eq(insert(3)(0)([1, 2]))([ 1, 2, , 0 ]),
       'interlace: make pairs out of same-length arrays':
         t => t.eq(interlace([1,2])([`a`,`b`]))([[1,`a`],[2,`b`]]),
       'disinterlace: make same-length arrays out of pairs':
