@@ -481,7 +481,7 @@ const push     = from_mutative(_push)(copy_apply1)
 const flatten  = a => fold(flip(concat))([])(a)
 const flatmap  = f => ᐅ([ map(f), flatten ])
 const includes = v => js.includes(v)
-const last     = a => ᐅ([ reverse, first ])(a)
+const last     = a => ᐅ([ skip(-1), first ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 const first    = arr => get(0)(arr)
@@ -553,7 +553,7 @@ export {
 
 const slicer = derive_mutative(slice)
 const take = slicer(slice => j => slice(0)(j))
-const skip = slicer(slc => i => ᐅdo([ len, slc(i) ]))
+const skip = slicer(slice => i => a => slice(i)(len(a))(a))
 
 export {
   skip,
