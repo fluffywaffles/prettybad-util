@@ -613,7 +613,7 @@ const get_in      = obj  => key  => get(key)(obj)
 const get_all_in  = obj  => keys => get_all(keys)(obj)
 const get_path_in = obj  => path => get_path(path)(obj)
 const map_getter  = getter => ks  => obj => map(flip(getter)(obj))(ks)
-const get_both    = g1  => g2  => ᐅ([ fmap([ g1, g2 ]), apply(concat) ])
+const get_both    = g1  => g2  => ᐅ([ fmap([ g1, g2 ]), flatten ])
 
 export {
   has,
@@ -639,7 +639,7 @@ const _sym_values  = obj => symbol_keyed_values(obj)
 const _from_pairs       = f => pairs => f(pairs)({})
 const _from_prop_pairs  = pairs => _from_pairs(_def_prop_pairs)(pairs)
 const _from_entry_pairs = pairs => _from_pairs(_def_entry_pairs)(pairs)
-const _combiner = get => join => ᐅ([ map(get), apply(concat), join ])
+const _combiner = get => join => ᐅ([ map(get), flatten, join ])
 const _enumerable_on = o => flip(js.is_enumerable)(o)
 const _filter_key_enum = o => filter(ᐅ([ get(0), _enumerable_on(o) ]))
 
