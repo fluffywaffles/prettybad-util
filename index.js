@@ -628,6 +628,17 @@ export {
   get_both,
 }
 
+const maybe_get = key => fmap([ has(key), ᐅwhen(has(key))(get(key)) ])
+const maybe_get_path = keys => object => {
+  const get_until_fail = k => ᐅwhen(get(0))(ᐅ([ get(1), maybe_get(k) ]))
+  return fold(get_until_fail)([ true, object ])(keys)
+}
+
+export {
+  maybe_get,
+  maybe_get_path,
+}
+
 // objects
 const _on_str_keys = f => obj => ᐅdo([ js.string_keys, f ])(obj)
 const _on_sym_keys = f => obj => ᐅdo([ js.symbol_keys, f ])(obj)
@@ -964,6 +975,13 @@ export function test (suite) {
           && t.eq(get_path(['a','b','d'])({'a': {'b': {'c': 5}}}))(None),
       'get_path_in: gets a path of keys/indices in a target object':
         t => t.eq(get_path_in({'a': {'b': {'c': 5 }}})(['a','b','c']))(5),
+      'maybe_get: conditionally gets a key and returns success':
+        t => t.eq(maybe_get(0)([`a`]))([ true, `a` ])
+          && t.eq(maybe_get(`a`)({ b: 0 }))([ false, { b: 0 } ])
+          && t.eq(maybe_get(0)([]))([ false, [] ]),
+      'maybe_get_path: contitionally gets a path and returns success':
+        t => t.eq(maybe_get_path([ 0, 1 ])([[0, 1]]))([ true, 1 ])
+          && t.eq(maybe_get_path([ `a`, `b` ])({ a: 0 }))([ false, 0 ]),
       'entries: gets {key,symbol}, value pairs': t => {
         return t.eq(entries({ a: 5, [Symbol.split]: `hi` }))([
           ['a', 5],
