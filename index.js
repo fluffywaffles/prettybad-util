@@ -170,6 +170,7 @@ export {
 }
 
 // pipelining
+// NOTE(jordan): keeps the target at the end of the argument list
 const _do_folder = f => fmap([ apply(f), last ])
 
 const ᐅ     = fns => val => fold(call)(val)(fns)
