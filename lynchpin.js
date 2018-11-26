@@ -159,7 +159,7 @@ const len     = a => a.length
 const pop     = arr      => []        .pop.call(arr)
 const shift   = arr      => []      .shift.call(arr)
 const reverse = arr      => []    .reverse.call(arr)
-const map     = f => arr => []        .map.call(arr, f)
+// const map     = f => arr => []        .map.call(arr, f)
 const find    = f => arr => []       .find.call(arr, f)
 const join    = v => arr => []       .join.call(arr, v)
 const push    = v => arr => []       .push.call(arr, v)
@@ -175,8 +175,23 @@ const findex  = f => arr => []  .findIndex.call(arr, f)
 const slice   = i => j => arr => [].slice.call(arr, i, j)
 const fill    = v => i => j => arr => [].fill.call(arr, v, i, j)
 const splice  = i => n => vs => arr => _splice(arr)(_args([ i, n ])(vs))
-const fold    = f => init => arr => [].reduce.call(arr, _folder(f), init)
+// const fold    = f => init => arr => [].reduce.call(arr, _folder(f), init)
 const includes = v => arr => [].includes.call(arr, v)
+
+const map = mapper => array => {
+  const len = array.length
+  let result = new Array(len)
+  for (let ix = 0; ix < len; ix++) result[ix] = mapper(array[ix], ix)
+  return result
+}
+
+const fold = folder => initial => array => {
+  let result = initial
+  for (let ([ index, item ]) of Object.entries(array)) {
+    result = folder(item, index)(result)
+  }
+  return result
+}
 
 export {
   len,
