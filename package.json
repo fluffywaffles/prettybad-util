@@ -4,7 +4,7 @@
   "description": "μtil - micro utilities",
   "main": "index.js",
   "scripts": {
-    "test": "npx rollup -c .rollup.test.js -- test.js && node .test.js && rm .test.js",
+    "test": "npx rollup -c .rollup.test.js -- test.js && node -r source-map-support/register .test.js && rm .test.js",
     "build": "npx rollup -c .rollup.test.js -- index.js && mv .test.js out.js && node -i -e \"const mu = require('./out')\""
   },
   "author": "fluffywaffles <skorlir@gmail.com>",
@@ -12,6 +12,7 @@
   "devDependencies": {
     "@sisyphus/sisyphus": "0.0.4",
     "rollup": "^0.54.0",
-    "rollup-plugin-node-resolve": "^3.0.2"
+    "rollup-plugin-node-resolve": "^3.0.2",
+    "source-map-support": "^0.5.9"
   }
 }

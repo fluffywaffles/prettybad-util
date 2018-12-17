@@ -6,6 +6,7 @@ function mkbuild ({ input }) {
     output: {
       file: `.test.js`,
       format: `cjs`,
+      sourcemap: `inline`,
     },
     plugins: [ resolve() ],
   }
