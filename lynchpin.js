@@ -21,10 +21,8 @@ export {
 }
 
 // descriptor mutators
-const _defprop  = Obj.defineProperty
-const _defprops = Obj.defineProperties
-const define_property   = key => desc => o => (_defprop(o, key, desc), o)
-const define_properties = descs => o => (_defprops(o, descs), o)
+const define_property   = k  => d => o => (Obj.defineProperty(o, k, d), o)
+const define_properties = ds => o => (Obj.defineProperties(o, ds), o)
 
 export {
   define_property,

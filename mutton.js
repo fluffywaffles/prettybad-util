@@ -16,7 +16,7 @@ import {
 const mutative        = fn => of_properties({ mut: { value: fn } })
 const with_mutative   = fn => define_property(`mut`)({ value: fn })
 const from_mutative   = mut => drv => with_mutative(mut)(drv(mut))
-const derive_mutative = fn => drv => with_mutative(drv(fn.mut))(drv(fn))
+const derive_mutative = fn  => drv => with_mutative(drv(fn.mut))(drv(fn))
 
 export {
   mutative,
