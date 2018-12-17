@@ -60,28 +60,26 @@ export {
 const proxy = traps => target => new Proxy(target, traps)
 const None = proxy({
   get (target, key, receiver) {
-    // stringify cases
-    if (or([
-      is(`toString`),
-    ])(key)) return ret(`None`)
-    // error cases
-    if (or([
-      is(Symbol.toPrimitive),
-    ])(key)) throw new Error(`None cannot be used as a primitive!`)
-    // name cases
-    if (or([
-      is(`name`),
-      is(Symbol.toStringTag),
-    ])(key)) return `None`
-    // prototype-traversing passthrough cases
-    if (or([
-      is(Symbol.isConcatSpreadable),
-    ])(key)) return target[key]
     // default: passthrough
     // NOTE: `get` returns `None` if `key` is not an "own-property"
     return get(key)(target)
   }
-})(function _None () { return None })
+})(js.define_properties({
+  // stringify cases
+  toString : { value () { return `None` } },
+  // error cases
+  [Symbol.toPrimitive] : {
+    value (hint) {
+      if (hint === 'string') return `None`
+      throw new Error(`Symbol.toPrimitive: None is not a primitive!`)
+    }
+  },
+  // name cases
+  name                 : { value: `None` },
+  [Symbol.toStringTag] : { value: `None` },
+  // other cases
+  [Symbol.isConcatSpreadable] : { value: false },
+})(function _None () { return None }))
 
 // utilities
 const value_or = value => ᐅwhen(not(is_value))(value)
