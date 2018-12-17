@@ -366,7 +366,7 @@ export {
  * pitfall. Here are known methods for copying functions, and trade-offs
  * they introduce:
  *
- * 1. create a wrapper function  that calls the source function
+ * 1. create a wrapper function that calls the source function
  *    - preserves closure state
  *    - loses identity state (but this can be copied separately)
  *    - loses instance state (but can directly set prototype)
@@ -569,8 +569,8 @@ export {
 }
 
 const splicer = derive_mutative(splice)
-const insert = splicer(splice => i => v => splice(i)(0)([v]))
-const remdex = splicer(splice => i => splice(i)(1)())
+const insert  = splicer(splice => i => v => splice(i)(0)([v]))
+const remdex  = splicer(splice => i => splice(i)(1)())
 const replace = splicer(splice => i => v => splice(i)(1)([v]))
 
 export {
@@ -801,12 +801,6 @@ export const Map = define.mut({
 Map.update = derive_mutative(Map.set)(set => k => fn => map => {
   return set(k)(fn(Map.get(k)(map)))(map)
 })
-
-// 3: depending on at most 3, 2 and 1
-// functions
-/* TODO(jordan):
- *  memoization
- */
 
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
