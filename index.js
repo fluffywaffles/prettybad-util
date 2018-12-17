@@ -153,11 +153,6 @@ const is_value = v => v != null        // [2]
  *
  * [2]: Using the *fancy* rules for {truthy,falsy}ness, one can determine
  * that this returns `true` when a value is not `undefined` or `null`.
- *
- * [3]: What's "faily"? This is an invention of the library. "Faily"
- * values are returned as a failure signal by many APIs, so it is useful
- * to be able to detect them categorically. The name pokes fun at "falsy"
- * values in JavaScript.
  */
 
 export {
