@@ -239,17 +239,19 @@ export const types = (function () {
 // TODO(jordan): untested
 const type        = t => v => typeof v === t
 const instance    = C => v => v instanceof C
-function object_case ({ array, object }) {
+function array_case ({ array, object }) {
   return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
 }
 export const reflex = {
   type,
   instance,
-  object_case,
+  array_case,
+  // DEPRECATED
+  object_case: array_case,
 }
 
 // polymorphic object/array methods
-const copy = obj => object_case({
+const copy = obj => array_case({
   array  : array_copy,
   object : object_copy,
 })(obj)
