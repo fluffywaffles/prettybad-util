@@ -106,6 +106,7 @@ const fmap    = fs => v => map(pass(v))(fs)
 const flip    = f  => a => b => f(b)(a)
 const times   = n  => f => v => fold(call)(v)(n_of(f)(n))
 const or_none = predicate => fn => ᐅif(predicate)(fn)(ret(None))
+const over    = fn => values => result => fold(fn)(result)(values)
 
 export {
   id,
@@ -119,6 +120,7 @@ export {
   apply,
   times,
   or_none,
+  over,
 }
 
 // binding and calling methods
@@ -166,7 +168,7 @@ export {
 // NOTE(jordan): keeps the target at the end of the argument list
 const _do_folder = f => fmap([ apply(f), last ])
 
-const ᐅ     = fns => val => fold(call)(val)(fns)
+const ᐅ     = fns => over(call)(fns)
 const ᐅᶠ    = ᐅ // DEPRECATED
 const ᐅf    = ᐅ // DEPRECATED
 const ᐅdo   = fns => target => first(fold(_do_folder)([target])(fns))
