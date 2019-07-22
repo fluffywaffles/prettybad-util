@@ -518,9 +518,10 @@ export {
   last_index,
 }
 
-const _delace = ([ k, v ]) => ([ ks, vs ]) => [ push(k)(ks), push(v)(vs) ]
 const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
-const disinterlace = kvs => fold(_delace)([[], []])(kvs)
+const disinterlace = kvs => fold(([ k, v ]) => ([ ks, vs ]) => {
+  return [ push(k)(ks), push(v)(vs) ]
+})([[], []])(kvs)
 
 export {
   interlace,
