@@ -839,14 +839,12 @@ const _has_toString = o => method_exists(`toString`)(o)
 const _stringable_object = v => and([ _is_object, _has_toString ])(v)
 const _stringable = v => or([ _stringable_object, _is_symbol ])(v)
 
-const Str = ''
 const string = v => `${ᐅwhen(_stringable)(v => v.toString())(v)}`
-const lowercase = str => Str.toLowerCase.call(str)
-const uppercase = str => Str.toUpperCase.call(str)
-const string_split = delimiter => str => Str.split.call(str, delimiter)
+const lowercase = str => ''.toLowerCase.call(str)
+const uppercase = str => ''.toUpperCase.call(str)
+const string_split = delimiter => str => ''.split.call(str, delimiter)
 
 export {
-  Str,
   string,
   lowercase,
   uppercase,
