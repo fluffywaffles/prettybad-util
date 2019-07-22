@@ -246,8 +246,8 @@ export const types = (function () {
 })()
 
 // TODO(jordan): untested
-const type        = t => v => typeof v === t
-const instance    = C => v => v instanceof C
+const type     = t => v => typeof v === t
+const instance = C => v => v instanceof C
 function array_case ({ array, object }) {
   return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
 }
