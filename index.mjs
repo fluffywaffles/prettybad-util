@@ -106,13 +106,9 @@ const None = proxy({
 // utilities
 const value_or = value => ᐅwhen(not(is_value))(value)
 
-// DEPRECATED: use not(is(None))
-const not_none = v => v !== None;
-
 export {
   None,
   proxy,
-  not_none,
   value_or,
 }
 
@@ -922,13 +918,6 @@ export function test (suite) {
         return t.ok(throws(_ => +None))
             && t.ok(throws(_ => None + 0))
             && t.ok(throws(_ => None * 2))
-      },
-      'not_none: false for None, true for other types': t => {
-        return t.eq(not_none(None))(false)
-            && t.eq(not_none(3))(true)
-            && t.eq(not_none("hi"))(true)
-            && t.eq(not_none(() => () => undefined))(true)
-            && t.eq(not_none({none: None}))(true)
       },
       'get(`name`)(None) should just return None': t => {
         return t.eq(get(`name`)(None))(`None`)
