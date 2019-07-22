@@ -182,8 +182,6 @@ export {
 const _do_folder = f => fmap([ apply(f), last ])
 
 const ᐅ     = fns => over(call)(fns)
-const ᐅᶠ    = ᐅ // DEPRECATED
-const ᐅf    = ᐅ // DEPRECATED
 const ᐅdo   = fns => target => first(fold(_do_folder)([target])(fns))
 const ᐅif   = predicate => tf => ff => v => (predicate(v) ? tf : ff)(v)
 const ᐅwhen = predicate => tf => ᐅif(predicate)(tf)(id)
@@ -192,8 +190,6 @@ const ᐅlog    = v => ᐅeffect(v => console.dir(v, { depth: null }))(v)
 
 export {
   ᐅ,
-  ᐅᶠ, // DEPRECATED
-  ᐅf, // DEPRECATED
   ᐅdo,
   ᐅif,
   ᐅwhen,
