@@ -44,6 +44,7 @@ import {
   derive_mutative,
 } from './mutton'
 import {
+  is,
   len,
   fold,
   join,
@@ -62,6 +63,7 @@ import * as js from './linchpin'
 // re-exports
 export { default as d } from './d'
 export {
+  is,
   len,
   bind,
   fold,
@@ -161,24 +163,17 @@ export {
 }
 
 // predicates
-const is       = a => b => a === b
 const not      = f => v => !f(v)
-const is_NaN   = v => v !== v          // [1]
-const is_value = v => v != null        // [2]
+const is_value = v => v != null        // [1]
 /* NOTE(jordan):
  *
- * [1]: Why does this work? Because NaN is the only value in JavaScript
- * that is not strictly equal to itself. See:
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
- *
- * [2]: Using the *fancy* rules for {truthy,falsy}ness, one can determine
+ * [1]: Using the *fancy* rules for {truthy,falsy}ness, one can determine
  * that this returns `true` when a value is not `undefined` or `null`.
  */
 
 export {
-  is,
+  /* NOTE(jordan): `is` was exported from linchpin above */
   not,
-  is_NaN,
   is_value,
 }
 
