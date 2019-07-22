@@ -215,32 +215,3 @@ export {
   fold,
   includes,
 }
-
-// ES6 (Weak)Map affordances
-/* NOTE(jordan): this funny juggling works around rollup's name-mangling
- * so that we can export the Map built-in under its own name.
- */
-const jsMap = Map
-export { jsMap as Map }
-/* NOTE(jordan): we cannot use the name Map here, otherwise every
- * reference to Map will get rewritten by Rollup to terms like Map$$1,
- * which of course won't work because the JavaScript built-in is called
- * Map, not Map$$1.
- */
-const Map_get = key => method(`get`)([key])
-const Map_has = key => method(`has`)([key])
-const Map_set = key => value => method(`set`)([key, value])
-const Map_keys = method(`keys`)([])
-const Map_clear = method(`clear`)([])
-const Map_values = method(`values`)([])
-const Map_entries = method(`entries`)([])
-
-export {
-  Map_get,
-  Map_has,
-  Map_set,
-  Map_keys,
-  Map_clear,
-  Map_values,
-  Map_entries,
-}

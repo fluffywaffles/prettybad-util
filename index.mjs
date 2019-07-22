@@ -875,27 +875,6 @@ export {
   string_split,
 }
 
-// (Weak)Maps
-// TODO(jordan): make this Map wrapper return immutable instances
-// TODO(jordan): don`t define functions in the map; extract and reference
-export const Map = define.mut({
-  // non-mutative native APIs that can be passed through
-  has: js.Map_has,
-  keys: ᐅ([ js.Map_keys, Array.from ]),
-  values: ᐅ([ js.Map_values, Array.from ]),
-  entries: ᐅ([ js.Map_entries, Array.from ]),
-  // mutative APIs that must be wrapped
-  set: from_mutative(js.Map_set)(set => k => v => map => {
-    return set(k)(v)(new js.Map(map))
-  }),
-  // extensions
-  get: k => or_none(Map.has(k))(js.Map_get(k)),
-})(it => new js.Map(it))
-
-Map.update = derive_mutative(Map.set)(set => k => fn => map => {
-  return set(k)(fn(Map.get(k)(map)))(map)
-})
-
 export function test (suite) {
   const to6 = [ 1, 2, 3, 4, 5 ]
   const sym_a = Symbol(`a`)
