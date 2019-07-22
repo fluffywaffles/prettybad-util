@@ -8,9 +8,9 @@
 // descriptor affordances
 const Obj             = Object
 const has_own         = key => o => Obj.hasOwnProperty.call(o, key)
-const of_properties   = descriptors => Object.create(null, descriptors)
+const of_properties   = descriptors => Obj.create(null, descriptors)
 const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
-const own_descriptors = Object.getOwnPropertyDescriptors
+const own_descriptors = Obj.getOwnPropertyDescriptors
 
 export {
   Obj,
@@ -185,7 +185,7 @@ const map = mapper => array => {
 
 const fold = folder => initial => array => {
   let result = initial
-  for (let [ index, item ] of Object.entries(array)) {
+  for (const [ index, item ] of Obj.entries(array)) {
     result = folder(item, index)(result)
   }
   return result
