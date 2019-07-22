@@ -11,9 +11,11 @@ const has_own         = key => o => Obj.hasOwnProperty.call(o, key)
 const of_properties   = descriptors => Obj.create(null, descriptors)
 const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
 const own_descriptors = Obj.getOwnPropertyDescriptors
+const is              = a => b => Obj.is(a, b)
 
 export {
   Obj,
+  is,
   has_own,
   of_properties,
   get_descriptor,
