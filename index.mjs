@@ -143,6 +143,19 @@ export {
   over,
 }
 
+// complex functions
+const until = f => vs => {
+  for (const v of vs) {
+    const result = f(v)
+    if (result) return [ result, v ]
+  }
+  return [ None, None ]
+}
+
+export {
+  until,
+}
+
 // binding and calling methods
 const method_of = obj => name => js.bind(obj)(get(name)(obj))
 const method  = name => args => obj => apply(method_of(obj)(name))(args)
@@ -937,6 +950,13 @@ export function test (suite) {
             && t.eq(method1(`double`)(5)(obj))(10)
             && t.eq(method2(`multiply`)(5)(4)(obj))(20)
             && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
+      },
+      'until: stops when the function succeeds': t => {
+        const gt5 = v => v > 5
+        const gt1 = v => v > 1
+        return t.eq(until(f => f(3))([ gt5, gt1 ]))([ true, gt1 ])
+            && t.eq(until(f => f(7))([ gt5, gt1 ]))([ true, gt5 ])
+            && t.eq(until(f => f(0))([ gt1, gt5 ]))([ None, None ])
       },
     }),
     t => t.suite(`objects`, {
