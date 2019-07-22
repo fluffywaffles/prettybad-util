@@ -1,7 +1,7 @@
 import {
   own_descriptors,
   define_properties,
-} from './lynchpin'
+} from './linchpin'
 
 /* TODO(jordan):
  *

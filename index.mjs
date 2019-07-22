@@ -56,8 +56,8 @@ import {
   is_enumerable,
   some as any,
   every as all,
-} from './lynchpin'
-import * as js from './lynchpin'
+} from './linchpin'
+import * as js from './linchpin'
 
 // re-exports
 export { default as d } from './d'
@@ -76,7 +76,7 @@ export {
   of_properties,
   some as any,
   every as all,
-} from './lynchpin'
+} from './linchpin'
 
 // general
 const proxy = traps => target => new Proxy(target, traps)

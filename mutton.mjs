@@ -10,7 +10,7 @@
 import {
   of_properties,
   define_property,
-} from './lynchpin'
+} from './linchpin'
 
 // mutative function factory
 const mutative        = fn => of_properties({ mut: { value: fn } })

@@ -1,4 +1,4 @@
-/* lynchpin
+/* linchpin
  *
  * what to javascript connects us
  * will likely be the death of us
@@ -55,7 +55,7 @@ export {
  * as 'keys' or 'values', and there does not exist any comparable set of
  * functions for Symbol-keyed properties or non-enumerable properties.
  *
- * Fortunately, we're here writing a lynchpin for a pretty bad utility
+ * Fortunately, we're here writing a linchpin for a pretty bad utility
  * library that no one will use, so we have the freedom to write a
  * consistent API layer on top of these weird building blocks.
  *
