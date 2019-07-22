@@ -84,10 +84,12 @@ export {
 const proxy = traps => target => new Proxy(target, traps)
 const None = proxy({
   get (target, key, receiver) {
-    // default: passthrough
     // NOTE: `get` returns `None` if `key` is not an "own-property"
     return get(key)(target)
-  }
+  },
+  apply () {
+    return None
+  },
 })(js.define_properties({
   // stringify cases
   toString : { value () { return `None` } },
@@ -103,7 +105,7 @@ const None = proxy({
   [Symbol.toStringTag] : { value: `None` },
   // other cases
   [Symbol.isConcatSpreadable] : { value: false },
-})(function _None () { return None }))
+})(function () {}))
 
 // utilities
 const value_or = value => ᐅwhen(not(is_value))(value)
@@ -875,21 +877,25 @@ export function test (suite) {
 
   return suite(`prettybad/μtil: worse than underscore`, [
     t => t.suite(`None`, {
-      'None: perpetuates itself and is None': t => {
-        return t.eq(None.toString())('None')
+      'perpetuates itself': t => {
+        return true
             && t.eq(None.a.b.c.hi())(None)
             // NOTE(jordan): Symbol.isConcatSpreadable tests
             && t.eq(concat(None)(5))([ None, 5 ])
             && t.eq(flatten([ `a`, None, `c` ]))([ `a`, None, `c` ])
       },
       'throws when used as a number': t => {
-        return t.ok(throws(_ => +None))
+        return true
+            && t.ok(throws(_ => +None))
             && t.ok(throws(_ => None + 0))
             && t.ok(throws(_ => None * 2))
       },
-      'get(`name`)(None) should just return None': t => {
-        return t.eq(get(`name`)(None))(`None`)
-            && t.eq(None.toString())(`None`)
+      'always stringifies as `None`': t => {
+        return true
+            && t.eq(get(`name`)(None))(`None`)
+            && t.eq(None.toString())('None')
+            && t.eq(String(None))('None')
+            && t.eq(`${None}`)('None')
             && t.eq(None[Symbol.toStringTag])(`None`)
       },
     }),
