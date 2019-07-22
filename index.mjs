@@ -197,7 +197,7 @@ export {
 const _do_folder = f => fmap([ apply(f), last ])
 
 const ᐅ     = fns => over(call)(fns)
-const ᐅdo   = fns => target => first(fold(_do_folder)([target])(fns))
+const ᐅdo   = fns => target => get(0)(fold(_do_folder)([target])(fns))
 const ᐅif   = predicate => tf => ff => v => (predicate(v) ? tf : ff)(v)
 const ᐅwhen = predicate => tf => ᐅif(predicate)(tf)(id)
 const ᐅeffect = f => target => (f(target), target)
@@ -492,11 +492,10 @@ const push     = from_mutative(v => ᐅeffect(js.push(v)))(copy_apply1)
 const flatten  = a => fold(flip(concat))([])(a)
 const flatmap  = f => ᐅ([ map(f), flatten ])
 const includes = v => js.includes(v)
-const last     = a => ᐅ([ skip(-1), first ])(a)
+const last     = a => ᐅ([ skip(-1), get(0) ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
-const first    = arr => get(0)(arr)
-const pop      = arr => fmap([ first, rest ])(arr)
+const pop      = arr => fmap([ get(0), rest ])(arr)
 const reverse  = from_mutative(js.reverse)(copy_and)
 const til      = from_mutative(_til)(til => n => til(n)(new Array(n)))
 const thru     = derive_mutative(til)(til => n => til(n + 1))
@@ -518,7 +517,6 @@ export {
   push,
   sort,
   thru,
-  first,
   slice,
   concat,
   splice,
