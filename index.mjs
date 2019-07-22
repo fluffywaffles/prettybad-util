@@ -439,9 +439,6 @@ export {
  * copying functions, which trade-offs should it choose?
  */
 
-// polymorphic array/object operations
-
-
 // utility for hiding some imperative code
 const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
 
