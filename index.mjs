@@ -255,8 +255,6 @@ export const reflex = {
   type,
   instance,
   array_case,
-  // DEPRECATED
-  object_case: array_case,
 }
 
 // polymorphic object/array methods
@@ -800,8 +798,8 @@ const map_properties = f => on_properties(map(f))
 const map_entries    = f => on_entries(map(f))
 const filter_properties = f => on_properties(filter(f))
 const filter_entries    = f => on_entries(filter(f))
-const swap = k => v => fmap([ get(k), extend({ [k]: v }) ])
-const update = k => f => ᐅdo([ get(k), v => extend({ [k]: f(v) }) ])
+const swap = k => v => fmap([ get(k), o => mixin(o)({ [k]: v }) ])
+const update = k => f => ᐅdo([ get(k), v => o => mixin(o)({ [k]: f(v) }) ])
 const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
 const enumerable_keys = o => ᐅdo([ keys, filter_keys(is_enumerable) ])(o)
 const enumerable_entries = o => ᐅdo([ enumerable_keys, get_entries ])(o)
@@ -809,11 +807,6 @@ const update_with = ups => o => fold(apply(update))(o)(entries(ups))
 
 const zip   = ks  => vs => ᐅ([ interlace(ks), from_entries ])(vs)
 const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
-
-// DEPRECATED
-const extend = extension => flip(mixin)(extension)
-const define = mutative(meta => define_property_pairs.mut(properties(meta)))
-const of_entries = obj => object_copy(obj)
 
 export {
   from_properties,
@@ -836,10 +829,6 @@ export {
   update_with,
   zip,
   unzip,
-  // DEPRECATED
-  extend,
-  define,
-  of_entries,
 }
 
 // strings
