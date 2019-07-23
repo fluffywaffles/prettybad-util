@@ -203,9 +203,9 @@ const fallible_fatalize = fallible => v => {
 }
 
 // 'Chain's a series of fallibles, until one fails to pose a next result
-const fallible_ᐅ = fs => v => fold_indexed(i => f => {
-  return ᐅwhen(get(0))(ᐅ([ get(1), f, push(i) ]))
-})([ true, v, -1 ])(fs)
+const fallible_ᐅ = fs => value => fold_indexed(index => fallible_fn => {
+  return ᐅwhen(get(0))(ᐅ([ get(1), fallible_fn, push(index) ]))
+})([ true, value, -1 ])(fs)
 
 const fallible = js.assign({
   ᐅ: fallible_ᐅ,
