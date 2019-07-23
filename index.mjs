@@ -209,6 +209,12 @@ export {
   ᐅwhen,
   ᐅeffect,
   ᐅlog,
+  ᐅ       as pipe,
+  ᐅdo     as pipe_do,
+  ᐅif     as pipe_if,
+  ᐅwhen   as pipe_when,
+  ᐅeffect as pipe_effect,
+  ᐅlog    as pipe_log,
 }
 
 /* primitive types
