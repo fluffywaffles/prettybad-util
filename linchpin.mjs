@@ -193,9 +193,9 @@ const map = mapper => array => {
 
 const fold = folder => initial => array => {
   let result = initial
-  for (const [ index, item ] of Obj.entries(array)) {
+  array.forEach((item, index) => {
     result = folder(item, index)(result)
-  }
+  })
   return result
 }
 
