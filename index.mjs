@@ -144,17 +144,68 @@ export {
   over,
 }
 
-// complex functions
-const until = f => vs => {
-  for (const v of vs) {
-    const result = f(v)
-    if (result) return [ result, v ]
+// Fallibles: they're not Promises. I know, I know. But they aren't.
+/* EXPLANATION(jordan): A "fallible" either `pose`s a result, or it
+ * `fail`s without computing one. Why use these names?
+ *
+ * A posed result can still become a failure in a composition of
+ * fallibles. Thus, the result is "posed:" it isn't a "success" or a
+ * "resolution." When a fallible poses a result, this does not signify the
+ * completion of the computation. It merely poses an option. A failure,
+ * however, cannot compose. When a fallible fails, its result is not
+ * available in the next step of the computation; when a fallible fails,
+ * the composition fails.
+ *
+ * Fallibles, unlike Promises, are not designed for failure recovery at
+ * the site of the error. They are designed for failure recovery only at
+ * the boundary, when a completed composition of fallibles becomes a
+ * result - or doesn't. Either a final posed result is accepted, or a
+ * failure is exposed and must be handled.
+ *
+ * This is a stricter, less friendly, formulation of a similar
+ * control-flow to (synchronous) Promises. Fallibles are not designed to
+ * make it easy to "make it work." They're designed to expose the
+ * fallibility of a computation, and to make that hard to ignore.
+ */
+// TODO(jordan): module
+// 'Break's on the first fallible to pose a result
+const fallible_break = fallibles => fallible(({ pose, fail }) => v => {
+  for (const fallible_fn of fallibles) {
+    const [ succeeded, result ] = fallible_fn(v)
+    if (succeeded) return pose(result)
   }
-  return [ None, None ]
+  return fail()
+})
+
+// 'Guard's a function with a predicate in a fallible
+const fallible_guard = pred => fn => fallible(({ pose, fail }) => v => {
+  return pred(v) ? pose(fn(v)) : fail()
+})
+
+// Forces a fallible composition to succeed or Error fatally
+const fallible_fatalize = fallible => v => {
+  const [ succeeded, result ] = fallible(v)
+  if (succeeded) return result
+  else throw new Error(`fatalized fallible failed on ${v}`)
 }
 
+// 'Chain's a series of fallibles, until one fails to pose a next result
+const fallible_ᐅ = fs => fold(f => {
+  return ᐅwhen(get(0))(ᐅ([ get(1), f ]))
+})([ true, v ])(fs)
+
+const fallible = js.assign({
+  ᐅ: fallible_ᐅ,
+  break: fallible_break,
+  guard: fallible_guard,
+  fatalize: fallible_fatalize,
+})(definition => value => definition({
+  pose: result => [ true, result ],
+  fail: _      => [ false, value ],
+})(value))
+
 export {
-  until,
+  fallible,
 }
 
 // binding and calling methods
@@ -643,7 +694,7 @@ export {
   filter_keys,
 }
 
-const maybe_get = key => fmap([ has(key), ᐅwhen(has(key))(get(key)) ])
+const maybe_get = key => fallible.guard(has(key))(get(key))
 const maybe_get_path = keys => object => {
   const get_until_fail = k => ᐅwhen(get(0))(ᐅ([ get(1), maybe_get(k) ]))
   return fold(get_until_fail)([ true, object ])(keys)
@@ -972,12 +1023,42 @@ export function test (suite) {
             && t.eq(method2(`multiply`)(5)(4)(obj))(20)
             && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
       },
-      'until: stops when the function succeeds': t => {
-        const gt5 = v => v > 5
-        const gt1 = v => v > 1
-        return t.eq(until(f => f(3))([ gt5, gt1 ]))([ true, gt1 ])
-            && t.eq(until(f => f(7))([ gt5, gt1 ]))([ true, gt5 ])
-            && t.eq(until(f => f(0))([ gt1, gt5 ]))([ None, None ])
+    }),
+    t => t.suite('fallibles', {
+      'wraps a calculation that may fail': t => {
+        const poses5 = fallible(({ pose }) => _ => pose(5))
+        const fails  = fallible(({ fail }) => _ => fail())
+        const poses_uppercase = fallible(({ pose, fail }) => value => {
+          if (typeof value !== 'string') {
+            return fail()
+          } else {
+            return pose(value.toUpperCase())
+          }
+        })
+        return true
+            && t.eq(poses5(NaN))([ true, 5 ])
+            && t.eq(fails('abc'))([ false, 'abc' ])
+            && t.eq(poses_uppercase(5))([ false, 5 ])
+            && t.eq(poses_uppercase('abc'))([ true, 'ABC' ])
+      },
+      'fallible.ᐅ: chains a series of fallibles': t => {
+        const arbitrary_pipe = fallible.ᐅ([
+          fallible.guard(v => typeof v === 'number')(id),
+          fallible.guard(v => v > 5)(v => v * 2),
+          fallible.guard(v => v % 2 === 0)(v => v - 1),
+        ])
+        return true
+            && t.eq(arbitrary_pipe('abc'))([ false, 'abc' ])
+            && t.eq(arbitrary_pipe(5))([ false, 5 ])
+            && t.eq(arbitrary_pipe(7))([ true, 13 ])
+      },
+      'fallible.break: stops at the first responding function': t => {
+        const gt5 = fallible.guard(v => v > 5)(ret(`5`))
+        const gt1 = fallible.guard(v => v > 1)(ret(`1`))
+        return true
+            && t.eq(fallible.break([ gt5, gt1 ])(3))([ true, `1` ])
+            && t.eq(fallible.break([ gt5, gt1 ])(7))([ true, `5` ])
+            && t.eq(fallible.break([ gt1, gt5 ])(0))([ false, 0  ])
       },
     }),
     t => t.suite(`objects`, {
