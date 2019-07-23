@@ -166,6 +166,19 @@ export {
  * control-flow to (synchronous) Promises. Fallibles are not designed to
  * make it easy to "make it work." They're designed to expose the
  * fallibility of a computation, and to make that hard to ignore.
+ *
+ * Fallibles also do not allow error messages. It is my belief that the
+ * error message should be generated for the user, not used in the code;
+ * in the code, it tends to be unwieldy, often leading to error-handling
+ * code that parses the message to determine what error is being handled.
+ *
+ * Instead, a chain of fallibles that fails will highlight the
+ * failing fallible and provide the last-posed-result. In this way, it may
+ * be possible to mitigate certain errors at the boundary of the
+ * composition, by detecting which fallible was at fault and by recovering
+ * some state of the execution from the last-posed-result. Alternatively,
+ * these 2 pieces of information can instead be used to produce an error
+ * message for display, or converted into a normal JavaScript Error.
  */
 // TODO(jordan): module
 // 'Break's on the first fallible to pose a result
@@ -190,9 +203,9 @@ const fallible_fatalize = fallible => v => {
 }
 
 // 'Chain's a series of fallibles, until one fails to pose a next result
-const fallible_ᐅ = fs => fold(f => {
-  return ᐅwhen(get(0))(ᐅ([ get(1), f ]))
-})([ true, v ])(fs)
+const fallible_ᐅ = fs => v => fold_indexed(i => f => {
+  return ᐅwhen(get(0))(ᐅ([ get(1), f, push(i) ]))
+})([ true, v, -1 ])(fs)
 
 const fallible = js.assign({
   ᐅ: fallible_ᐅ,
@@ -1048,9 +1061,9 @@ export function test (suite) {
           fallible.guard(v => v % 2 === 0)(v => v - 1),
         ])
         return true
-            && t.eq(arbitrary_pipe('abc'))([ false, 'abc' ])
-            && t.eq(arbitrary_pipe(5))([ false, 5 ])
-            && t.eq(arbitrary_pipe(7))([ true, 13 ])
+            && t.eq(arbitrary_pipe('abc'))([ false, 'abc', 0 ])
+            && t.eq(arbitrary_pipe(5))([ false, 5, 1 ])
+            && t.eq(arbitrary_pipe(7))([ true, 13, 2 ])
       },
       'fallible.break: stops at the first responding function': t => {
         const gt5 = fallible.guard(v => v > 5)(ret(`5`))
