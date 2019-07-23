@@ -1163,7 +1163,8 @@ export function test (suite) {
           && t.eq(find(v => !v)([ 0, false ]))(0)
           && t.eq(find(v => !v)([ 14, true ]))(None),
       'findex: first even of to6 is at index 1':
-        t => t.eq(findex(v => v % 2 == 0)(to6))(1),
+        t => t.eq(findex(v => v % 2 == 0)(to6))(1)
+          && t.eq(findex(v => v > 10)(to6))(-1),
       'join: joins an array into a string':
         t => t.eq(join('+')(to6))('1+2+3+4+5'),
       'slice(0)(0): nothing':
