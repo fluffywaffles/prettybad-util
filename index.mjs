@@ -107,7 +107,7 @@ const None = proxy({
 })(function () {}))
 
 // utilities
-const value_or = value => ᐅwhen(not(is_value))(value)
+const value_or = replacement => ᐅwhen(not(is_value))(ret(replacement))
 
 export {
   None,
