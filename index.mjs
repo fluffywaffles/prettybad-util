@@ -180,7 +180,7 @@ export {
  * these 2 pieces of information can instead be used to produce an error
  * message for display, or converted into a normal JavaScript Error.
  */
-// TODO(jordan): module
+// REFACTOR(jordan): module
 // 'Break's on the first fallible to pose a result
 const fallible_break = fallibles => fallible(({ pose, fail }) => v => {
   for (const fallible_fn of fallibles) {
