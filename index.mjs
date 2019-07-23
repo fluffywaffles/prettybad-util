@@ -655,7 +655,6 @@ export {
 }
 
 // objects
-const _combiner = get => join => ᐅ([ map(get), flatten, join ])
 
 // Object getters
 const get_entry      = key => obj => [ key, get(key)(obj) ]
@@ -791,21 +790,33 @@ export {
   define_property_pairs,
 }
 
-const entry_pairs_definer = derive_mutative(define_entry_pairs)
-
-const define_entries    = entry_pairs_definer(def => ᐅ([ entries, def ]))
-const define_properties = from_mutative(js.define_properties)(copy_apply2)
+const define_entries    = from_mutative(js.assign)(copy_apply1)
+const define_properties = from_mutative(js.define_properties)(copy_apply1)
 
 export {
   define_entries,
   define_properties,
 }
 
-const from_properties = pairs => define_property_pairs.mut(pairs)({})
 const from_entries    = pairs => define_entry_pairs.mut(pairs)({})
-const object_copy     = obj   => ᐅ([ properties, from_properties ])(obj)
-const merge_entries    = vs => _combiner(entries)(from_entries)(vs)
-const merge_properties = vs => _combiner(properties)(from_properties)(vs)
+const from_properties = pairs => define_property_pairs.mut(pairs)({})
+
+export {
+  from_entries,
+  from_properties,
+}
+
+const merge_by = ([ get, join ]) => ᐅ([ map(get), flatten, join ])
+const merge_entries    = vs => merge_by([ entries, from_entries ])(vs)
+const merge_properties = vs => merge_by([ properties, from_properties ])(vs)
+
+export {
+  merge_by,
+  merge_entries,
+  merge_properties,
+}
+
+const object_copy = obj => ᐅ([ properties, from_properties ])(obj)
 const mixin = a => b => merge_properties([ a, b ])
 const map_as = convert => undo => f => ᐅ([ convert, f, undo ])
 const on_properties = f => map_as(properties)(from_properties)(f)
@@ -825,11 +836,7 @@ const zip   = ks  => vs => ᐅ([ interlace(ks), from_entries ])(vs)
 const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
 
 export {
-  from_properties,
-  from_entries,
   object_copy,
-  merge_entries,
-  merge_properties,
   mixin,
   map_as,
   on_properties,
