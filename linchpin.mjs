@@ -6,17 +6,23 @@
  * — fin
  */
 // descriptor affordances
-const Obj             = Object
-const has_own         = key => o => Obj.hasOwnProperty.call(o, key)
-const of_properties   = descriptors => Obj.create(null, descriptors)
-const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
-const own_descriptors = Obj.getOwnPropertyDescriptors
-const is              = a => b => Obj.is(a, b)
+const Obj     = Object
+const is      = a => b => Obj.is(a, b)
+const assign  = source => target => Obj.assign(target, source)
+const has_own = key => o => Obj.hasOwnProperty.call(o, key)
 
 export {
   Obj,
   is,
+  assign,
   has_own,
+}
+
+const of_properties   = descriptors => Obj.create(null, descriptors)
+const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
+const own_descriptors = Obj.getOwnPropertyDescriptors
+
+export {
   of_properties,
   get_descriptor,
   own_descriptors,
@@ -137,7 +143,7 @@ export {
 const Fn    = Function
 const arity = f   => f.length
 const bind  = ctx => f => Fn.bind.call(f, ctx)
-const call  = ctx => f =>  arg => Fn.call.call(f, ctx,  arg)
+const call  = ctx => f =>  arg => Fn.call.call(f, ctx, arg)
 const apply = ctx => f => args => Fn.apply.call(f, ctx, args)
 const method = name => args => obj => apply(obj)(obj[name])(args)
 
