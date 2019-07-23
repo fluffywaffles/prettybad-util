@@ -907,11 +907,15 @@ export function test (suite) {
       },
       'ᐅif: inline if': t => {
         const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
-        return t.eq(approach_10(5))(6) && t.eq(approach_10(12))(11)
+        return true
+          && t.eq(approach_10(5))(6)
+          && t.eq(approach_10(12))(11)
       },
       'ᐅwhen: one-armed inline if': t => {
         const inc_when_even = ᐅwhen(v => v % 2 === 0)(v => v + 1)
-        return t.eq(inc_when_even(2))(3) && t.eq(inc_when_even(1))(1)
+        return true
+          && t.eq(inc_when_even(2))(3)
+          && t.eq(inc_when_even(1))(1)
       },
     }),
     t => t.suite('functions', {
@@ -949,7 +953,8 @@ export function test (suite) {
           double    (value) { return this.multiply(value)(2) },
           raise_sum (power) { return a => b => Math.pow(a + b, power) },
         }
-        return t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
+        return true
+            && t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
             && t.eq(method(`double`)([ 4 ])(obj))(8)
             && t.eq(method1(`double`)(5)(obj))(10)
             && t.eq(method2(`multiply`)(5)(4)(obj))(20)
@@ -982,13 +987,19 @@ export function test (suite) {
         const o = { a: 5 }
         define_properties.mut({ b: { value: 3 } })(o)
         define_properties.mut({ a: { value: 6, enumerable: false } })(o)
-        return t.eq(o.b)(3) && t.eq(o.a)(6) && t.eq(Object.keys(o))([])
+        return true
+          && t.eq(o.b)(3)
+          && t.eq(o.a)(6)
+          && t.eq(Object.keys(o))([])
       },
       'define_property.mut: sets a single property on an object': t => {
         const o = { a: 1 }
         define_property.mut('b')({ value: 5 })(o)
         define_property.mut('a')({ enumerable: false })(o)
-        return t.eq(o.b)(5) && t.eq(o.a)(1) && t.eq(Object.keys(o))([])
+        return true
+          && t.eq(o.b)(5)
+          && t.eq(o.a)(1)
+          && t.eq(Object.keys(o))([])
       },
       'string_keyed_properties: gets non-symbol properties':
         t => {
@@ -1057,7 +1068,8 @@ export function test (suite) {
         t => {
           const update_ab = update_path([ `a`, `b` ])
           const inc = v => v + 1
-          return t.eq(update_ab(inc)({ a: { b: 2 } }))({ a: { b : 3 } })
+          return true
+              && t.eq(update_ab(inc)({ a: { b: 2 } }))({ a: { b : 3 } })
               // && t.eq(update_ab(inc)({ a: 3 }))({ a: 3 }) // FAILING
               && t.eq(update_ab(v => v())({ a: 3 }))({ a: 3 })
         },
