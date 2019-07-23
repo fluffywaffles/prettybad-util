@@ -2,7 +2,6 @@
  * UTF-8 Mappings
  * μ : U+03bc
  * ᐅ : U+1405
- * ᶠ :  U+1da0
  */
 
 /*
