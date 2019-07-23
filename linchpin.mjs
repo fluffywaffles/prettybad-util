@@ -191,13 +191,19 @@ const map = mapper => array => {
   return result
 }
 
-const fold = folder => initial => array => {
+const fold = define_properties({
+  short_circuit: { value: Symbol(`fold: short-circuit marker`) },
+})(folder => initial => array => {
   let result = initial
-  array.forEach((item, index) => {
-    result = folder(item, index)(result)
-  })
+  for (let index = 0; index < array.length; index++) {
+    const next = folder(array[index], index)(result)
+    if (next === fold.short_circuit) {
+      break
+    }
+    result = next
+  }
   return result
-}
+})
 
 export {
   len,
