@@ -184,24 +184,47 @@ const splice  = i => n => vs => arr => _splice(arr)(_args([ i, n ])(vs))
 // const fold    = f => init => arr => [].reduce.call(arr, _folder(f), init)
 const includes = v => arr => [].includes.call(arr, v)
 
-const map = mapper => array => {
-  const len = array.length
-  let result = new Array(len)
-  for (let ix = 0; ix < len; ix++) result[ix] = mapper(array[ix], ix)
-  return result
+/* NOTE(jordan): this code is terrifying and you just shouldn't think too
+ * hard about it.
+ *
+ * The unfortunate complexity arises from the short-circuiting mechanism.
+ * It was already a somewhat ugly piece of imperative looping code, but as
+ * soon as it was "enhanced" with a conditional short-circuit mechanism it
+ * became... well, this.
+ *
+ * This is the cleanest formulation I've been able to construct.
+ */
+const breakloop = ({ marker, body, latch = _ => {} }) => array => {
+  let index = 0, result = marker
+  while (true
+    && (index < array.length)
+    && (result = body(array[index], index), (result !== marker ))
+  ) {
+    latch(result, index++)
+  }
 }
+
+const map = define_properties({
+  short_circuit: { value: Symbol(`map: short-circuit marker`) },
+})(mapper => array => {
+  let result = array.slice()
+  breakloop({
+    marker: map.short_circuit,
+    body: (item, index) => mapper(item, index),
+    latch: (mapper_result, index) => result[index] = mapper_result,
+  })(array)
+  return result
+})
 
 const fold = define_properties({
   short_circuit: { value: Symbol(`fold: short-circuit marker`) },
 })(folder => initial => array => {
   let result = initial
-  for (let index = 0; index < array.length; index++) {
-    const next = folder(array[index], index)(result)
-    if (next === fold.short_circuit) {
-      break
-    }
-    result = next
-  }
+  breakloop({
+    marker: fold.short_circuit,
+    body: (item, index) => folder(item, index)(result),
+    latch: (folder_result) => result = folder_result,
+  })(array)
   return result
 })
 
