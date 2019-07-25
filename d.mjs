@@ -2,16 +2,6 @@ import {
   assign,
 } from './linchpin'
 
-/* TODO(jordan):
- *
- * distinguish data descriptors (value) from accessor descriptors
- * (get/set)
- *
- * the 'writable' option is only applicable to data descriptors you'll get
- * a TypeError if you have { writable: true } with an accessor descriptor
- * ... which right now is possible to do with d, and it shouldn't be
- */
-
 /**
  * descriptor factory
  * borrowing shamelessly from d.js: https://www.npmjs.com/package/d
