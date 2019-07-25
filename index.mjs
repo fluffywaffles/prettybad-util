@@ -988,10 +988,11 @@ export function test (suite) {
     t => t.suite('functions', {
       'id: id(6) is 6':
         t => t.eq(id(6))(6),
-      'id: works on objects': t => {
-        const object = { a: 5 }
-        return t.refeq(id(object))(object)
-      },
+      'id: works on objects':
+        t => {
+          const object = { a: 5 }
+          return t.refeq(id(object))(object)
+        },
       'flip: flips args':
         t => t.eq(flip(a => b => a - b)(1)(2))(1),
       'call: calls func':
@@ -1014,19 +1015,20 @@ export function test (suite) {
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
       'fmap: runs a series of functions on an object':
         t => t.eq(fmap([ v => v + 1, v => v / 2 ])(4))([ 5, 2 ]),
-      'method{n}: calls a named method with argument(s)': t => {
-        const obj = {
-          multiply  (value) { return mutiplicand => mutiplicand * value },
-          double    (value) { return this.multiply(value)(2) },
-          raise_sum (power) { return a => b => Math.pow(a + b, power) },
-        }
-        return true
-            && t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
-            && t.eq(method(`double`)([ 4 ])(obj))(8)
-            && t.eq(method1(`double`)(5)(obj))(10)
-            && t.eq(method2(`multiply`)(5)(4)(obj))(20)
-            && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
-      },
+      'method{n}: calls a named method with argument(s)':
+        t => {
+          const obj = {
+            multiply  (value) { return mutiplicand => mutiplicand * value },
+            double    (value) { return this.multiply(value)(2) },
+            raise_sum (power) { return a => b => Math.pow(a + b, power) },
+          }
+          return true
+              && t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
+              && t.eq(method(`double`)([ 4 ])(obj))(8)
+              && t.eq(method1(`double`)(5)(obj))(10)
+              && t.eq(method2(`multiply`)(5)(4)(obj))(20)
+              && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
+        },
     }),
     t => t.suite('fallibles', {
       'wraps a calculation that may fail': t => {
@@ -1159,19 +1161,25 @@ export function test (suite) {
       'swap: swaps the current value of a key for another':
         t => t.eq(swap(`a`)(14)({ a: 5 }))([ 5, { a: 14 } ]),
       'update: replaces a key by a v -> v function':
-        t => t.eq(update(`a`)(v => v + 1)({ a: 4 }))({ a: 5 })
-          // && t.eq(update(`a`)(v => v + 1)({}))({ a: 5 }) // FAILING
-          && t.eq(update(0)(v => v + 1)([ 1 ]))([ 2 ])
-          && t.ok(ᐅlog(update(0)(v => v + 1)([ 1 ]) instanceof Array))
-          && t.eq(update(`a`)(v => v())({}))({ a: 5 }),
+        t => {
+          const inc = v => v + 1
+          return true
+            && t.eq(update(`a`)(inc)({ a: 4 }))([ true, { a: 5 } ])
+            && t.eq(update(`a`)(inc)({}))([ false, {} ])
+            && t.eq(update(`a`)(v => 5)({}))([ false, {} ])
+            && t.ok(ᐅ([ update(0)(inc), get(1) ])([ 1 ]) instanceof Array)
+            && t.eq(update(0)(inc)([ 1 ]))([ true, [ 2 ] ])
+        },
       'update_path: replace a nested key by a v -> v function':
         t => {
           const update_ab = update_path([ `a`, `b` ])
           const inc = v => v + 1
           return true
-              && t.eq(update_ab(inc)({ a: { b: 2 } }))({ a: { b : 3 } })
-              // && t.eq(update_ab(inc)({ a: 3 }))({ a: 3 }) // FAILING
-              && t.eq(update_ab(v => v())({ a: 3 }))({ a: 3 })
+            && t.eq(update_ab(inc)({ a: { b: 2 } }))([ true, { a: { b : 3 } }, 1 ])
+            && t.eq(update_ab(inc)({ z: 1 }))([ false, { z: 1 }, 0 ])
+            && t.eq(update_ab(inc)({ a: 3 }))([ false, { a: 3 }, 0 ])
+            && t.ok(ᐅ([ update_path([ 0, 1 ])(inc), get(1) ])([ [ 1, 2 ], 3 ]) instanceof Array)
+            && t.eq(update_path([ 0, 1 ])(inc)([ [ 1, 2 ], 3 ]))([ true, [ [ 1, 3 ], 3 ], 1 ])
         },
       'enumerable_entries: entries, filtered by js.is_enumerable':
         t => {
