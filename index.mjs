@@ -907,7 +907,7 @@ export {
 }
 
 const object_copy = obj => ᐅ([ get.properties, from_properties ])(obj)
-const mixin = a => b => merge_properties([ a, b ])
+const merge = a => b => merge_properties([ a, b ])
 const map_as = convert => undo => f => ᐅ([ convert, f, undo ])
 const on_properties = f => map_as(get.all.properties)(from_properties)(f)
 const on_entries    = f => map_as(get.all.entries)(from_entries)(f)
@@ -915,7 +915,7 @@ const map_properties = f => on_properties(map(f))
 const map_entries    = f => on_entries(map(f))
 const filter_properties = f => on_properties(filter(f))
 const filter_entries    = f => on_entries(filter(f))
-const swap = k => v => fmap([ get(k), o => mixin(o)({ [k]: v }) ])
+const swap = k => v => fmap([ get(k), o => merge(o)({ [k]: v }) ])
 const enumerable_keys = o => ᐅ([ keys, filter(k => is_enumerable(k)(o)) ])(o)
 const enumerable_entries = o => ᐅdo([ enumerable_keys, get.for_keys.entries ])(o)
 
@@ -924,7 +924,7 @@ const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
 
 export {
   object_copy,
-  mixin,
+  merge,
   map_as,
   on_properties,
   map_properties,
@@ -936,6 +936,8 @@ export {
   enumerable_entries,
   zip,
   unzip,
+  // DEPRECATED(jordan)
+  merge as mixin,
 }
 
 // TODO(jordan): clean-up
@@ -1182,8 +1184,8 @@ export function test (suite) {
       'object_copy: (shallowly) clones an object':
         t => t.eq(object_copy({ a: 5 }))({ a: 5 })
           && t.refeq(object_copy({ f: to6 }).f)(to6),
-      'mixin: combines properties of 2 source objects':
-        t => t.eq(mixin({ a: 4 })({ a: 5 }))({ a: 5 }),
+      'merge: combines properties of 2 source objects':
+        t => t.eq(merge({ a: 4 })({ a: 5 }))({ a: 5 }),
       'has: returns true is a key is valid and present in an object':
         t => !t.ok(has([`a`])({ a: `b` }))
           && t.ok(has(`a`)({ a: `b` }))
