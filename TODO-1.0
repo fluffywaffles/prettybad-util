@@ -1,18 +1,27 @@
-- Get rid of `extend` - prefer `update_with`
-- Make `update*` functions respect property descriptors
-- Make `update*` functions work correctly with arrays
+- Make `update*` functions work for properties, entries, descriptors...
+  - `update_value`, `update_descriptor`
+  - does `update_value` respect the descriptor? (no)
+  - `update` does the mid-optimal thing: it wraps `update_descriptor`
+    but takes a function on `value`; so, if you just use the "obvious"
+    thing, it behaves in an obvious way. If you use `update_value` for
+    some reason, you're opting in to the "ignore descriptor
+    configuration" outcome. You can also use `update_descriptor` to get
+    access to get/set and other descriptor configuration.
+- Fix `update_with`
 - Add `set*` functions for setting (but not overwriting) values
-- Optimize (or add a less general alterative to) `mixin`
-- Move `define_propert{y,ies}` out of mutton and into index instead
+- Now the taxonomy is:
+  - `set*`: create a new {entry,property}
+  - `define*`: set/change an {entry,property}
+  - `update*`: modify an existing {entry,property}
+- Try to remove some `define*` functions -- seems like too many
 - Make sure all functions are tested
 - Make sure mutative alternates are tested
-- Remove `not_none` in favor of `not(is_None)`
-- Fix the `flip` bug! (update with nonexistent key!)
 - `reflex.type` helpers
   - reflex.type.undefined, reflex.type.number, reflex.type.string, etc.
   - reduces the 'reflex.type(types.undefined)` style boilerplate
-- `update_or`: update_or(handle_none)(key)(updater)(target)
-  - e.g.: update_or(set_value(value)) for supplying a default
+- `fallible.or`: supersedes `update_or` below with a more general solution
+  - `update_or`: update_or(handle_none)(key)(updater)(target)
+    - e.g.: update_or(set_value(value)) for supplying a default
 
 update_or_set = key => ({ initial }) => updater => object => {
   return update

@@ -1,67 +1,73 @@
 # prettybad/μtil
 ## it's worse than underscore
 
-in keeping with my life motto ("i bet a could make a pretty bad {x}"), this is a pretty bad utility
-library. it is pretty bad, tbh. it has some pretty bad goals:
+In keeping with my life motto ("I bet a could make a pretty bad {x}"),
+this is a pretty bad utility library. It is pretty bad, tbh. It has some
+pretty bad goals:
 
-1. don't ignore symbols
-2. preserve symbols during operations (e.g. `map`)
-3. don't ignore property descriptors
-4. also preserve property descriptors during operations (e.g. `map`)
-5. everything is curry all of the time
-6. "iteratee first, data last" as lodash/fp puts it
-    - the functions come before the data, e.g. `map(inc)([ 1, 2, 3 ])`
-    - i could have just said that, but i think the lodash-eff-pee-ers are funnier so i copied them
-7. where it makes sense, be polymorphic
-    - that is: check object type tags and dispatch the correct function
-    - for example, `slice` dispatches: `slice_array` on arrays, and `slice_string` on strings
-8. be immutable by default, but provide clearly-labeled mutative alternatives
+1. Don't ignore or hide symbols
+    - "key"s means "strings and symbols"
+    - "symbol_keys" means symbols
+    - "string_keys" means strings
+    - Seriously why isn't the  built-in library clear in the first place
+2. Don't ignore or hide property descriptors
+    - Merging objects merges descriptors; it doesn't just implicitly drop
+      nonenumerable things
+    - Updating an object doesn't implicitly make its descriptor enumerable
+      and writable if it wasn't before
+    - `*_propert{y,ies}` and `*_descriptor{s}` APIs exist for explicitness
+3. Everything is curried all of the time
+    - Composition over rice with a cup of chai tea
+    - I get tired of writing out names for arguments I'm passing along
+    - Point-free... erm... et cetera
+4. "iteratee first, data last" as lodash/fp puts it
+    - The data is always the last argument, e.g. `map(inc)([ 1, 2, 3 ])`
+    - I could have just said that, but I think the lodash-eff-pee-ers are funnier so I copied them
+5. Where it makes sense, just be polymorphic
+    - Check object type tags and dispatch the correct function
+    - For example, `slice` dispatches: `slice_array` on arrays, and `slice_string` on strings
+6. Be immutable by default, but provide clearly-labeled mutative alternatives
     - e.g.: `splice` and `splice.mut`, `map` and `map.mut`, `filter` and `filter.mut`
-    - mutation should be explicit and grep-able (so, like, search for `.*\.mut(.*)`)
+    - Mutation should be explicit and grep-able (so, like, search for `.*\.mut(.*)`)
 
-why mutative apis? well, uh, what for performances in the where we do want to that. but seriously:
-sometimes you want to mutate. for example, design-time mutation - to set the state of an object at
-initialization - is perfectly okay. and in tight loops, mutation can make a huge performance
-difference. besides, in practice, perfect immutability in javascript is a lie whenever you touch the
-DOM. frameworks that espouse immutable web interfaces hide mutation - sometimes in a compiler
-backend (hi, Elm) and sometimes in a runtime (hi, React) - but the fact is, the DOM mutates, and
-browsers are optimized for this.
+Why mutative APIs? Well, uh, what for... when you performant, need the...
+where we do want to, uh, do that.
 
-also, programmers are smart enough to be allowed to mutate when they want to. i call this the "give
-a man a footgun" principle of API design. it has a saying that goes... uh... "give a man a footgun,
-and he'll have 1 foot and learnt a lesson, or he'll reinvent wheels". or something like that. one of
-those is supposed to be the good outcome. i can't remember which.
+But seriously: sometimes you want to mutate. For example, design-time
+mutation - to set the state of an object at initialization - is perfectly
+okay. In tight loops, mutation can make a huge performance difference.
+Besides, in practice, perfect immutability in javascript is a lie whenever
+you touch the DOM. Frameworks that espouse immutable web interfaces hide
+mutation - sometimes in a compiler backend (hi, Elm) and sometimes in a
+runtime (hi, React) - but the fact is, the DOM mutates, and browsers are
+optimized for this.
 
-it also has at least 1 really pretty bad goal:
+Also, programmers are smart enough to be allowed to mutate when they want
+to. I call this the "give a man a footgun" principle of API design. It has
+a saying that goes... uh... "give a man a footgun, and he'll have 1 foot
+and learnt a lesson, or he'll reinvent wheels". Or something like that.
+One of those is supposed to be the good outcome. I can't remember which.
 
-0. things are as bare as possible
-    - javascript is pretty meh & i'd rather not have it so `Object.create(null)` all the way
-    - things shouldn't be configurable/writable/enumerable in general
-    - implication: no prototypes, so no `toString()` ⇒ `"[Object object]"` for you (sorry)
-    - implication: you can't modify properties, so no `splice.mut = /* muahaha */` for you
-    - implication: you can't enumerate utility properties, so `Object.keys(splice)` ⇒ `[]` even
-        though you and i both know that there's a `splice.mut` method for mutative `splice`-ing
+So there, I had reasons. Never let it be said I was unreasonable. Insane,
+maybe, but only within reason.
 
-so there, i had reasons. never let it be said i was unreasonable. insane, maybe, but only within
-reason. if only someone else had already written a pretty bad utility library, and then i wouldn't
-be writing this one... er, wait.
+If only someone else had already written a pretty bad utility library,
+then I wouldn't be writing this one... er, wait.
 
 # inFAQs
 ## inFrequently Asked Questions
 ### infrequent: as in, never
 
-1. why would anyone use a library that calls itself "pretty bad, tbh"
+1. Why would anyone use a library that calls itself "pretty bad, tbh"
 
 ...
 
 2. ...
 
-nevermind i'm tired of making up FAQs.
+Nevermind, I'm tired of making up FAQs.
 
-# does it do?
+# Does it work?
 
-it has a few tests. almost all of them pass. but not string split. that sonofagun got borkt on April
-4th, 2018, and has yet to be fixed.
-
-oh. right. you can't run them without sisyphus, a test library i am writing. it's not available yet.
-check back... later?
+Yes. But unfortunately you'll have to take my word for it right now that
+the tests pass. I wrote the tests using my own testing library, Sisyphus,
+which I'm still in the process of... uh... fixing, before I release it.
