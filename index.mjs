@@ -916,11 +916,8 @@ const map_entries    = f => on_entries(map(f))
 const filter_properties = f => on_properties(filter(f))
 const filter_entries    = f => on_entries(filter(f))
 const swap = k => v => fmap([ get(k), o => mixin(o)({ [k]: v }) ])
-const update = k => f => ᐅdo([ get(k), v => o => mixin(o)({ [k]: f(v) }) ])
-const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
 const enumerable_keys = o => ᐅ([ keys, filter(k => is_enumerable(k)(o)) ])(o)
 const enumerable_entries = o => ᐅdo([ enumerable_keys, get.for_keys.entries ])(o)
-const update_with = ups => o => fold(apply(update))(o)(get.all.entries(ups))
 
 const zip   = ks  => vs => ᐅ([ interlace(ks), from_entries ])(vs)
 const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
@@ -935,13 +932,26 @@ export {
   filter_properties,
   filter_entries,
   swap,
-  update,
-  update_path,
   enumerable_keys,
   enumerable_entries,
-  update_with,
   zip,
   unzip,
+}
+
+// TODO(jordan): clean-up
+const update_path = path => final_updater => {
+  return over(key => value_updater => fallible.ᐅdo([
+    fallible.rollback(fallible.ᐅ([ maybe_get(key), value_updater ])),
+    new_value => fallible.unfailing(define_entries({ [key]: new_value })),
+  ]))(reverse(path))(fallible.unfailing(final_updater))
+}
+const update = key => fn => ᐅ([ update_path([ key ])(fn), take(2) ])
+// const update_with = ups => o => fold(apply(update))(o)(entries(ups))
+
+export {
+  update,
+  update_path,
+  // update_with,
 }
 
 // strings
@@ -1235,20 +1245,20 @@ export function test (suite) {
           })
           return t.eq(enumerable_entries(example))([[ 'a', 5 ]])
         },
-      'update_with: update with an object of updaters':
-        t => {
-          const example = { a: 3, b: { c: 'd' }, hi: true }
-          const updaters = {
-            a: v => v + 1,
-            b: update(`c`)(v => v.toUpperCase()),
-            hi: v => !v,
-          }
-          return t.eq(update_with(updaters)(example))({
-            a: 4,
-            b: { c: `D` },
-            hi: false,
-          })
-        },
+      // 'update_with: update with an object of updaters':
+      //   t => {
+      //     const example = { a: 3, b: { c: 'd' }, hi: true }
+      //     const updaters = {
+      //       a: v => v + 1,
+      //       b: update(`c`)(v => v.toUpperCase()),
+      //       hi: v => !v,
+      //     }
+      //     return t.eq(update_with(updaters)(example))({
+      //       a: 4,
+      //       b: { c: `D` },
+      //       hi: false,
+      //     })
+      //   },
     }),
     t => t.suite('value predicates', {
       'is':
