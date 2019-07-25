@@ -256,15 +256,18 @@ export {
 }
 
 // pipelining
-// NOTE(jordan): keeps the target at the end of the argument list
-const _do_folder = f => fmap([ apply(f), last ])
 
 const ᐅ     = fns => over(call)(fns)
-const ᐅdo   = fns => target => get(0)(fold(_do_folder)([target])(fns))
 const ᐅif   = predicate => tf => ff => v => (predicate(v) ? tf : ff)(v)
 const ᐅwhen = predicate => tf => ᐅif(predicate)(tf)(id)
 const ᐅeffect = f => target => (f(target), target)
 const ᐅlog    = v => ᐅeffect(v => console.dir(v, { depth: null }))(v)
+
+// NOTE(jordan): continue passing the target as the last argument
+const ᐅdo = fns => target => {
+  const do_folder = fn => args => [ apply(fn)(args), last(args) ]
+  return ᐅ([ fold(do_folder)([target]), get(0) ])(fns)
+}
 
 export {
   ᐅ,
