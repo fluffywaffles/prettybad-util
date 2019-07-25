@@ -181,6 +181,11 @@ export {
  * message for display, or converted into a normal JavaScript Error.
  */
 // REFACTOR(jordan): module
+const fallible_create = definition => value => definition({
+  pose: result => [ true, result ],
+  fail: _      => [ false, value ],
+})(value)
+
 // 'Break's on the first fallible to pose a result
 const fallible_break = fallibles => fallible(({ pose, fail }) => v => {
   for (const fallible_fn of fallibles) {
@@ -202,20 +207,50 @@ const fallible_fatalize = fallible => v => {
   else throw new Error(`fatalized fallible failed on ${v}`)
 }
 
+// Folds fallibles over results until one fails to pose a next result
+const fallible_fold = folder => initial => values => {
+  return fold_indexed(index => value => {
+    const thread_shuttle = ᐅ([ get(1), folder(value), push(index) ])
+    return ᐅif(get(0))(thread_shuttle)(ret(fold.short_circuit))
+  })([ true, initial, -1 ])(values)
+}
+
 // 'Chain's a series of fallibles, until one fails to pose a next result
-const fallible_ᐅ = fs => value => fold_indexed(index => fallible_fn => {
-  return ᐅwhen(get(0))(ᐅ([ get(1), fallible_fn, push(index) ]))
-})([ true, value, -1 ])(fs)
+const fallible_ᐅ = fs => value => fallible_fold(call)(value)(fs)
+const fallible_ᐅdo = fs => value => {
+  const do_folder = fallible_fn => args => {
+    const target = last(args)
+    const [ succeeded, result ] = apply(fallible_fn)(args)
+    return [ succeeded, [ result, target ] ]
+  }
+  return ᐅ([
+    fallible_fold(do_folder)([ value ]),
+    array_update(1)(get(0)), // drop the carried 2nd argument
+  ])(fs)
+}
+
+const fallible_rollback = f => fallible_create(({ pose, fail }) => value => {
+  const [ succeeded, result ] = f(value)
+  return succeeded ? pose(result) : fail()
+})
+
+const fallible_fail = _ => fallible_create(({ fail }) => _ => fail())
+const fallible_unfailing = fn => fallible_create(({ pose }) => value => {
+  return pose(fn(value))
+})
 
 const fallible = js.assign({
   ᐅ: fallible_ᐅ,
+  ᐅdo: fallible_ᐅdo,
+  fold: fallible_fold,
   break: fallible_break,
   guard: fallible_guard,
   fatalize: fallible_fatalize,
-})(definition => value => definition({
-  pose: result => [ true, result ],
-  fail: _      => [ false, value ],
-})(value))
+  rollback: fallible_rollback,
+  // Wrappers
+  fail: fallible_fail,
+  unfailing: fallible_unfailing,
+})(fallible_create)
 
 export {
   fallible,
@@ -1031,41 +1066,52 @@ export function test (suite) {
         },
     }),
     t => t.suite('fallibles', {
-      'wraps a calculation that may fail': t => {
-        const poses5 = fallible(({ pose }) => _ => pose(5))
-        const fails  = fallible(({ fail }) => _ => fail())
-        const poses_uppercase = fallible(({ pose, fail }) => value => {
-          if (typeof value !== 'string') {
-            return fail()
-          } else {
-            return pose(value.toUpperCase())
-          }
-        })
-        return true
-            && t.eq(poses5(NaN))([ true, 5 ])
-            && t.eq(fails('abc'))([ false, 'abc' ])
-            && t.eq(poses_uppercase(5))([ false, 5 ])
-            && t.eq(poses_uppercase('abc'))([ true, 'ABC' ])
-      },
-      'fallible.ᐅ: chains a series of fallibles': t => {
-        const arbitrary_pipe = fallible.ᐅ([
-          fallible.guard(v => typeof v === 'number')(id),
-          fallible.guard(v => v > 5)(v => v * 2),
-          fallible.guard(v => v % 2 === 0)(v => v - 1),
-        ])
-        return true
-            && t.eq(arbitrary_pipe('abc'))([ false, 'abc', 0 ])
-            && t.eq(arbitrary_pipe(5))([ false, 5, 1 ])
-            && t.eq(arbitrary_pipe(7))([ true, 13, 2 ])
-      },
-      'fallible.break: stops at the first responding function': t => {
-        const gt5 = fallible.guard(v => v > 5)(ret(`5`))
-        const gt1 = fallible.guard(v => v > 1)(ret(`1`))
-        return true
-            && t.eq(fallible.break([ gt5, gt1 ])(3))([ true, `1` ])
-            && t.eq(fallible.break([ gt5, gt1 ])(7))([ true, `5` ])
-            && t.eq(fallible.break([ gt1, gt5 ])(0))([ false, 0  ])
-      },
+      'wraps a calculation that may fail':
+        t => {
+          const poses5 = fallible(({ pose }) => _ => pose(5))
+          const fails  = fallible(({ fail }) => _ => fail())
+          const poses_uppercase = fallible(({ pose, fail }) => value => {
+            if (typeof value !== 'string') {
+              return fail()
+            } else {
+              return pose(value.toUpperCase())
+            }
+          })
+          return true
+              && t.eq(poses5(NaN))([ true, 5 ])
+              && t.eq(fails('abc'))([ false, 'abc' ])
+              && t.eq(poses_uppercase(5))([ false, 5 ])
+              && t.eq(poses_uppercase('abc'))([ true, 'ABC' ])
+        },
+      'fallible.unfailing: poses the result of a normal function':
+        t => {
+          return t.eq(fallible.unfailing(v => v + 1)(5))([ true, 6 ])
+        },
+      'fallible.fail: immediately fails':
+        t => {
+          return t.eq(fallible.fail()(5))([ false, 5 ])
+        },
+      'fallible.ᐅ: chains a series of fallibles':
+        t => {
+          const arbitrary_pipe = fallible.ᐅ([
+            fallible.guard(v => typeof v === 'number')(id),
+            fallible.guard(v => v > 5)(v => v * 2),
+            fallible.guard(v => v % 2 === 0)(v => v - 1),
+          ])
+          return true
+              && t.eq(arbitrary_pipe('abc'))([ false, 'abc', 0 ])
+              && t.eq(arbitrary_pipe(5))([ false, 5, 1 ])
+              && t.eq(arbitrary_pipe(7))([ true, 13, 2 ])
+        },
+      'fallible.break: stops at the first responding function':
+        t => {
+          const gt5 = fallible.guard(v => v > 5)(ret(`5`))
+          const gt1 = fallible.guard(v => v > 1)(ret(`1`))
+          return true
+              && t.eq(fallible.break([ gt5, gt1 ])(3))([ true, `1` ])
+              && t.eq(fallible.break([ gt5, gt1 ])(7))([ true, `5` ])
+              && t.eq(fallible.break([ gt1, gt5 ])(0))([ false, 0  ])
+        },
     }),
     t => t.suite(`objects`, {
       'string_keys: lists string keys':
