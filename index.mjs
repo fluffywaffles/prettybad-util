@@ -575,7 +575,6 @@ const flatfmap = fns => ᐅ([ fmap(fns), flatten ])
 const mut_splice = i => n => vs => ᐅeffect(js.splice(i)(n)(vs))
 const splice     = from_mutative(mut_splice)(copy_apply3)
 const array_copy = arr => concat(arr)([])//Array.from(arr)
-const last_index = arr => len(arr) - 1
 
 export {
   map,
@@ -600,7 +599,6 @@ export {
   split_on,
   flatfmap,
   array_copy,
-  last_index,
 }
 
 const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
