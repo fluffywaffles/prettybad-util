@@ -639,9 +639,11 @@ export {
 
 const taker = derive_mutative(take)
 const drop_end = taker(take => n => take(-n))
+const but_last  = drop_end(1)
 
 export {
   drop_end,
+  but_last,
 }
 
 const skipper = derive_mutative(skip)
@@ -679,27 +681,7 @@ export {
 }
 
 // objects & arrays
-// NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
-
-const is_key = key => includes(typeof key)([`string`,`number`,`symbol`])
-const has    = key => obj => is_key(key) && and([ is_value, js.has_own(key) ])(obj)
-const get    = key => or_none(has(key))(obj => obj[key])
-const get_all  = keys => fmap(map(get)(keys))
-const get_path = path => obj => fold(get)(obj)(path)
-const get_in      = obj => key  => get(key)(obj)
-const get_all_in  = obj => keys => get_all(keys)(obj)
-const get_path_in = obj => path => get_path(path)(obj)
-
-export {
-  has,
-  get,
-  get_all,
-  get_in,
-  get_all_in,
-  get_path,
-  get_path_in,
-}
-
+// key mappers
 const map_keys    = fn => keys => obj => map(k => fn(k)(obj))(keys)
 const filter_keys = fn => keys => obj => filter(k => fn(k)(obj))(keys)
 
@@ -708,147 +690,155 @@ export {
   filter_keys,
 }
 
-const maybe_get = key => fallible.guard(has(key))(get(key))
-const maybe_get_path = keys => object => {
-  const get_until_fail = k => ᐅwhen(get(0))(ᐅ([ get(1), maybe_get(k) ]))
-  return fold(get_until_fail)([ true, object ])(keys)
+// key selectors
+const on_string_keys = fn => ᐅdo([ string_keys, fn ])
+const on_symbol_keys = fn => ᐅdo([ symbol_keys, fn ])
+const on_keys = fn => flatfmap([ on_string_keys(fn), on_symbol_keys(fn) ])
+
+export {
+  on_string_keys,
+  on_symbol_keys,
+  on_keys,
 }
+
+// getter predicates
+// NOTE(jordan): `has(...)` is shallow; `in` or Reflect.has would be deep
+const is_key     = v => includes(typeof v)([`string`,`number`,`symbol`])
+const unsafe_has = key => obj => and([ is_value, js.has_own(key) ])(obj)
+const has        = key => obj => is_key(key) && unsafe_has(key)(obj)
+
+export {
+  is_key,
+  unsafe_has,
+  has,
+}
+
+// getters
+// value getters
+const get_value      = key => or_none(has(key))(obj => obj[key])
+const get_values     = keys => fmap(map(get)(keys))
+const get_path_value = path => obj => fold(get)(obj)(path)
+
+// (flipped)
+const get_value_in      = obj => key  => get_value(key)(obj)
+const get_values_in     = obj => keys => get_values(keys)(obj)
+const get_path_value_in = obj => path => get_path_value(path)(obj)
+
+// entry, property, descriptor getters
+const get_entry      = key => obj => [ key, get(key)(obj) ]
+const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
+const get_descriptor = key => or_none(has(key))(js.get_descriptor(key))
+
+const get_entries     = keys => map_keys(get_entry)(keys)
+const get_properties  = keys => map_keys(get_property)(keys)
+const get_descriptors = keys => map_keys(get_descriptor)(keys)
+
+const at_path = getter => path => ᐅ([
+  fmap([ last, ᐅ([ but_last, get_path_value ]) ]),
+  apply(getter),
+])(path)
+/*
+ * at_path(get_entry)([ 'a', 'b' ])({ a: { b: 5 } }) // => [ 'b', 5 ]
+ * ... and so on, for get_property, get_properties, get_descriptor, etc.
+ */
+
+// filtered getters
+const get = js.assign({
+  for_key : {
+    value      : get_value,
+    entry      : get_entry,
+    property   : get_property,
+    descriptor : get_descriptor,
+  },
+  for_keys : {
+    values      : get_values,
+    entries     : get_entries,
+    properties  : get_properties,
+    descriptors : get_descriptors,
+  },
+  for_path : {
+    value       : get_path_value,
+    values      : at_path(get_values),
+    entry       : at_path(get_entry),
+    entries     : at_path(get_entries),
+    property    : at_path(get_property),
+    properties  : at_path(get_properties),
+    descriptor  : at_path(get_descriptor),
+    descriptors : at_path(get_descriptors),
+  },
+  string_keyed : {
+    values      : on_string_keys(get_values),
+    entries     : on_string_keys(get_entries),
+    properties  : on_string_keys(get_properties),
+    descriptors : on_string_keys(get_descriptors),
+  },
+  symbol_keyed : {
+    values      : on_symbol_keys(get_values),
+    entries     : on_symbol_keys(get_entries),
+    properties  : on_symbol_keys(get_properties),
+    descriptors : on_symbol_keys(get_descriptors),
+  },
+  all : {
+    values      : on_keys(get_values),
+    entries     : on_keys(get_entries),
+    properties  : on_keys(get_properties),
+    descriptors : on_keys(get_descriptors),
+  },
+})(get_value)
+/* get(k)(obj) -- same as: get.for_key.value(k)(obj)
+ * get.for_key.entry(k)(obj)
+ * get.keys.entries(ks)(obj)
+ * get.string_keyed.entries(obj)
+ * get.symbol_keyed.properties(obj)
+ * &c.
+ */
+
+// define some shortcuts
+js.assign({
+  // single-result getters
+  value       : get.for_key.value,
+  entry       : get.for_key.entry,
+  property    : get.for_key.property,
+  descriptor  : get.for_key.descriptor,
+  // many-result getters
+  values      : get.all.values,
+  entries     : get.all.entries,
+  properties  : get.all.properties,
+  descriptors : get.all.descriptors,
+})(get)
+
+export {
+  get,
+}
+
+// Fallible getters
+const maybe_get = key => fallible.guard(has(key))(get(key))
+const maybe_get_path = keys => fallible.ᐅ(map(maybe_get)(keys))
 
 export {
   maybe_get,
   maybe_get_path,
 }
 
-// objects
-
-// Object getters
-const get_entry      = key => obj => [ key, get(key)(obj) ]
-const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
-const get_descriptor = key => or_none(has(key))(js.get_descriptor(key))
-
-export {
-  get_entry,
-  get_property,
-  get_descriptor,
-}
-
-const get_entries    = keys => map_keys(get_entry)(keys)
-const get_properties = keys => map_keys(get_property)(keys)
-
-export {
-  get_entries,
-  get_properties,
-}
-
-const on_string_keys = fn => ᐅdo([ string_keys, fn ])
-const on_symbol_keys = fn => ᐅdo([ symbol_keys, fn ])
-const string_keyed_values     = obj => on_string_keys(get_all)(obj)
-const symbol_keyed_values     = obj => on_symbol_keys(get_all)(obj)
-const string_keyed_entries    = obj => on_string_keys(get_entries)(obj)
-const symbol_keyed_entries    = obj => on_symbol_keys(get_entries)(obj)
-const string_keyed_properties = obj => on_string_keys(get_properties)(obj)
-const symbol_keyed_properties = obj => on_symbol_keys(get_properties)(obj)
-
-export {
-  on_string_keys,
-  on_symbol_keys,
-  string_keyed_values,
-  symbol_keyed_values,
-  string_keyed_entries,
-  symbol_keyed_entries,
-  string_keyed_properties,
-  symbol_keyed_properties,
-}
-
-const object_get = {
-  for_key : {
-    entry      : get_entry,
-    property   : get_property,
-    descriptor : get_descriptor,
-  },
-  for_keys : {
-    entries    : get_entries,
-    properties : get_properties,
-  },
-  string_keyed : {
-    values     : string_keyed_values,
-    entries    : string_keyed_entries,
-    properties : string_keyed_properties,
-  },
-  symbol_keyed : {
-    values     : symbol_keyed_values,
-    entries    : symbol_keyed_entries,
-    properties : symbol_keyed_properties,
-  },
-}
-/* object_get.for_key.entry(k)(obj)
- * object_get.for_keys.entries(ks)(obj)
- * object_get.string_keyed.entries(obj)
- * object_get.symbol_keyed.properties(obj)
- * &c.
- */
-
-const key_types  = [ 'string_keyed', 'symbol_keyed' ]
-const view_types = [ 'values', 'entries', 'properties' ]
-
-const get_keyed_by = key_type => {
-  console.assert(
-    includes(key_type)(key_types),
-    `get_keyed_by: key_type must be one of ${key_types}; got: ${key_type}`,
-  )
-  return get(key_type)(object_get)
-}
-const get_view = view => {
-  console.assert(
-    includes(view)(view_types),
-    `get_view: view must be one of ${view_types}; got: ${view}`,
-  )
-  return get(view)
-}
-
-const get_for_key_type  = kt  => v => get_view(v)(get_keyed_by(kt))
-const get_for_key_types = kts => v => map(flip(get_for_key_type)(v))(kts)
-const get_for_all_keys  = pt  => get_for_key_types(key_types)(pt)
-
-const values     = obj => flatfmap(get_for_all_keys('values'))(obj)
-const entries    = obj => flatfmap(get_for_all_keys('entries'))(obj)
-const properties = obj => flatfmap(get_for_all_keys('properties'))(obj)
-
-for (let fn of [ values, entries, properties ]) object_get[fn.name] = fn
-
-export {
-  values,
-  entries,
-  properties,
-}
-
 // Object mutators
-const set             = mutative(k => v => ᐅeffect(obj => (obj[k] = v)))
-const define_entry    = from_mutative(set.mut)(copy_apply2)
-const define_property = from_mutative(js.define_property)(copy_apply2)
+const set_value = from_mutative(k => v => ᐅeffect(o => (o[k] = v)))(copy_apply2)
+const set_descriptor = from_mutative(js.define_property)(copy_apply2)
 
 export {
-  set,
-  define_entry,
-  define_property,
+  set_value,
+  set_descriptor,
 }
 
-const entry_definer    = derive_mutative(define_entry)
-const property_definer = derive_mutative(define_property)
-
-const define_entry_pair    = entry_definer(apply)
-const define_property_pair = property_definer(apply)
+const define_entry_pair    = derive_mutative(set_value)(apply)
+const define_property_pair = derive_mutative(set_descriptor)(apply)
 
 export {
   define_entry_pair,
   define_property_pair,
 }
 
-const entry_pair_definer    = derive_mutative(define_entry_pair)
-const property_pair_definer = derive_mutative(define_property_pair)
-
-const define_entry_pairs    = entry_pair_definer(over)
-const define_property_pairs = property_pair_definer(over)
+const define_entry_pairs    = derive_mutative(define_entry_pair)(over)
+const define_property_pairs = derive_mutative(define_property_pair)(over)
 
 export {
   define_entry_pairs,
@@ -872,8 +862,8 @@ export {
 }
 
 const merge_by = ([ get, join ]) => ᐅ([ map(get), flatten, join ])
-const merge_entries    = vs => merge_by([ entries, from_entries ])(vs)
-const merge_properties = vs => merge_by([ properties, from_properties ])(vs)
+const merge_entries    = vs => merge_by([ get.entries, from_entries ])(vs)
+const merge_properties = vs => merge_by([ get.properties, from_properties ])(vs)
 
 export {
   merge_by,
@@ -881,11 +871,11 @@ export {
   merge_properties,
 }
 
-const object_copy = obj => ᐅ([ properties, from_properties ])(obj)
+const object_copy = obj => ᐅ([ get.properties, from_properties ])(obj)
 const mixin = a => b => merge_properties([ a, b ])
 const map_as = convert => undo => f => ᐅ([ convert, f, undo ])
-const on_properties = f => map_as(properties)(from_properties)(f)
-const on_entries    = f => map_as(entries)(from_entries)(f)
+const on_properties = f => map_as(get.all.properties)(from_properties)(f)
+const on_entries    = f => map_as(get.all.entries)(from_entries)(f)
 const map_properties = f => on_properties(map(f))
 const map_entries    = f => on_entries(map(f))
 const filter_properties = f => on_properties(filter(f))
@@ -893,9 +883,9 @@ const filter_entries    = f => on_entries(filter(f))
 const swap = k => v => fmap([ get(k), o => mixin(o)({ [k]: v }) ])
 const update = k => f => ᐅdo([ get(k), v => o => mixin(o)({ [k]: f(v) }) ])
 const update_path = p => f => fold(k => u => update(k)(u))(f)(reverse(p))
-const enumerable_keys = o => ᐅdo([ keys, filter_keys(is_enumerable) ])(o)
-const enumerable_entries = o => ᐅdo([ enumerable_keys, get_entries ])(o)
-const update_with = ups => o => fold(apply(update))(o)(entries(ups))
+const enumerable_keys = o => ᐅ([ keys, filter(k => is_enumerable(k)(o)) ])(o)
+const enumerable_entries = o => ᐅdo([ enumerable_keys, get.for_keys.entries ])(o)
+const update_with = ups => o => fold(apply(update))(o)(get.all.entries(ups))
 
 const zip   = ks  => vs => ᐅ([ interlace(ks), from_entries ])(vs)
 const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
@@ -980,7 +970,7 @@ export function test (suite) {
       'ᐅdo: chains together calls on a common target': t => {
         const object = { a: 0, b: `c`, d: true }
         const values = [ 0, `c`, true ]
-        return t.eq(ᐅdo([ js.keys, get_all ])(object))(values)
+        return t.eq(ᐅdo([ js.keys, get.for_keys.values ])(object))(values)
       },
       'ᐅif: inline if': t => {
         const approach_10 = ᐅif(v => v < 10)(v => v + 1)(v => v - 1)
@@ -1082,47 +1072,49 @@ export function test (suite) {
         t => t.eq(symbol_keys({ [sym_a]: `hi`, a: 4 }))([sym_a]),
       'keys: lists both string and symbol keys':
         t => t.eq(keys({ [sym_a]: `hi`, a: 4 }))(['a', sym_a]),
-      'string_keyed_values: lists string-keyed values':
-        t => t.eq(string_keyed_values({ [sym_a]: `hi`, a: 4 }))([4]),
-      'symbol_keyed_values: lists symbol-keyed values':
-        t => t.eq(symbol_keyed_values({ [sym_a]: `hi`, a: 4 }))([ `hi` ]),
-      'values: lists both symbol values and non-symbol values':
-        t => t.eq(values({ [sym_a]: `hi`, a: 4 }))([ 4, `hi` ]),
-      'get_descriptor: gets property descriptor':
-        t => t.eq(get_descriptor('a')({ a: 4 }))(d.default({ v: 4 })),
-      'define_properties.mut: sets properties on an object': t => {
-        const o = { a: 5 }
-        define_properties.mut({ b: { value: 3 } })(o)
-        define_properties.mut({ a: { value: 6, enumerable: false } })(o)
-        return true
-          && t.eq(o.b)(3)
-          && t.eq(o.a)(6)
-          && t.eq(Object.keys(o))([])
-      },
-      'define_property.mut: sets a single property on an object': t => {
-        const o = { a: 1 }
-        define_property.mut('b')({ value: 5 })(o)
-        define_property.mut('a')({ enumerable: false })(o)
-        return true
-          && t.eq(o.b)(5)
-          && t.eq(o.a)(1)
-          && t.eq(Object.keys(o))([])
-      },
-      'string_keyed_properties: gets non-symbol properties':
+      'get.string_keyed.values: lists string-keyed values':
+        t => t.eq(get.string_keyed.values({ [sym_a]: `hi`, a: 4 }))([4]),
+      'get.symbol_keyed.values: lists symbol-keyed values':
+        t => t.eq(get.symbol_keyed.values({ [sym_a]: `hi`, a: 4 }))([ `hi` ]),
+      'get.all.values: lists both symbol values and non-symbol values':
+        t => t.eq(get.all.values({ [sym_a]: `hi`, a: 4 }))([ 4, `hi` ]),
+      'get.descriptor: gets property descriptor':
+        t => t.eq(get.descriptor('a')({ a: 4 }))(d.default({ v: 4 })),
+      'define_properties.mut: sets properties on an object':
         t => {
-          return t.eq(string_keyed_properties({ a: 5 }))([
+          const o = { a: 5 }
+          define_properties.mut({ b: { value: 3 } })(o)
+          define_properties.mut({ a: { value: 6, enumerable: false } })(o)
+          return true
+            && t.eq(o.b)(3)
+            && t.eq(o.a)(6)
+            && t.eq(Object.keys(o))([])
+        },
+      'set_descriptor.mut: sets a single descriptor on an object':
+        t => {
+          const o = { a: 1 }
+          set_descriptor.mut('b')({ value: 5 })(o)
+          set_descriptor.mut('a')({ enumerable: false })(o)
+          return true
+            && t.eq(o.b)(5)
+            && t.eq(o.a)(1)
+            && t.eq(Object.keys(o))([])
+        },
+      'get.string_keyed.properties: gets non-symbol properties':
+        t => {
+          return t.eq(get.string_keyed.properties({ a: 5 }))([
             ['a', d.default({ v: 5 }) ],
           ])
         },
-      'symbol_keyed_properties: gets symbol properties':
+      'get.symbol_keyed.properties: gets symbol properties':
         t => {
-          return t.eq(symbol_keyed_properties({ [Symbol.split]: `hi` }))([
+          return t.eq(get.symbol_keyed.properties({ [Symbol.split]: `hi` }))([
             [Symbol.split, d.default({ v: `hi` })],
           ])
         },
-      'properties: gets all descriptors':
+      'get.all.properties: gets all properties':
         t => {
-          return t.eq(properties({ a: 5, [Symbol.split]: `hi` }))([
+          return t.eq(get.all.properties({ a: 5, [Symbol.split]: `hi` }))([
             [ 'a',          d.default({ v: 5 })    ],
             [ Symbol.split, d.default({ v: `hi` }) ],
           ])
@@ -1143,24 +1135,25 @@ export function test (suite) {
         t => t.eq(get(0)([5]))(5)
           && t.eq(get('a')({}))(None)
           && !t.eq(get(['a'])({ 'a': 'b' }))('b'),
-      'get_path: gets a path, or returns None if path does not exist':
-        t => t.eq(get_path(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
-          && t.eq(get_path(['a','b','d'])({'a': {'b': {'c': 5}}}))(None),
-      'get_path_in: gets a path of keys/indices in a target object':
-        t => t.eq(get_path_in({'a': {'b': {'c': 5 }}})(['a','b','c']))(5),
+      'get.for_path.value: gets a path, or returns None if path does not exist':
+        t => t.eq(get.for_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
+          && t.eq(get.for_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None),
+      'get_path_value_in: gets a path of keys/indices in a target object':
+        t => t.eq(get_path_value_in({'a': {'b': {'c': 5 }}})(['a','b','c']))(5),
       'maybe_get: conditionally gets a key and returns success':
         t => t.eq(maybe_get(0)([`a`]))([ true, `a` ])
           && t.eq(maybe_get(`a`)({ b: 0 }))([ false, { b: 0 } ])
           && t.eq(maybe_get(0)([]))([ false, [] ]),
-      'maybe_get_path: contitionally gets a path and returns success':
-        t => t.eq(maybe_get_path([ 0, 1 ])([[0, 1]]))([ true, 1 ])
-          && t.eq(maybe_get_path([ `a`, `b` ])({ a: 0 }))([ false, 0 ]),
-      'entries: gets {key,symbol}, value pairs': t => {
-        return t.eq(entries({ a: 5, [Symbol.split]: `hi` }))([
-          ['a', 5],
-          [Symbol.split, `hi`],
-        ])
-      },
+      'maybe_get_path: conditionally gets a path and returns success':
+        t => t.eq(maybe_get_path([0, 1])([[0, 1]]))([ true, 1, 1 ])
+          && t.eq(maybe_get_path([`a`, `b`])({ a: 0 }))([ false, 0, 1 ]),
+      'get.all.entries: gets {key,symbol}, value pairs':
+        t => {
+          return t.eq(get.all.entries({ a: 5, [Symbol.split]: `hi` }))([
+            ['a', 5],
+            [Symbol.split, `hi`],
+          ])
+        },
       'from_entries: turns {key,symbol}, value pairs into an object':
         t => t.eq(from_entries([['a', 5],['b', `hi`]]))({a: 5, b: `hi`}),
       'swap: swaps the current value of a key for another':
