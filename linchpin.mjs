@@ -196,10 +196,9 @@ const includes = v => arr => [].includes.call(arr, v)
  */
 const breakloop = ({ marker, body, latch = _ => {} }) => array => {
   let index = 0, result = marker
-  while (true
-    && (index < array.length)
-    && (result = body(array[index], index), (result !== marker ))
-  ) {
+  while (index < array.length) {
+    result = body(array[index], index)
+    if (result === marker) break
     latch(result, index++)
   }
 }
