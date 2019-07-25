@@ -1,6 +1,5 @@
 import {
-  own_descriptors,
-  define_properties,
+  assign,
 } from './linchpin'
 
 /* TODO(jordan):
@@ -16,8 +15,12 @@ import {
 /**
  * descriptor factory
  * borrowing shamelessly from d.js: https://www.npmjs.com/package/d
+ *
+ * The trouble with the original d is: The code is clearly too
+ * complicated, and the number of dependencies is for some unclear reason
+ * non-zero. Both of those qualities are showstoppers.
  */
-const d = define_properties(own_descriptors({
+const d = assign({
   /**
    * Internal configuration
    */
@@ -46,7 +49,7 @@ const d = define_properties(own_descriptors({
           : c1             ? { [d._.cew[c1]]: true }
           : {}
   },
-}))(make_descriptor)
+})(make_descriptor)
 
 /**
  * Descriptor factory api
@@ -58,13 +61,13 @@ function make_descriptor (cew) {
   const parse = typeof cew === 'string'
     ? d.parse_cew_string
     : d._.unknown_parse
-  const Conf = parse(cew)
+  const configuration_create = parse(cew)
   return ({ v, g, s }) => {
-    const inst = Conf()
-    if (v !== undefined) inst.value = v
-    if (g !== undefined) inst.get   = g
-    if (s !== undefined) inst.set   = s
-    return inst
+    const configuration = configuration_create()
+    if (v !== undefined) configuration.value = v
+    if (g !== undefined) configuration.get   = g
+    if (s !== undefined) configuration.set   = s
+    return configuration
   }
 }
 
@@ -76,7 +79,7 @@ function make_descriptor (cew) {
  *   d.nothing({ g: ret(4) }) ⇒ { get: ret(4) }
  *   d.enumerable({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
  */
-define_properties(own_descriptors({
+assign({
   // Default descriptor: all permissions
   default          : d(`cew`),
   // Single permission inclusion descriptors
@@ -89,6 +92,6 @@ define_properties(own_descriptors({
   non_writable     : d( `ce`),
   // Nothing descriptor: no permissions
   nothing          : d(   ``),
-}))(d)
+})(d)
 
 export default d
