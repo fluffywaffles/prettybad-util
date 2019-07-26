@@ -18,12 +18,12 @@ export {
   has_own,
 }
 
-const of_properties   = descriptors => Obj.create(null, descriptors)
+const create          = descriptors => Obj.create(null, descriptors)
 const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
 const own_descriptors = Obj.getOwnPropertyDescriptors
 
 export {
-  of_properties,
+  create,
   get_descriptor,
   own_descriptors,
 }

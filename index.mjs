@@ -43,9 +43,9 @@ export {
   string_keys,
   symbol_keys,
   is_enumerable,
-  of_properties,
   some as any,
   every as all,
+  create as from_descriptors,
 } from './linchpin'
 
 // general
@@ -1237,7 +1237,7 @@ export function test (suite) {
         },
       'enumerable_entries: entries, filtered by js.is_enumerable':
         t => {
-          const example = js.of_properties({
+          const example = js.create({
             a: d.default({ v: 5 }),
             b: { value: 'hidden' },
           })
