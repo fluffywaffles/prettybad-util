@@ -627,7 +627,7 @@ const thru     = derive_mutative(til)(til => n => til(n + 1))
 const flatfmap = fns => ᐅ([ fmap(fns), flatten ])
 const mut_splice = i => n => vs => ᐅeffect(js.splice(i)(n)(vs))
 const splice     = from_mutative(mut_splice)(copy_apply3)
-const array_copy = arr => concat(arr)([])//Array.from(arr)
+const array_copy = arr => concat(arr)([])
 
 export {
   map,
