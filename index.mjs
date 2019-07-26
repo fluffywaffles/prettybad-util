@@ -1045,13 +1045,18 @@ export function test (suite) {
       'ret: returns a computed value':
         t => t.eq(ret(5)())(5),
       'apply: applies function to array of args':
-        t => t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3)
-          && t.eq(apply(_ => 5)([])())(5),
+        t => {
+          return t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3)
+              && t.eq(apply(_ => 5)([])())(5)
+        },
       'times: repeats a function a set number of times':
         t => t.eq(times(3)(x => x * 2)(2))(16),
       'or_none: if <cond>, do <fn>; otherwise return None':
-        t => t.eq(or_none(a => a.length > 0)(a => a[0])([1]))(1)
-          && t.eq(or_none(a => a.length > 0)(a => a[0])([]))(None),
+        t => {
+          return true
+              && t.eq(or_none(a => a.length > 0)(a => a[0])([1]))(1)
+              && t.eq(or_none(a => a.length > 0)(a => a[0])([]))(None)
+        },
       'and: true if all predicates are true':
         t => t.ok(and([ x => x % 2 === 0, x => x % 3 === 0 ])(6)),
       'or: true if any predicate is true':
@@ -1178,31 +1183,49 @@ export function test (suite) {
       'from_properties: converts [prop, desc] pairs to an object':
         t => t.eq(from_properties([['a',d.default({ v: 5 })]]))({ a: 5 }),
       'object_copy: (shallowly) clones an object':
-        t => t.eq(object_copy({ a: 5 }))({ a: 5 })
-          && t.refeq(object_copy({ f: to6 }).f)(to6),
+        t => {
+          return true
+              && t.eq(object_copy({ a: 5 }))({ a: 5 })
+              && t.refeq(object_copy({ f: to6 }).f)(to6)
+        },
       'merge: combines properties of 2 source objects':
         t => t.eq(merge({ a: 4 })({ a: 5 }))({ a: 5 }),
       'has: returns true is a key is valid and present in an object':
-        t => !t.ok(has([`a`])({ a: `b` }))
-          && t.ok(has(`a`)({ a: `b` }))
-          && !t.ok(has(0)([]))
-          && t.ok(has(0)([1])),
+        t => {
+          return true
+              && !t.ok(has([`a`])({ a: `b` }))
+              && t.ok(has(`a`)({ a: `b` }))
+              && !t.ok(has(0)([]))
+              && t.ok(has(0)([1]))
+        },
       'get: gets a key/index or None if not present':
-        t => t.eq(get(0)([5]))(5)
-          && t.eq(get('a')({}))(None)
-          && !t.eq(get(['a'])({ 'a': 'b' }))('b'),
+        t => {
+          return true
+              && t.eq(get(0)([5]))(5)
+              && t.eq(get('a')({}))(None)
+              && !t.eq(get(['a'])({ 'a': 'b' }))('b')
+        },
       'get.for_path.value: gets a path, or returns None if path does not exist':
-        t => t.eq(get.for_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
-          && t.eq(get.for_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None),
+        t => {
+          return true
+              && t.eq(get.for_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
+              && t.eq(get.for_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None)
+        },
       'get_path_value_in: gets a path of keys/indices in a target object':
         t => t.eq(get_path_value_in({'a': {'b': {'c': 5 }}})(['a','b','c']))(5),
       'maybe_get: conditionally gets a key and returns success':
-        t => t.eq(maybe_get(0)([`a`]))([ true, `a` ])
-          && t.eq(maybe_get(`a`)({ b: 0 }))([ false, { b: 0 } ])
-          && t.eq(maybe_get(0)([]))([ false, [] ]),
+        t => {
+          return true
+              && t.eq(maybe_get(0)([`a`]))([ true, `a` ])
+              && t.eq(maybe_get(`a`)({ b: 0 }))([ false, { b: 0 } ])
+              && t.eq(maybe_get(0)([]))([ false, [] ])
+        },
       'maybe_get_path: conditionally gets a path and returns success':
-        t => t.eq(maybe_get_path([0, 1])([[0, 1]]))([ true, 1, 1 ])
-          && t.eq(maybe_get_path([`a`, `b`])({ a: 0 }))([ false, 0, 1 ]),
+        t => {
+          return true
+              && t.eq(maybe_get_path([0, 1])([[0, 1]]))([ true, 1, 1 ])
+              && t.eq(maybe_get_path([`a`, `b`])({ a: 0 }))([ false, 0, 1 ])
+        },
       'get.all.entries: gets {key,symbol}, value pairs':
         t => {
           return t.eq(get.all.entries({ a: 5, [Symbol.split]: `hi` }))([
@@ -1260,24 +1283,33 @@ export function test (suite) {
     }),
     t => t.suite('value predicates', {
       'is':
-        t => t.ok(is(null)(null))
-          && t.ok(is(undefined)(undefined))
-          && t.ok(is(0)(0))
-          && t.ok(is("hello")("hello"))
-          && !t.ok(is("hello")("goodbye"))
-          && !t.ok(is(0)(1))
-          && !t.ok(is(null)(undefined))
-          && !t.ok(is(false)(undefined))
-          && !t.ok(is(null)(false)),
+        t => {
+          return true
+              && t.ok(is(null)(null))
+              && t.ok(is(undefined)(undefined))
+              && t.ok(is(0)(0))
+              && t.ok(is("hello")("hello"))
+              && !t.ok(is("hello")("goodbye"))
+              && !t.ok(is(0)(1))
+              && !t.ok(is(null)(undefined))
+              && !t.ok(is(false)(undefined))
+              && !t.ok(is(null)(false))
+        },
       'not':
-        t => t.ok(not(v => v < 5)(6))
-          && !t.ok(not(v => v === "hello")("hello")),
+        t => {
+          return true
+              && t.ok(not(v => v < 5)(6))
+              && !t.ok(not(v => v === "hello")("hello"))
+        },
       'is_value':
-        t => t.ok(is_value(0))
-          && t.ok(is_value(false))
-          && t.ok(is_value(NaN))
-          && !t.ok(is_value(undefined))
-          && !t.ok(is_value(null)),
+        t => {
+          return true
+              && t.ok(is_value(0))
+              && t.ok(is_value(false))
+              && t.ok(is_value(NaN))
+              && !t.ok(is_value(undefined))
+              && !t.ok(is_value(null))
+        },
     }),
     t => t.suite('arrays', {
       'each: no effect':
@@ -1307,14 +1339,20 @@ export function test (suite) {
       'index: -1 when not found':
         t => t.eq(index(123)(to6))(-1),
       'find: first even of to6 is 2':
-        t => t.eq(find(v => v % 2 == 0)(to6))(2)
-          && t.eq(find(v => v === 0)([ 0, false ]))(0)
-          && t.eq(find(v => v === false)([ 0, false ]))(false)
-          && t.eq(find(v => !v)([ 0, false ]))(0)
-          && t.eq(find(v => !v)([ 14, true ]))(None),
+        t => {
+          return true
+              && t.eq(find(v => v % 2 == 0)(to6))(2)
+              && t.eq(find(v => v === 0)([ 0, false ]))(0)
+              && t.eq(find(v => v === false)([ 0, false ]))(false)
+              && t.eq(find(v => !v)([ 0, false ]))(0)
+              && t.eq(find(v => !v)([ 14, true ]))(None)
+        },
       'findex: first even of to6 is at index 1':
-        t => t.eq(findex(v => v % 2 == 0)(to6))(1)
-          && t.eq(findex(v => v > 10)(to6))(-1),
+        t => {
+          return true
+              && t.eq(findex(v => v % 2 == 0)(to6))(1)
+              && t.eq(findex(v => v > 10)(to6))(-1)
+        },
       'join: joins an array into a string':
         t => t.eq(join('+')(to6))('1+2+3+4+5'),
       'slice(0)(0): nothing':
@@ -1336,21 +1374,30 @@ export function test (suite) {
       'len: len of to6 is 5':
         t => t.eq(len(to6))(5),
       'fill: fills an array with a value':
-        t => t.eq(fill(5)(to6))([ 5, 5, 5, 5, 5 ])
-          && t.eq(to6)([ 1, 2, 3, 4, 5 ]),
+        t => {
+          return true
+              && t.eq(fill(5)(to6))([ 5, 5, 5, 5, 5 ])
+              && t.eq(to6)([ 1, 2, 3, 4, 5 ])
+        },
       'n_of: n_of 0 where n is 5 gives 5 zeroes':
         t => t.eq(n_of(0)(5))([ 0, 0, 0, 0, 0 ]),
       'push: to6 push [6] is 1..5,[6]':
         t => t.eq(push([ 6 ])(to6))([ 1, 2, 3, 4, 5, [ 6 ] ]),
       'flatten: flattening arbitrarily partitioned to6 is to6':
-        t => t.eq(flatten([[1], [2, 3], 4, [5]]))(to6)
-          && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ])
-          && t.eq(flatten([[ 1, 2, 3 ]]))([ 1, 2, 3 ]),
+        t => {
+          return true
+              && t.eq(flatten([[1], [2, 3], 4, [5]]))(to6)
+              && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ])
+              && t.eq(flatten([[ 1, 2, 3 ]]))([ 1, 2, 3 ])
+        },
       'flatmap: maps then flattens':
         t => t.eq(flatmap(v => [ v, v + 5 ])([ 1, 2 ]))([ 1, 6, 2, 7 ]),
       'array_copy: makes new copy of array':
-        t => t.eq(array_copy(to6))(to6)
-          && !t.refeq(array_copy(to6))(to6),
+        t => {
+          return true
+              && t.eq(array_copy(to6))(to6)
+              && !t.refeq(array_copy(to6))(to6)
+        },
       'reverse: reverse of to6 is 5..1':
         t => t.eq(reverse(to6))([ 5, 4, 3, 2, 1 ]),
       'remove: removing 2 from to6 drops index 1':
@@ -1370,12 +1417,15 @@ export function test (suite) {
     }),
     t => t.suite(`strings`, {
       'string: stringifies a thing':
-        t => t.eq(string({ toString() { return 'hello' } }))('hello')
-          && t.eq(string(function f () {}))('function f () {}')
-          && t.eq(string(5))('5')
-          && t.eq(string([ `a`, `b`, `c`, ]))('a,b,c')
-          && t.eq(string(true))('true')
-          && t.eq(string(Symbol(`abc`)))('Symbol(abc)'),
+        t => {
+          return true
+              && t.eq(string({ toString() { return 'hello' } }))('hello')
+              && t.eq(string(function f () {}))('function f () {}')
+              && t.eq(string(5))('5')
+              && t.eq(string([ `a`, `b`, `c`, ]))('a,b,c')
+              && t.eq(string(true))('true')
+              && t.eq(string(Symbol(`abc`)))('Symbol(abc)')
+        },
       'lowercase: lower-cases a string':
         t => t.eq(lowercase('aBCdEfChgaksldFS'))('abcdefchgaksldfs'),
       'uppercase: upper-cases a string':
