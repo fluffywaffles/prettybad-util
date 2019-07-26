@@ -874,7 +874,7 @@ export {
 }
 
 // Object mutators
-const set_value = from_mutative(k => v => ᐅeffect(o => (o[k] = v)))(copy_apply2)
+const set_value      = from_mutative(k => v => ᐅeffect(o => (o[k] = v)))(copy_apply2)
 const set_descriptor = from_mutative(js.define_property)(copy_apply2)
 
 export {
@@ -882,32 +882,32 @@ export {
   set_descriptor,
 }
 
-const define_entry_pair    = derive_mutative(set_value)(apply)
-const define_property_pair = derive_mutative(set_descriptor)(apply)
+const set_entry    = derive_mutative(set_value)(apply)
+const set_property = derive_mutative(set_descriptor)(apply)
 
 export {
-  define_entry_pair,
-  define_property_pair,
+  set_entry,
+  set_property,
 }
 
-const define_entry_pairs    = derive_mutative(define_entry_pair)(over)
-const define_property_pairs = derive_mutative(define_property_pair)(over)
+const set_entries    = derive_mutative(set_entry)(over)
+const set_properties = derive_mutative(set_property)(over)
 
 export {
-  define_entry_pairs,
-  define_property_pairs,
+  set_entries,
+  set_properties,
 }
 
-const define_entries    = from_mutative(js.assign)(copy_apply1)
-const define_properties = from_mutative(js.define_properties)(copy_apply1)
+const set_values      = from_mutative(js.assign)(copy_apply1)
+const set_descriptors = from_mutative(js.define_properties)(copy_apply1)
 
 export {
-  define_entries,
-  define_properties,
+  set_values,
+  set_descriptors,
 }
 
-const from_entries    = pairs => define_entry_pairs.mut(pairs)({})
-const from_properties = pairs => define_property_pairs.mut(pairs)({})
+const from_entries    = pairs => set_entries.mut(pairs)({})
+const from_properties = pairs => set_properties.mut(pairs)({})
 
 export {
   from_entries,
@@ -962,7 +962,7 @@ export {
 const update_path = path => final_updater => {
   return over(key => value_updater => fallible.ᐅdo([
     fallible.rollback(fallible.ᐅ([ maybe_get(key), value_updater ])),
-    new_value => fallible.unfailing(define_entries({ [key]: new_value })),
+    new_value => fallible.unfailing(set_value(key)(new_value)),
   ]))(reverse(path))(fallible.unfailing(final_updater))
 }
 const update = key => fn => ᐅ([ update_path([ key ])(fn), take(2) ])
@@ -1158,11 +1158,11 @@ export function test (suite) {
         t => t.eq(get.all.values({ [sym_a]: `hi`, a: 4 }))([ 4, `hi` ]),
       'get.descriptor: gets property descriptor':
         t => t.eq(get.descriptor('a')({ a: 4 }))(d.default({ v: 4 })),
-      'define_properties.mut: sets properties on an object':
+      'set_descriptors.mut: copies descriptors from an object':
         t => {
           const o = { a: 5 }
-          define_properties.mut({ b: { value: 3 } })(o)
-          define_properties.mut({ a: { value: 6, enumerable: false } })(o)
+          set_descriptors.mut({ b: { value: 3 } })(o)
+          set_descriptors.mut({ a: { value: 6, enumerable: false } })(o)
           return true
             && t.eq(o.b)(3)
             && t.eq(o.a)(6)
