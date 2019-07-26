@@ -239,15 +239,28 @@ const fallible_unfailing = fn => fallible_create(({ pose }) => value => {
   return pose(fn(value))
 })
 
+const fallible_unwrap = ([ succeeded, result ]) => {
+  if (succeeded) return result
+  throw new Error(
+    `fallible.assert: fallible failed with [${succeeded} ${result}]`
+  )
+}
+
+const fallible_assert = f => value => {
+  return fallible_unwrap(f(value))
+}
+
 const fallible = js.assign({
   ᐅ: fallible_ᐅ,
   ᐅdo: fallible_ᐅdo,
   fold: fallible_fold,
   break: fallible_break,
-  guard: fallible_guard,
+  unwrap: fallible_unwrap,
+  assert: fallible_assert,
   fatalize: fallible_fatalize,
   rollback: fallible_rollback,
   // Wrappers
+  guard: fallible_guard,
   fail: fallible_fail,
   unfailing: fallible_unfailing,
 })(fallible_create)
