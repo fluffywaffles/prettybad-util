@@ -5,21 +5,6 @@
  */
 
 /*
- * Missing
- *
- *
- * other
- *  px/unpx
- *  wait
- *  attr
- *  relative_xy
- *  immutable
- *  Some
- *  defined
- *
- */
-
-/*
  * Obvious TODOs
  *
  * mutative alternatives for more APIs
