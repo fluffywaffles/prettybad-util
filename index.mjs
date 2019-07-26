@@ -407,6 +407,8 @@ export const reflex = {
 }
 
 // polymorphic object/array copiers
+const array_copy  = arr => concat(arr)([])
+const object_copy = obj => ᐅ([ get.properties, from_properties ])(obj)
 const copy = object => fallible.assert(fallible.break([
   fallible.guard(reflex.instance.Array)(array_copy),
   fallible.guard(reflex.type.object)(object_copy),
@@ -417,6 +419,8 @@ const copy_apply2 = f => a => b => copy_and(f(a)(b))
 const copy_apply3 = f => a => b => c => copy_and(f(a)(b)(c))
 
 export {
+  array_copy,
+  object_copy,
   copy,
   copy_and,
   copy_apply1,
@@ -636,7 +640,6 @@ const thru     = derive_mutative(til)(til => n => til(n + 1))
 const flatfmap = fns => ᐅ([ fmap(fns), flatten ])
 const mut_splice = i => n => vs => ᐅeffect(js.splice(i)(n)(vs))
 const splice     = from_mutative(mut_splice)(copy_apply3)
-const array_copy = arr => concat(arr)([])
 
 export {
   map,
@@ -660,7 +663,6 @@ export {
   split_at,
   split_on,
   flatfmap,
-  array_copy,
 }
 
 const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
@@ -933,7 +935,6 @@ export {
   merge_properties,
 }
 
-const object_copy = obj => ᐅ([ get.properties, from_properties ])(obj)
 const merge = a => b => merge_properties([ a, b ])
 const map_as = convert => undo => f => ᐅ([ convert, f, undo ])
 const on_properties = f => map_as(get.all.properties)(from_properties)(f)
@@ -950,7 +951,6 @@ const zip   = ks  => vs => ᐅ([ interlace(ks), from_entries ])(vs)
 const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
 
 export {
-  object_copy,
   merge,
   map_as,
   on_properties,
