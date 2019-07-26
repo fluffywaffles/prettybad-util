@@ -155,15 +155,6 @@ const fallible_create = definition => value => definition({
   fail: _      => [ false, value ],
 })(value)
 
-// 'Break's on the first fallible to pose a result
-const fallible_break = fallibles => fallible(({ pose, fail }) => v => {
-  for (const fallible_fn of fallibles) {
-    const [ succeeded, result ] = fallible_fn(v)
-    if (succeeded) return pose(result)
-  }
-  return fail()
-})
-
 // 'Guard's a function with a predicate in a fallible
 const fallible_guard = pred => fn => fallible(({ pose, fail }) => v => {
   return pred(v) ? pose(fn(v)) : fail()
@@ -177,38 +168,57 @@ const fallible_fatalize = fallible => v => {
 }
 
 // Folds fallibles over results until one fails to pose a next result
-const fallible_fold = folder => initial => values => {
-  return fold_indexed(index => value => {
+function fallible_fold (folder) {
+  return initial => fold_indexed(index => value => {
     const thread_shuttle = ᐅ([ get(1), folder(value), push(index) ])
     return ᐅif(get(0))(thread_shuttle)(ret(fold.short_circuit))
-  })([ true, initial, -1 ])(values)
+  })([ true, initial, -1 ])
+}
+
+// 'Break's on the first fallible to pose a result
+function fallible_break (fallibles) {
+  return fallible(({ pose, fail }) => value => {
+    for (const fallible of fallibles) {
+      const [ succeeded, result ] = fallible(value)
+      if (succeeded) return pose(result)
+    }
+    return fail()
+  })
 }
 
 // 'Chain's a series of fallibles, until one fails to pose a next result
-const fallible_ᐅ = fs => value => fallible_fold(call)(value)(fs)
-const fallible_ᐅdo = fs => value => {
-  const do_folder = fallible_fn => args => {
-    const target = last(args)
-    const [ succeeded, result ] = apply(fallible_fn)(args)
-    return [ succeeded, [ result, target ] ]
-  }
-  return ᐅ([
-    fallible_fold(do_folder)([ value ]),
-    array_update(1)(get(0)), // drop the carried 2nd argument
-  ])(fs)
+function fallible_ᐅ (fallibles) {
+  return value => fallible_fold(call)(value)(fallibles)
+}
+function fallible_ᐅdo (fallibles) {
+  return fallible(({}) => value => {
+    const do_folder = fallible => args => {
+      const target = last(args)
+      const [ succeeded, result ] = apply(fallible)(args)
+      return [ succeeded, [ result, target ] ]
+    }
+    return ᐅ([
+      fallible_fold(do_folder)([ value ]),
+      array_update(1)(get(0)), // drop the carried 2nd argument
+    ])(fallibles)
+  })
 }
 
-const fallible_rollback = f => fallible_create(({ pose, fail }) => value => {
-  const [ succeeded, result ] = f(value)
-  return succeeded ? pose(result) : fail()
-})
+function fallible_rollback (fallible) {
+  return fallible_create(({ pose, fail }) => value => {
+    const [ succeeded, result ] = fallible(value)
+    return succeeded ? pose(result) : fail()
+  })
+}
 
-const fallible_fail = _ => fallible_create(({ fail }) => _ => fail())
-const fallible_unfailing = fn => fallible_create(({ pose }) => value => {
-  return pose(fn(value))
-})
+function fallible_fail () {
+  return fallible(({ fail }) => _ => fail())
+}
+function fallible_unfailing (fn) {
+  return fallible(({ pose }) => value => pose(fn(value)))
+}
 
-const fallible_unwrap = ([ succeeded, result ]) => {
+function fallible_unwrap ([ succeeded, result ]) {
   if (succeeded) return result
   throw new Error(
     `fallible.assert: fallible failed with [${succeeded} ${result}]`
@@ -220,18 +230,21 @@ const fallible_assert = f => value => {
 }
 
 const fallible = js.assign({
-  ᐅ: fallible_ᐅ,
-  ᐅdo: fallible_ᐅdo,
-  fold: fallible_fold,
-  break: fallible_break,
-  unwrap: fallible_unwrap,
-  assert: fallible_assert,
-  fatalize: fallible_fatalize,
-  rollback: fallible_rollback,
+  // Composers
+  ᐅ         : fallible_ᐅ,
+  ᐅdo       : fallible_ᐅdo,
+  fold      : fallible_fold,
+  break     : fallible_break,
+  // Modifiers
+  fatalize  : fallible_fatalize,
+  rollback  : fallible_rollback,
   // Wrappers
-  guard: fallible_guard,
-  fail: fallible_fail,
-  unfailing: fallible_unfailing,
+  fail      : fallible_fail,
+  guard     : fallible_guard,
+  unfailing : fallible_unfailing,
+  // Unwrappers
+  assert    : fallible_assert,
+  unwrap    : fallible_unwrap,
 })(fallible_create)
 
 export {
