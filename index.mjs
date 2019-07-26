@@ -1239,7 +1239,7 @@ export function test (suite) {
         t => {
           const example = js.create({
             a: d.default({ v: 5 }),
-            b: { value: 'hidden' },
+            b: d.nothing({ v: 'hidden' }),
           })
           return t.eq(enumerable_entries(example))([[ 'a', 5 ]])
         },
