@@ -374,8 +374,26 @@ function array_case ({ array, object }) {
   return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
 }
 export const reflex = {
-  type,
-  instance,
+  type: js.assign({
+    object    : type(types.object),
+    number    : type(types.number),
+    string    : type(types.string),
+    symbol    : type(types.symbol),
+    boolean   : type(types.boolean),
+    function  : type(types.function),
+    undefined : type(types.undefined),
+  })(type),
+  instance: js.assign({
+    Map      : instance(Map),
+    Set      : instance(Set),
+    Date     : instance(Date),
+    Array    : instance(Array),
+    Number   : instance(Number),
+    Object   : instance(Object),
+    RegExp   : instance(RegExp),
+    Boolean  : instance(Boolean),
+    Function : instance(Function),
+  })(instance),
   array_case,
 }
 
