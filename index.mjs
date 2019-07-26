@@ -383,9 +383,6 @@ export const types = (function () {
 // TODO(jordan): untested
 const type     = t => v => typeof v === t
 const instance = C => v => v instanceof C
-function array_case ({ array, object }) {
-  return ᐅwhen(type(types.object))(ᐅif(instance(Array))(array)(object))
-}
 export const reflex = {
   type: js.assign({
     object    : type(types.object),
@@ -407,14 +404,13 @@ export const reflex = {
     Boolean  : instance(Boolean),
     Function : instance(Function),
   })(instance),
-  array_case,
 }
 
-// polymorphic object/array methods
-const copy = obj => array_case({
-  array  : array_copy,
-  object : object_copy,
-})(obj)
+// polymorphic object/array copiers
+const copy = object => fallible.assert(fallible.break([
+  fallible.guard(reflex.instance.Array)(array_copy),
+  fallible.guard(reflex.type.object)(object_copy),
+]))(object)
 const copy_and    = f => obj => ᐅ([ copy, f ])(obj)
 const copy_apply1 = f => a => copy_and(f(a))
 const copy_apply2 = f => a => b => copy_and(f(a)(b))
