@@ -15,13 +15,19 @@
   - `update*`: modify an existing {entry,property}
 - Try to remove some `define*` functions -- seems like too many
 - Make sure all functions are tested
+  - Including modules (d, linchpin, ...)
 - Make sure mutative alternates are tested
 - `reflex.type` helpers
   - reflex.type.undefined, reflex.type.number, reflex.type.string, etc.
   - reduces the 'reflex.type(types.undefined)` style boilerplate
+- Add more mutative alternates (where applicable)
 - `fallible.or`: supersedes `update_or` below with a more general solution
   - `update_or`: update_or(handle_none)(key)(updater)(target)
     - e.g.: update_or(set_value(value)) for supplying a default
+- Timers?
+  - wait  ↔ setTimeout
+  - every ↔ setInterval
+  - soon  ↔ {setIdleCallback,requestAnimationFrame}
 
 update_or_set = key => ({ initial }) => updater => object => {
   return update

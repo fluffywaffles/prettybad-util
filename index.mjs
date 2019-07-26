@@ -4,22 +4,6 @@
  * ᐅ : U+1405
  */
 
-/*
- * Obvious TODOs
- *
- * mutative alternatives for more APIs
- *   - not everything has a logical mutable alternative
- *   - for example, id
- * tests for
- *   - d (descriptor factory)
- *   - internal APIs (mutative)
- *   - define_prop.mut, define_props.mut
- * μ.time.wait, μ.time.every, μ.time.asap
- *   - wait  ⇔ setTimeout
- *   - every ⇔ setInterval
- *   - asap  ⇔ requestAnimationFrame
- */
-
 import d from './d'
 import {
   mutative,
