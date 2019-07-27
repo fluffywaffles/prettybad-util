@@ -212,7 +212,7 @@ function fallible_ᐅdo (fallibles) {
   })
 }
 
-function fallible_rollback (fallible) {
+function fallible_atomic (fallible) {
   return fallible_create(({ pose, fail }) => value => {
     const [ succeeded, result ] = fallible(value)
     return succeeded ? pose(result) : fail()
@@ -242,8 +242,8 @@ const fallible = js.assign({
   fold      : fallible_fold,
   first     : fallible_first,
   // Modifiers
+  atomic    : fallible_atomic,
   fatalize  : fallible_fatalize,
-  rollback  : fallible_rollback,
   // Wrappers
   fail      : fallible_fail,
   guard     : fallible_guard,
@@ -862,7 +862,7 @@ export {
 // TODO(jordan): clean-up
 const update_path = path => final_updater => {
   return fold(key => value_updater => fallible.ᐅdo([
-    fallible.rollback(fallible.ᐅ([ maybe_get(key), value_updater ])),
+    fallible.atomic(fallible.ᐅ([ maybe_get(key), value_updater ])),
     new_value => fallible.unfailing(set_value(key)(new_value)),
   ]))(fallible.unfailing(final_updater))(reverse(path))
 }
