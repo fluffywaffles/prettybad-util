@@ -496,7 +496,7 @@ const slice = from_mutative(i => j => array => {
 const each     = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
 const find     = f => arr => value_or(None)(js.find(f)(arr))
 const n_of     = x => n => fill.mut(x)(new Array(n))
-const concat   = with_mutative(a => each(flip(push)(a)))(js.concat)
+const concat   = with_mutative(a => each(v => push.mut(v)(a)))(js.concat)
 const sort     = from_mutative(js.sort)(copy_apply1)
 const fill     = from_mutative(v => js.fill(v)(/*i*/)(/*j*/))(copy_apply1)
 const cons     = from_mutative(v => ᐅeffect(js.unshift(v)))(copy_apply1)
