@@ -1004,10 +1004,10 @@ export {
 
 // TODO(jordan): clean-up
 const update_path = path => final_updater => {
-  return over(key => value_updater => fallible.ᐅdo([
+  return fold(key => value_updater => fallible.ᐅdo([
     fallible.rollback(fallible.ᐅ([ maybe_get(key), value_updater ])),
     new_value => fallible.unfailing(set_value(key)(new_value)),
-  ]))(reverse(path))(fallible.unfailing(final_updater))
+  ]))(fallible.unfailing(final_updater))(reverse(path))
 }
 const update = key => fn => ᐅ([ update_path([ key ])(fn), take(2) ])
 // const update_with = ups => o => fold(apply(update))(o)(entries(ups))
