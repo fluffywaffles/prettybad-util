@@ -90,7 +90,6 @@ const pass    = v  => f => f(v)
 const and     = fs => v => all(pass(v))(fs)
 const or      = fs => v => any(pass(v))(fs)
 const fmap    = fs => v => map(pass(v))(fs)
-const flip    = f  => a => b => f(b)(a)
 const times   = n  => f => v => fold(call)(v)(n_of(f)(n))
 const or_none = predicate => fn => ᐅif(predicate)(fn)(ret(None))
 const over    = fn => values => result => fold(fn)(result)(values)
@@ -102,7 +101,6 @@ export {
   and,
   ret,
   call,
-  flip,
   fmap,
   over,
   pass,
@@ -528,7 +526,7 @@ const flatten = from_mutative(ᐅeffect(as => {
   let length = len(as)
   for (let index = 0; index < length; index++) {
     const [ item ] = pop.mut(as)
-    ᐅif(reflex.instance.Array)(flip(concat.mut))(push.mut)(item)(as)
+    ᐅif(reflex.instance.Array)(append.mut)(push.mut)(item)(as)
   }
 }))(copy_apply0)
 const flatmap = from_mutative(fn => array => {
@@ -961,8 +959,6 @@ export function test (suite) {
           const object = { a: 5 }
           return t.refeq(id(object))(object)
         },
-      'flip: flips args':
-        t => t.eq(flip(a => b => a - b)(1)(2))(1),
       'call: calls func':
         t => t.eq(call(id)(1))(1),
       'bind: binds ctx':
