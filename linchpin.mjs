@@ -157,50 +157,31 @@ export {
 }
 
 // array affordances
-const _splice = arr => args => apply(arr)([].splice)(args)
-const _args   = (a=[]) => (b=[]) => concat(a)(b)
-const _folder = f => (acc, v) => f(v)(acc)
-
-const len     = a => a.length
-const pop     = arr      => []        .pop.call(arr)
-const shift   = arr      => []      .shift.call(arr)
-const reverse = arr      => []    .reverse.call(arr)
-// const map     = f => arr => []        .map.call(arr, f)
-const find    = f => arr => []       .find.call(arr, f)
-const join    = v => arr => []       .join.call(arr, v)
-const push    = v => arr => []       .push.call(arr, v)
-const some    = f => arr => []       .some.call(arr, f)
-const sort    = f => arr => []       .sort.call(arr, f)
-const every   = f => arr => []      .every.call(arr, f)
-const concat  = a => b   => []     .concat.call([], a, b)
-const filter  = f => arr => []     .filter.call(arr, f)
-const each    = f => arr => []    .forEach.call(arr, f)
-const index   = v => arr => []    .indexOf.call(arr, v)
-const unshift = v => arr => []    .unshift.call(arr, v)
-const findex  = f => arr => []  .findIndex.call(arr, f)
-const slice   = i => j => arr => [].slice.call(arr, i, j)
-const fill    = v => i => j => arr => [].fill.call(arr, v, i, j)
-const splice  = i => n => vs => arr => _splice(arr)(_args([ i, n ])(vs))
-// const fold    = f => init => arr => [].reduce.call(arr, _folder(f), init)
-const includes = v => arr => [].includes.call(arr, v)
-
-/* NOTE(jordan): this code is terrifying and you just shouldn't think too
- * hard about it.
- *
- * The unfortunate complexity arises from the short-circuiting mechanism.
- * It was already a somewhat ugly piece of imperative looping code, but as
- * soon as it was "enhanced" with a conditional short-circuit mechanism it
- * became... well, this.
- *
- * This is the cleanest formulation I've been able to construct.
- */
-const breakloop = ({ marker, body, latch = _ => {} }) => array => {
-  let index = 0, result = marker
-  while (index < array.length) {
-    result = body(array[index], index)
-    if (result === marker) break
-    latch(result, index++)
-  }
+const len      = a => a.length
+const pop      = a      => []       .pop.call(a)
+const shift    = a      => []     .shift.call(a)
+const reverse  = a      => []   .reverse.call(a)
+const map      = f => a => []       .map.call(a, f)
+const find     = f => a => []      .find.call(a, f)
+const join     = v => a => []      .join.call(a, v)
+const push     = v => a => []      .push.call(a, v)
+const some     = f => a => []      .some.call(a, f)
+const sort     = f => a => []      .sort.call(a, f)
+const every    = f => a => []     .every.call(a, f)
+const concat   = a => b => []    .concat.call([], a, b)
+const filter   = f => a => []    .filter.call(a, f)
+const each     = f => a => []   .forEach.call(a, f)
+const index    = v => a => []   .indexOf.call(a, v)
+const unshift  = v => a => []   .unshift.call(a, v)
+const findex   = f => a => [] .findIndex.call(a, f)
+const includes = v => a => []  .includes.call(a, v)
+const slice    = i => j => a =>      [] .slice.call(a, i, j)
+const fill     = v => i => j => a => []  .fill.call(a, v, i, j)
+const splice = i => n => (vs = []) => a => {
+  return [].splice.apply(a, [ i, n ].concat(vs))
+}
+const reduce = fn => initial => a => {
+  return [].reduce.call(a, (acc, value) => fn(value)(acc), initial)
 }
 
 export {
