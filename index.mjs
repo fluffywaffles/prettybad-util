@@ -501,8 +501,6 @@ const sort     = from_mutative(js.sort)(copy_apply1)
 const fill     = from_mutative(v => js.fill(v)(/*i*/)(/*j*/))(copy_apply1)
 const cons     = from_mutative(v => ᐅeffect(js.unshift(v)))(copy_apply1)
 const push     = from_mutative(v => ᐅeffect(js.push(v)))(copy_apply1)
-const flatten  = a => fold(flip(concat))([])(a)
-const flatmap  = f => ᐅ([ map(f), flatten ])
 const includes = v => js.includes(v)
 const last     = a => ᐅ([ skip(-1), get(0) ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
@@ -526,12 +524,26 @@ export {
   slice,
   concat,
   splice,
-  flatmap,
-  flatten,
   reverse,
   includes,
   split_at,
   split_on,
+}
+
+const flatten = from_mutative(ᐅeffect(as => {
+  let length = len(as)
+  for (let index = 0; index < length; index++) {
+    const [ item ] = pop.mut(as)
+    ᐅif(reflex.instance.Array)(flip(concat.mut))(push.mut)(item)(as)
+  }
+}))(copy_apply0)
+const flatmap = from_mutative(fn => array => {
+  return ᐅ([ map.mut(fn), flatten.mut ])(array)
+})(copy_apply1)
+
+export {
+  flatten,
+  flatmap,
 }
 
 const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
