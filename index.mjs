@@ -571,6 +571,13 @@ export {
   filter_indexed,
 }
 
+const concatenator = derive_mutative(concat)
+const append = concatenator(concat => a => b => concat(b)(a))
+
+export {
+  append,
+}
+
 const slicer = derive_mutative(slice)
 const take = slicer(slice => j => slice(0)(j))
 const skip = slicer(slice => i => a => slice(i)(len(a))(a))
