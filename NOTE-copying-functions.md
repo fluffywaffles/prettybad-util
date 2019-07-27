@@ -108,7 +108,10 @@ they introduce:
    - high overhead: every function call now becomes 2+ function calls
    - complex: all non-closure state must be manually copied
    - flexible: permits pre- and post-call code execution
-2. (new Function(`return ${source_function.toString()}`))()
+2. Re-evaluate the source function
+    ```
+    (new Function(`return ${source_function.toString()}`))()
+    ```
    - loses closure state (no way to mitigate)
    - preserves identity state (cleanly; re-evaluates the original)
    - loses instance state (but can directly set prototype)
