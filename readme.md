@@ -6,9 +6,9 @@ this is a pretty bad utility library. It is pretty bad, tbh. It has some
 pretty bad goals:
 
 1. Don't ignore or hide symbols
-    - "key"s means "strings and symbols"
-    - "symbol\_keyed\_\*" functions refer to symbol keys
-    - "string\_keyed\_\*" functions refer to string keys
+    - `key`s means "strings and symbols"
+    - `symbol_keyed_*` functions refer to symbol keys
+    - `string_keyed_*` functions refer to string keys
     - Seriously why isn't the  built-in library clear in the first place
 2. Don't ignore or hide property descriptors
     - Merging objects merges descriptors; it doesn't just implicitly drop
@@ -20,7 +20,7 @@ pretty bad goals:
     - Composition over rice with a cup of chai tea
     - I get tired of writing out names for arguments I'm passing along
     - Point-free... erm... et cetera
-4. "iteratee first, data last" as lodash/fp puts it
+4. As lodash/fp puts it, "Iteratee first, data last"
     - The data is always the last argument, e.g. `map(inc)([ 1, 2, 3 ])`
     - I could have just said that, but I think the lodash-eff-pee-ers are funnier so I copied them
 5. Where it makes sense, just be polymorphic
@@ -47,7 +47,7 @@ optimized for this.
 Also, programmers are smart enough to be allowed to mutate when they want
 to. I call this the "give a man a footgun" principle of API design. It has
 a saying that goes... uh... "give a man a footgun, and he'll have 1 foot
-and learnt a lesson, or he'll reinvent wheels". Or something like that.
+and learnt a lesson, or he'll reinvent wheels." Or something like that.
 One of those is supposed to be the good outcome. I can't remember which.
 
 So there, I had reasons. Never let it be said I was unreasonable. Insane,
@@ -60,7 +60,7 @@ then I wouldn't be writing this one... er, wait.
 ## inFrequently Asked Questions
 ### infrequent: as in, never
 
-1. Why would anyone use a library that calls itself "pretty bad, tbh"
+1. Why would anyone use a library that calls itself "pretty bad, tbh?"
 
 ...
 
