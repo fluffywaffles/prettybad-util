@@ -103,10 +103,10 @@ export {
   call,
   flip,
   fmap,
+  over,
   pass,
   times,
   or_none,
-  over,
 }
 
 const apply  = f => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
