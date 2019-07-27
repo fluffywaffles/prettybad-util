@@ -186,8 +186,8 @@ function fallible_fold (folder) {
 }
 
 // 'Break's on the first fallible to pose a result
-function fallible_break (fallibles) {
-  return fallible(({ pose, fail }) => value => {
+function fallible_first (fallibles) {
+  return fallible_create(({ pose, fail }) => value => {
     for (const fallible of fallibles) {
       const [ succeeded, result ] = fallible(value)
       if (succeeded) return pose(result)
@@ -201,7 +201,7 @@ function fallible_ᐅ (fallibles) {
   return value => fallible_fold(call)(value)(fallibles)
 }
 function fallible_ᐅdo (fallibles) {
-  return fallible(({}) => value => {
+  return fallible_create(({}) => value => {
     const do_folder = fallible => args => {
       const target = last(args)
       const [ succeeded, result ] = apply(fallible)(args)
@@ -222,21 +222,19 @@ function fallible_rollback (fallible) {
 }
 
 function fallible_fail () {
-  return fallible(({ fail }) => _ => fail())
+  return fallible_create(({ fail }) => _ => fail())
 }
 function fallible_unfailing (fn) {
-  return fallible(({ pose }) => value => pose(fn(value)))
+  return fallible_create(({ pose }) => value => pose(fn(value)))
 }
 
-function fallible_unwrap ([ succeeded, result ]) {
+function fallible_unwrap ([ succeeded, result, index = None ]) {
   if (succeeded) return result
-  throw new Error(
-    `fallible.assert: fallible failed with [${succeeded} ${result}]`
-  )
+  throw new Error(`fallible.assert: failed on ${result}`)
 }
 
-const fallible_assert = f => value => {
-  return fallible_unwrap(f(value))
+const fallible_assert = fallible => value => {
+  return fallible_unwrap(fallible(value))
 }
 
 const fallible = js.assign({
@@ -244,7 +242,7 @@ const fallible = js.assign({
   ᐅ         : fallible_ᐅ,
   ᐅdo       : fallible_ᐅdo,
   fold      : fallible_fold,
-  break     : fallible_break,
+  first     : fallible_first,
   // Modifiers
   fatalize  : fallible_fatalize,
   rollback  : fallible_rollback,
@@ -401,7 +399,7 @@ export const reflex = {
 // polymorphic object/array copiers
 const array_copy  = arr => concat(arr)([])
 const object_copy = obj => ᐅ([ get.properties, from_properties ])(obj)
-const copy = object => fallible.assert(fallible.break([
+const copy = object => fallible.assert(fallible.first([
   fallible.guard(reflex.instance.Array)(array_copy),
   fallible.guard(reflex.type.object)(object_copy),
 ]))(object)
@@ -1030,14 +1028,14 @@ export function test (suite) {
               && t.eq(arbitrary_pipe(5))([ false, 5, 1 ])
               && t.eq(arbitrary_pipe(7))([ true, 13, 2 ])
         },
-      'fallible.break: stops at the first responding function':
+      'fallible.first: returns the first successful fallible':
         t => {
           const gt5 = fallible.guard(v => v > 5)(ret(`5`))
           const gt1 = fallible.guard(v => v > 1)(ret(`1`))
           return true
-              && t.eq(fallible.break([ gt5, gt1 ])(3))([ true, `1` ])
-              && t.eq(fallible.break([ gt5, gt1 ])(7))([ true, `5` ])
-              && t.eq(fallible.break([ gt1, gt5 ])(0))([ false, 0  ])
+              && t.eq(fallible.first([ gt5, gt1 ])(3))([ true, `1` ])
+              && t.eq(fallible.first([ gt5, gt1 ])(7))([ true, `5` ])
+              && t.eq(fallible.first([ gt1, gt5 ])(0))([ false, 0  ])
         },
     }),
     t => t.suite(`objects`, {
