@@ -507,7 +507,6 @@ const includes = v => js.includes(v)
 const last     = a => ᐅ([ skip(-1), get(0) ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => a => ᐅdo([ index(v), split_at ])(a)
-const pop      = arr => fmap([ get(0), rest ])(arr)
 const reverse  = from_mutative(js.reverse)(copy_and)
 const thru     = derive_mutative(til)(til => n => til(n + 1))
 const splice   = from_mutative(start => count => to_insert => {
@@ -515,7 +514,6 @@ const splice   = from_mutative(start => count => to_insert => {
 })(copy_apply3)
 
 export {
-  pop,
   til,
   cons,
   each,
@@ -610,9 +608,11 @@ export {
 
 const remdexer = derive_mutative(remdex)
 const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
+const pop    = remdexer(remdex => a => fmap([ get(0), remdex(0) ])(a))
 
 export {
   remove,
+  pop,
 }
 
 // objects & arrays
