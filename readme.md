@@ -7,8 +7,8 @@ pretty bad goals:
 
 1. Don't ignore or hide symbols
     - "key"s means "strings and symbols"
-    - "symbol_keys" means symbols
-    - "string_keys" means strings
+    - "symbol\_keyed\_\*" functions refer to symbol keys
+    - "string\_keyed\_\*" functions refer to string keys
     - Seriously why isn't the  built-in library clear in the first place
 2. Don't ignore or hide property descriptors
     - Merging objects merges descriptors; it doesn't just implicitly drop
@@ -25,10 +25,12 @@ pretty bad goals:
     - I could have just said that, but I think the lodash-eff-pee-ers are funnier so I copied them
 5. Where it makes sense, just be polymorphic
     - Check object type tags and dispatch the correct function
-    - For example, `slice` dispatches: `slice_array` on arrays, and `slice_string` on strings
+    - For example, `copy` dispatches: `array_copy` on arrays, and `object_copy` on normal objects
 6. Be immutable by default, but provide clearly-labeled mutative alternatives
     - e.g.: `splice` and `splice.mut`, `map` and `map.mut`, `filter` and `filter.mut`
     - Mutation should be explicit and grep-able (so, like, search for `.*\.mut(.*)`)
+7. In general, don't ever do anything with prototypes
+    - They're complex and inefficient to work with. Leave them alone.
 
 Why mutative APIs? Well, uh, what for... when you performant, need the...
 where we do want to, uh, do that.
