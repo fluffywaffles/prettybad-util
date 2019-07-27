@@ -407,6 +407,7 @@ const copy = object => fallible.assert(fallible.break([
 ]))(object)
 const copy_and    = f => obj  => ᐅ([ copy, f ])(obj)
 const copy_apply  = f => args => copy_and(apply(f)(args))
+const copy_apply0 = f =>                copy_apply(f)([])
 const copy_apply1 = f => a =>           copy_apply(f)([ a ])
 const copy_apply2 = f => a => b =>      copy_apply(f)([ a, b ])
 const copy_apply3 = f => a => b => c => copy_apply(f)([ a, b, c ])
@@ -417,6 +418,7 @@ export {
   copy,
   copy_and,
   copy_apply,
+  copy_apply0,
   copy_apply1,
   copy_apply2,
   copy_apply3,
