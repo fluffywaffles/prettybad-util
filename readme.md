@@ -5,12 +5,12 @@ In keeping with my life motto ("I bet a could make a pretty bad {x}"),
 this is a pretty bad utility library. It is pretty bad, tbh. It has some
 pretty bad goals:
 
-1. Don't ignore or hide symbols
-    - `key`s means "strings and symbols"
-    - `symbol_keyed_*` functions refer to symbol keys
-    - `string_keyed_*` functions refer to string keys
-    - Seriously why isn't the  built-in library clear in the first place
-2. Don't ignore or hide property descriptors
+1. Don't ignore symbols or nonenumerable properties by default
+    - `keys` means "strings" _and_ "symbols", enumerable and not
+    - `symbol_keyed_*` means symbol keys, enumerable and not
+    - `string_keyed_*` means string keys, enumerable and not
+    - Seriously why isn't the built-in library clear in the first place
+2. Don't ignore property descriptors
     - Merging objects merges descriptors; it doesn't just implicitly drop
       nonenumerable things
     - Updating an object doesn't implicitly make its descriptor enumerable
@@ -26,23 +26,33 @@ pretty bad goals:
 5. Where it makes sense, just be polymorphic
     - Check object type tags and dispatch the correct function
     - For example, `copy` dispatches: `array_copy` on arrays, and `object_copy` on normal objects
-6. Be immutable by default, but provide clearly-labeled mutative alternatives
+6. In general, don't ever do anything with prototypes
+    - They're complex and inefficient to work with. Leave them alone
+7. As a generalization of the prototypes rule: nothing is ever 'deep'
+    - 'Deep' recurrences into objects are generally inefficient and unnecessary
+    - Even worse: 'deep' is ambiguous.
+        - Does 'deep' include the protype chain?
+        - Does 'deep' copy functions? (If so, how?)
+        - Does 'deep' also copy array elements?
+    - Instead, the library should provide clean APIs for walking trees
+8. Be immutable by default, but provide clearly-labeled mutative alternatives
     - e.g.: `splice` and `splice.mut`, `map` and `map.mut`, `filter` and `filter.mut`
     - Mutation should be explicit and grep-able (so, like, search for `.*\.mut(.*)`)
-7. In general, don't ever do anything with prototypes
-    - They're complex and inefficient to work with. Leave them alone.
 
 Why mutative APIs? Well, uh, what for... when you performant, need the...
 where we do want to, uh, do that.
 
-But seriously: sometimes you want to mutate. For example, design-time
-mutation - to set the state of an object at initialization - is perfectly
-okay. In tight loops, mutation can make a huge performance difference.
-Besides, in practice, perfect immutability in javascript is a lie whenever
-you touch the DOM. Frameworks that espouse immutable web interfaces hide
-mutation - sometimes in a compiler backend (hi, Elm) and sometimes in a
-runtime (hi, React) - but the fact is, the DOM mutates, and browsers are
-optimized for this.
+But seriously: yes, there are lots of advantages to immutability, but
+sometimes you _want_ to mutate. For example, design-time mutation - to set
+the state of an object at initialization - is perfectly okay. In tight
+loops, mutation can make a huge performance difference. Besides, in
+practice, perfect immutability in JavaScript is a lie whenever you touch
+the DOM. Frameworks that espouse immutable web pages hide mutation -
+sometimes in a compiler backend (hi, Elm) and sometimes in a runtime (hi,
+React) - but the fact is, the DOM mutates, and browsers are optimized for
+this. If you replaced entire DOM nodes every time they updated, in fact,
+the browser would grind to a complete halt running even moderately
+interactive pages. The Garbage Collection! Oh, The Garbage Collection!
 
 Also, programmers are smart enough to be allowed to mutate when they want
 to. I call this the "give a man a footgun" principle of API design. It has
