@@ -572,7 +572,7 @@ export {
 
 const taker = derive_mutative(take)
 const drop_end = taker(take => n => take(-n))
-const but_last  = drop_end(1)
+const but_last = derive_mutative(drop_end)(drop_end => drop_end(1))
 
 export {
   drop_end,
