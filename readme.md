@@ -11,11 +11,14 @@ pretty bad goals:
     - `string_keyed_*` means string keys, enumerable and not
     - Seriously why isn't the built-in library clear in the first place
 2. Don't ignore property descriptors
-    - Merging objects merges descriptors; it doesn't just implicitly drop
-      nonenumerable things
-    - Updating an object doesn't implicitly make its descriptor enumerable
-      and writable if it wasn't before
-    - `*_propert{y,ies}` and `*_descriptor{s}` APIs exist for explicitness
+    - Merging objects merges descriptors
+    - Copying an object doesn't omit nonenumerable properties
+    - Updating an object doesn't make its descriptor enumerable or
+      writable if it wasn't before
+    - In general, updating an object doesn't change things you don't
+      explicitly intend to change
+    - `*_propert{y,ies}` and `*_descriptor{s}` APIs exist for
+      explicitness, and you can opt-in to
 3. Everything is curried all of the time
     - Composition over rice with a cup of chai tea
     - I get tired of writing out names for arguments I'm passing along
