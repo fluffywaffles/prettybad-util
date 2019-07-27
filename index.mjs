@@ -590,7 +590,7 @@ export {
 
 const splicer = derive_mutative(splice)
 const insert  = splicer(splice => i => v => splice(i)(0)([v]))
-const remdex  = splicer(splice => i => splice(i)(1)())
+const remdex  = splicer(splice => i => splice(i)(1)([]))
 const replace = splicer(splice => i => v => splice(i)(1)([v]))
 
 export {
@@ -1259,11 +1259,11 @@ export function test (suite) {
         t => t.eq(join('+')(to6))('1+2+3+4+5'),
       'slice(0)(0): nothing':
         t => t.eq(slice(0)(0)(to6))([]),
-      'slice(1)(): of to6 is 2..5':
-        t => t.eq(slice(1)()(to6))([ 2, 3, 4, 5 ]),
+      'slice(1)(5): of to6 is 2..5':
+        t => t.eq(slice(1)(5)(to6))([ 2, 3, 4, 5 ]),
       'slice(0)(3): of to6 is 1..3':
         t => t.eq(slice(0)(3)(to6))([ 1, 2, 3 ]),
-      'skip(1): of to6 is same as slice(1)()':
+      'skip(1): of to6 is same as slice(1)(5)':
         t => t.eq(skip(1)(to6))([ 2, 3, 4, 5 ]),
       'take(3): of to6 is same as slice(0)(3)':
         t => t.eq(take(3)(to6))([ 1, 2, 3 ]),
