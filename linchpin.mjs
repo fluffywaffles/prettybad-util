@@ -203,30 +203,6 @@ const breakloop = ({ marker, body, latch = _ => {} }) => array => {
   }
 }
 
-const map = define_properties({
-  short_circuit: { value: Symbol(`map: short-circuit marker`) },
-})(mapper => array => {
-  let result = array.slice()
-  breakloop({
-    marker: map.short_circuit,
-    body: (item, index) => mapper(item, index),
-    latch: (mapper_result, index) => result[index] = mapper_result,
-  })(array)
-  return result
-})
-
-const fold = define_properties({
-  short_circuit: { value: Symbol(`fold: short-circuit marker`) },
-})(folder => initial => array => {
-  let result = initial
-  breakloop({
-    marker: fold.short_circuit,
-    body: (item, index) => folder(item, index)(result),
-    latch: (folder_result) => result = folder_result,
-  })(array)
-  return result
-})
-
 export {
   len,
   pop,

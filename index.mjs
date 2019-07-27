@@ -14,7 +14,6 @@ import {
 import {
   is,
   len,
-  fold,
   join,
   keys,
   index,
@@ -34,7 +33,6 @@ export {
   is,
   len,
   bind,
-  fold,
   join,
   keys,
   index,
@@ -171,7 +169,7 @@ const fallible_fatalize = fallible => v => {
 function fallible_fold (folder) {
   return initial => fold_indexed(index => value => {
     const thread_shuttle = ᐅ([ get(1), folder(value), push(index) ])
-    return ᐅif(get(0))(thread_shuttle)(ret(fold.short_circuit))
+    return ᐅif(get(0))(thread_shuttle)(ret(fold.break))
   })([ true, initial, -1 ])
 }
 
@@ -574,37 +572,81 @@ export {
  * copying functions, which trade-offs should it choose?
  */
 
-// utility for hiding some imperative code
-const loop = n => f => { let i = 0; while (i < n) { f(i); i++ } }
+// utilities for hiding some imperative code
+
+/* NOTE(jordan): this code is terrifying and you just shouldn't think too
+ * hard about it.
+ *
+ * The unfortunate complexity arises from the short-circuiting mechanism.
+ * It was already a somewhat ugly piece of imperative looping code, but as
+ * soon as it was "enhanced" with a conditional short-circuit mechanism it
+ * became... well, this.
+ *
+ * This is the cleanest formulation I've been able to construct.
+ */
+const breakloop = ({ marker, body, latch = _ => {} }) => array => {
+  let index = 0, result = marker
+  while (index < array.length) {
+    result = body(array[index], index)
+    if (result === marker) break
+    latch(result, index++)
+  }
+}
+
+const map = js.define_properties({
+  break: { value: Symbol(`map: short-circuit marker`) },
+})(from_mutative(fn => array => {
+  return ᐅeffect(breakloop({
+    marker : map.break,
+    body   : (item,   index) => fn(item, index, array),
+    latch  : (result, index) => array[index] = result,
+  }))(array)
+})(copy_apply1))
+
+const fold = js.define_properties({
+  break: { value: Symbol(`fold: short-circuit marker`) },
+})(folder => initial => array => {
+  let accumulator = initial
+  breakloop({
+    marker : fold.break,
+    body   : (item, index) => folder(item, index, array)(accumulator),
+    latch  : (result) => accumulator = result,
+  })(array)
+  return accumulator
+})
 
 export {
-  loop,
+  map,
+  fold,
 }
 
 // arrays
-const ᐅeff = e => ᐅeffect(e)
-const _offset = o => ᐅeff(arr => loop(len(arr))(i => arr[i] = arr[i + o]))
-const _map    = f => ᐅeff(arr => loop(len(arr))(i => arr[i] = f(arr[i])))
-const _til    = n => ᐅeff(arr => loop(n)(i => arr[i] = i))
-const _resize = len => ᐅeffect(arr => arr.length = len)
-const _js_slice  = start => end => ᐅdo([ len, _slice_len(start)(end) ])
-const _slice_len = s => e => l => apply(_slice)(map(_wrap(l))([ s, e ]))
-const _slice  = s => e => ᐅ([ _offset(s), _resize(e - s) ])
-const _wrap   = l => n => n < 0 ? n + l : n
+const resize = len => set_value('length')(len)
+const wrap   = l => n => n < 0 ? n + l : n
 
-const string_array_case = ({ string: string_fn, array: array_fn }) => {
-  return ᐅif(reflex.type(types.string))(string_fn)(array_fn)
+const mapper = derive_mutative(map)
+const offset = mapper(map => o => map((_, ix, ar) => ar[ix + o]))
+const til    = mapper(map => n => map((_, i) => i > n ? map.break : i))
+
+const slice = i => j => array => {
+  if (i === undefined) i = 0
+  if (j === undefined) j = len(array)
+  const [ start, end ] = map(wrap(len(array)))([ i, j ])
+  return ᐅ([ offset(start), resize(end - start) ])(array)
 }
+
+// const string_array_case = ({ string: string_fn, array: array_fn }) => {
+//   return ᐅif(reflex.type(types.string))(string_fn)(array_fn)
+// }
+// const slice    = with_mutative(array_slice.mut)(i => j => string_array_case({
+//   string : s => ''.slice.call(s, i, j),
+//   array  : a => [].slice.call(a, i, j),
+// }))
 
 const each     = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
 const find     = f => arr => value_or(None)(js.find(f)(arr))
 const n_of     = x => n => fill.mut(x)(new Array(n))
-const slice    = with_mutative(_slice)(i => j => string_array_case({
-  string : str => ''.slice.call(str, i, j),
-  array  : arr => [].slice.call(arr, i, j),
-}))
 const concat   = with_mutative(a => each(flip(push)(a)))(js.concat)
-const map      = with_mutative(_map)(f => js.map(f))
 const sort     = from_mutative(js.sort)(copy_apply1)
 const fill     = from_mutative(v => js.fill(v)(/*i*/)(/*j*/))(copy_apply1)
 const cons     = from_mutative(v => ᐅeffect(js.unshift(v)))(copy_apply1)
@@ -617,14 +659,13 @@ const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 const pop      = arr => fmap([ get(0), rest ])(arr)
 const reverse  = from_mutative(js.reverse)(copy_and)
-const til      = from_mutative(_til)(til => n => til(n)(new Array(n)))
 const thru     = derive_mutative(til)(til => n => til(n + 1))
 const flatfmap = fns => ᐅ([ fmap(fns), flatten ])
-const mut_splice = i => n => vs => ᐅeffect(js.splice(i)(n)(vs))
-const splice     = from_mutative(mut_splice)(copy_apply3)
+const splice   = from_mutative(start => count => to_insert => {
+  return ᐅeffect(js.splice(start)(count)(to_insert))
+})(copy_apply3)
 
 export {
-  map,
   pop,
   til,
   cons,
