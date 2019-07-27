@@ -473,19 +473,17 @@ export {
 }
 
 // arrays
-const resize = len => set_value('length')(len)
+const resize = mutative(len => set_value('length')(len))
 const wrap   = l => n => n < 0 ? n + l : n
 
 const mapper = derive_mutative(map)
 const offset = mapper(map => o => map((_, ix, ar) => ar[ix + o]))
 const til    = mapper(map => n => map((_, i) => i > n ? map.break : i))
 
-const slice = i => j => array => {
-  if (i === undefined) i = 0
-  if (j === undefined) j = len(array)
+const slice = from_mutative(i => j => array => {
   const [ start, end ] = map(wrap(len(array)))([ i, j ])
-  return ᐅ([ offset(start), resize(end - start) ])(array)
-}
+  return ᐅ([ offset.mut(start), resize.mut(end - start) ])(array)
+})(copy_apply2)
 
 // const string_array_case = ({ string: string_fn, array: array_fn }) => {
 //   return ᐅif(reflex.type(types.string))(string_fn)(array_fn)
