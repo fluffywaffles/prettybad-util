@@ -403,16 +403,18 @@ const copy = object => fallible.assert(fallible.break([
   fallible.guard(reflex.instance.Array)(array_copy),
   fallible.guard(reflex.type.object)(object_copy),
 ]))(object)
-const copy_and    = f => obj => ᐅ([ copy, f ])(obj)
-const copy_apply1 = f => a => copy_and(f(a))
-const copy_apply2 = f => a => b => copy_and(f(a)(b))
-const copy_apply3 = f => a => b => c => copy_and(f(a)(b)(c))
+const copy_and    = f => obj  => ᐅ([ copy, f ])(obj)
+const copy_apply  = f => args => copy_and(apply(f)(args))
+const copy_apply1 = f => a =>           copy_apply(f)([ a ])
+const copy_apply2 = f => a => b =>      copy_apply(f)([ a, b ])
+const copy_apply3 = f => a => b => c => copy_apply(f)([ a, b, c ])
 
 export {
   array_copy,
   object_copy,
   copy,
   copy_and,
+  copy_apply,
   copy_apply1,
   copy_apply2,
   copy_apply3,
