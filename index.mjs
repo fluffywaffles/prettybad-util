@@ -84,7 +84,6 @@ export {
 
 // functions
 const id      = v => v
-const apply   = f  => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
 const ret     = v  => _ => v
 const call    = f  => v => f(v)
 const pass    = v  => f => f(v)
@@ -105,10 +104,21 @@ export {
   flip,
   fmap,
   pass,
-  apply,
   times,
   or_none,
   over,
+}
+
+const apply  = f => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
+const apply1 = f => a =>           apply(f)([ a ])
+const apply2 = f => a => b =>      apply(f)([ a, b ])
+const apply3 = f => a => b => c => apply(f)([ a, b, c ])
+
+export {
+  apply,
+  apply1,
+  apply2,
+  apply3,
 }
 
 // Fallibles: they're not Promises. I know, I know. But they aren't.
