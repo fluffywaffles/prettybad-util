@@ -471,14 +471,6 @@ export {
 }
 
 // arrays
-const resize = mutative(len => set_value('length')(len))
-const wrap   = l => n => n < 0 ? n + l : n
-
-const slice = from_mutative(i => j => array => {
-  const [ start, end ] = map(wrap(len(array)))([ i, j ])
-  return ᐅ([ offset.mut(start), resize.mut(end - start) ])(array)
-})(copy_apply2)
-
 // const string_array_case = ({ string: string_fn, array: array_fn }) => {
 //   return ᐅif(reflex.type(types.string))(string_fn)(array_fn)
 // }
@@ -512,13 +504,24 @@ export {
   n_of,
   push,
   sort,
-  slice,
   concat,
   splice,
   reverse,
   includes,
   split_at,
   split_on,
+}
+
+const resize = mutative(len => set_value('length')(len))
+const wrap   = l => n => n < 0 ? n + l : n
+
+const slice = from_mutative(i => j => array => {
+  const [ start, end ] = map(wrap(len(array)))([ i, j ])
+  return ᐅ([ offset.mut(start), resize.mut(end - start) ])(array)
+})(copy_apply2)
+
+export {
+  slice,
 }
 
 const flatten = from_mutative(ᐅeffect(as => {
