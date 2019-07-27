@@ -474,10 +474,6 @@ export {
 const resize = mutative(len => set_value('length')(len))
 const wrap   = l => n => n < 0 ? n + l : n
 
-const mapper = derive_mutative(map)
-const offset = mapper(map => o => map((_, ix, ar) => ar[ix + o]))
-const til    = mapper(map => n => map((_, i) => i > n ? map.break : i))
-
 const slice = from_mutative(i => j => array => {
   const [ start, end ] = map(wrap(len(array)))([ i, j ])
   return ᐅ([ offset.mut(start), resize.mut(end - start) ])(array)
@@ -504,13 +500,11 @@ const last     = a => ᐅ([ skip(-1), get(0) ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => a => ᐅdo([ index(v), split_at ])(a)
 const reverse  = from_mutative(js.reverse)(copy_and)
-const thru     = derive_mutative(til)(til => n => til(n + 1))
 const splice   = from_mutative(start => count => to_insert => {
   return ᐅeffect(js.splice(start)(count)(to_insert))
 })(copy_apply3)
 
 export {
-  til,
   cons,
   each,
   find,
@@ -518,7 +512,6 @@ export {
   n_of,
   push,
   sort,
-  thru,
   slice,
   concat,
   splice,
@@ -569,6 +562,16 @@ export {
   each_indexed,
   fold_indexed,
   filter_indexed,
+}
+
+const mapper = derive_mutative(map)
+const offset = mapper(map => o => map((_, ix, ar) => ar[ix + o]))
+const til    = mapper(map => n => map((_, i) => i > n ? map.break : i))
+const thru   = derive_mutative(til)(til => n => til(n + 1))
+
+export {
+  til,
+  thru,
 }
 
 const concatenator = derive_mutative(concat)
