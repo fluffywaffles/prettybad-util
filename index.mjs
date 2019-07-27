@@ -94,6 +94,7 @@ const flip    = f  => a => b => f(b)(a)
 const times   = n  => f => v => fold(call)(v)(n_of(f)(n))
 const or_none = predicate => fn => ᐅif(predicate)(fn)(ret(None))
 const over    = fn => values => result => fold(fn)(result)(values)
+const flatfmap = fns => ᐅ([ fmap(fns), flatten ])
 
 export {
   id,
@@ -107,6 +108,7 @@ export {
   pass,
   times,
   or_none,
+  flatfmap,
 }
 
 const apply  = f => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
@@ -508,7 +510,6 @@ const split_on = v => arr => ᐅdo([ index(v), split_at ])(arr)
 const pop      = arr => fmap([ get(0), rest ])(arr)
 const reverse  = from_mutative(js.reverse)(copy_and)
 const thru     = derive_mutative(til)(til => n => til(n + 1))
-const flatfmap = fns => ᐅ([ fmap(fns), flatten ])
 const splice   = from_mutative(start => count => to_insert => {
   return ᐅeffect(js.splice(start)(count)(to_insert))
 })(copy_apply3)
@@ -533,7 +534,6 @@ export {
   includes,
   split_at,
   split_on,
-  flatfmap,
 }
 
 const interlace = a => b => map_indexed(i => k => [ k, get(i)(b) ])(a)
