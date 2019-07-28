@@ -50,7 +50,7 @@ sometimes you _want_ to mutate. For example, design-time mutation - to set
 the state of an object at initialization - is perfectly okay. In tight
 loops, mutation can make a huge performance difference. Besides, in
 practice, perfect immutability in JavaScript is a lie whenever you touch
-the DOM. Frameworks that espouse immutable web pages hide mutation -
+the DOM. Frameworks that espouse "immutable" web UIs hide mutation -
 sometimes in a compiler backend (hi, Elm) and sometimes in a runtime (hi,
 React) - but the fact is, the DOM mutates, and browsers are optimized for
 this. If you replaced entire DOM nodes every time they updated, in fact,
