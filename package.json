@@ -5,7 +5,8 @@
   "main": "index.mjs",
   "scripts": {
     "test": "npx rollup -c .rollup.test.js -- test.mjs && node -r source-map-support/register .test.js && rm .test.js",
-    "build": "npx rollup -c .rollup.test.js -- index.mjs && mv .test.js out.js && node -i -e \"const mu = require('./out')\""
+    "repl": "npm run build && node -i -e \"const mu = require('./out')\"",
+    "build": "npx rollup -c .rollup.test.js -- index.mjs && mv .test.js out.js"
   },
   "author": "fluffywaffles <skorlir@gmail.com>",
   "license": "ISC",
