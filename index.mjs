@@ -5,12 +5,7 @@
  */
 
 import d from './d'
-import {
-  mutative,
-  with_mutative,
-  from_mutative,
-  derive_mutative,
-} from './mutton'
+import * as mutative from './mutton'
 import {
   is,
   len,
@@ -443,7 +438,7 @@ const breakloop = ({ marker, body, latch = _ => {} }) => array => {
 
 const map = js.define_properties({
   break: { value: Symbol(`map: short-circuit marker`) },
-})(from_mutative(fn => array => {
+})(mutative.from(fn => array => {
   return ᐅeffect(breakloop({
     marker : map.break,
     body   : (item,   index) => fn(item, index, array),
@@ -472,7 +467,7 @@ export {
 // const string_array_case = ({ string: string_fn, array: array_fn }) => {
 //   return ᐅif(reflex.type(types.string))(string_fn)(array_fn)
 // }
-// const slice    = with_mutative(array_slice.mut)(i => j => string_array_case({
+// const slice    = mutative.with(array_slice.mut)(i => j => string_array_case({
 //   string : s => ''.slice.call(s, i, j),
 //   array  : a => [].slice.call(a, i, j),
 // }))
@@ -480,17 +475,17 @@ export {
 const each     = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
 const find     = f => arr => value_or(None)(js.find(f)(arr))
 const n_of     = x => n => fill.mut(x)(new Array(n))
-const concat   = with_mutative(a => each(v => push.mut(v)(a)))(js.concat)
-const sort     = from_mutative(js.sort)(copy_apply1)
-const fill     = from_mutative(v => js.fill(v)(/*i*/)(/*j*/))(copy_apply1)
-const cons     = from_mutative(v => ᐅeffect(js.unshift(v)))(copy_apply1)
-const push     = from_mutative(v => ᐅeffect(js.push(v)))(copy_apply1)
+const concat   = mutative.with(a => each(v => push.mut(v)(a)))(js.concat)
+const sort     = mutative.from(js.sort)(copy_apply1)
+const fill     = mutative.from(v => js.fill(v)(/*i*/)(/*j*/))(copy_apply1)
+const cons     = mutative.from(v => ᐅeffect(js.unshift(v)))(copy_apply1)
+const push     = mutative.from(v => ᐅeffect(js.push(v)))(copy_apply1)
 const includes = v => js.includes(v)
 const last     = a => ᐅ([ skip(-1), get(0) ])(a)
 const split_at = n => fmap([ take(n), skip(n) ])
 const split_on = v => a => ᐅdo([ index(v), split_at ])(a)
-const reverse  = from_mutative(js.reverse)(copy_and)
-const splice   = from_mutative(start => count => to_insert => {
+const reverse  = mutative.from(js.reverse)(copy_and)
+const splice   = mutative.from(start => count => to_insert => {
   return ᐅeffect(js.splice(start)(count)(to_insert))
 })(copy_apply3)
 
@@ -510,10 +505,10 @@ export {
   split_on,
 }
 
-const resize = mutative(len => set_value('length')(len))
+const resize = mutative.wrap(len => set_value('length')(len))
 const wrap   = l => n => n < 0 ? n + l : n
 
-const slice = from_mutative(i => j => array => {
+const slice = mutative.from(i => j => array => {
   const [ start, end ] = map(wrap(len(array)))([ i, j ])
   return ᐅ([ offset.mut(start), resize.mut(end - start) ])(array)
 })(copy_apply2)
@@ -522,14 +517,14 @@ export {
   slice,
 }
 
-const flatten = from_mutative(ᐅeffect(as => {
+const flatten = mutative.from(ᐅeffect(as => {
   let length = len(as)
   for (let index = 0; index < length; index++) {
     const [ item ] = pop.mut(as)
     ᐅif(reflex.instance.Array)(append.mut)(push.mut)(item)(as)
   }
 }))(copy_apply0)
-const flatmap = from_mutative(fn => array => {
+const flatmap = mutative.from(fn => array => {
   return ᐅ([ map.mut(fn), flatten.mut ])(array)
 })(copy_apply1)
 
@@ -565,24 +560,24 @@ export {
   filter_indexed,
 }
 
-const mapper = derive_mutative(map)
+const mapper = mutative.derive(map)
 const offset = mapper(map => o => map((_, ix, ar) => ar[ix + o]))
 const til    = mapper(map => n => map((_, i) => i > n ? map.break : i))
-const thru   = derive_mutative(til)(til => n => til(n + 1))
+const thru   = mutative.derive(til)(til => n => til(n + 1))
 
 export {
   til,
   thru,
 }
 
-const concatenator = derive_mutative(concat)
+const concatenator = mutative.derive(concat)
 const append = concatenator(concat => a => b => concat(b)(a))
 
 export {
   append,
 }
 
-const slicer = derive_mutative(slice)
+const slicer = mutative.derive(slice)
 const take = slicer(slice => j => slice(0)(j))
 const skip = slicer(slice => i => a => slice(i)(len(a))(a))
 
@@ -591,23 +586,22 @@ export {
   take,
 }
 
-const taker = derive_mutative(take)
+const taker = mutative.derive(take)
 const drop_end = taker(take => n => take(-n))
-const but_last = derive_mutative(drop_end)(drop_end => drop_end(1))
+const but_last = mutative.derive(drop_end)(drop_end => drop_end(1))
 
 export {
   drop_end,
   but_last,
 }
 
-const skipper = derive_mutative(skip)
-const rest = skipper(skip => a => skip(1)(a))
+const rest = mutative.derive(skip)(skip => a => skip(1)(a))
 
 export {
   rest,
 }
 
-const splicer = derive_mutative(splice)
+const splicer = mutative.derive(splice)
 const insert  = splicer(splice => i => v => splice(i)(0)([v]))
 const remdex  = splicer(splice => i => splice(i)(1)([]))
 const replace = splicer(splice => i => v => splice(i)(1)([v]))
@@ -618,8 +612,7 @@ export {
   replace,
 }
 
-const replacer = derive_mutative(replace)
-const array_update = replacer(replace => {
+const array_update = mutative.derive(replace)(replace => {
   return i => f => ᐅdo([ ᐅ([ get(i), call(f) ]), replace(i) ])
 })
 
@@ -627,7 +620,7 @@ export {
   array_update,
 }
 
-const remdexer = derive_mutative(remdex)
+const remdexer = mutative.derive(remdex)
 const remove = remdexer(remdex => v => ᐅdo([ index(v), remdex ]))
 const pop    = remdexer(remdex => a => fmap([ get(0), remdex(0) ])(a))
 
@@ -770,32 +763,32 @@ export {
 }
 
 // Object mutators
-const set_value      = from_mutative(k => v => ᐅeffect(o => (o[k] = v)))(copy_apply2)
-const set_descriptor = from_mutative(js.define_property)(copy_apply2)
+const set_value      = mutative.from(k => v => ᐅeffect(o => (o[k] = v)))(copy_apply2)
+const set_descriptor = mutative.from(js.define_property)(copy_apply2)
 
 export {
   set_value,
   set_descriptor,
 }
 
-const set_entry    = derive_mutative(set_value)(apply)
-const set_property = derive_mutative(set_descriptor)(apply)
+const set_entry    = mutative.derive(set_value)(apply)
+const set_property = mutative.derive(set_descriptor)(apply)
 
 export {
   set_entry,
   set_property,
 }
 
-const set_entries    = derive_mutative(set_entry)(over)
-const set_properties = derive_mutative(set_property)(over)
+const set_entries    = mutative.derive(set_entry)(over)
+const set_properties = mutative.derive(set_property)(over)
 
 export {
   set_entries,
   set_properties,
 }
 
-const set_values      = from_mutative(js.assign)(copy_apply1)
-const set_descriptors = from_mutative(js.define_properties)(copy_apply1)
+const set_values      = mutative.from(js.assign)(copy_apply1)
+const set_descriptors = mutative.from(js.define_properties)(copy_apply1)
 
 export {
   set_values,

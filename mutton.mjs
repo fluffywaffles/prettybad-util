@@ -12,15 +12,15 @@ import {
   define_property,
 } from './linchpin'
 
-// mutative function factory
-const mutative        = fn => create({ mut: { value: fn } })
-const with_mutative   = fn => define_property(`mut`)({ value: fn })
-const from_mutative   = mut => drv => with_mutative(mut)(drv(mut))
-const derive_mutative = fn  => drv => with_mutative(drv(fn.mut))(drv(fn))
+// mutative function factories
+const mut        = fn => create({ mut: { value: fn } })
+const with_mut   = fn => define_property(`mut`)({ value: fn })
+const from_mut   = mut => derive => with_mut(mut)(derive(mut))
+const derive_mut = fn  => derive => with_mut(derive(fn.mut))(derive(fn))
 
 export {
-  mutative,
-  with_mutative,
-  from_mutative,
-  derive_mutative,
+  mut as wrap,
+  with_mut as with,
+  from_mut as from,
+  derive_mut as derive,
 }
