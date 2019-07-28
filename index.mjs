@@ -637,14 +637,6 @@ export {
 }
 
 // objects & arrays
-// key mappers
-const map_keys    = fn => keys => obj => map(k => fn(k)(obj))(keys)
-const filter_keys = fn => keys => obj => filter(k => fn(k)(obj))(keys)
-
-export {
-  map_keys,
-  filter_keys,
-}
 
 // key selectors
 const on_string_keys = fn => ᐅdo([ string_keys, fn ])
@@ -685,6 +677,7 @@ const get_entry      = key => obj => [ key, get(key)(obj) ]
 const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
 const get_descriptor = key => or_none(has(key))(js.get_descriptor(key))
 
+const map_keys        = fn => keys => obj => map(k => fn(k)(obj))(keys)
 const get_entries     = keys => map_keys(get_entry)(keys)
 const get_properties  = keys => map_keys(get_property)(keys)
 const get_descriptors = keys => map_keys(get_descriptor)(keys)
