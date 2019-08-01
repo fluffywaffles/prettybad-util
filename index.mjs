@@ -842,37 +842,38 @@ export {
   maybe_get_path,
 }
 
-// Object mutators
-const set_value      = mutative.from(k => v => ᐅeffect(o => (o[k] = v)))(copy_apply2)
+// Object manipulators
+// key, (value|descriptor)
+const set_value = mutative.from(k => v => o => (o[k] = v, o))(copy_apply2)
 const set_descriptor = mutative.from(js.define_property)(copy_apply2)
 
-export {
-  set_value,
-  set_descriptor,
-}
-
-const set_entry    = mutative.derive(set_value)(apply)
-const set_property = mutative.derive(set_descriptor)(apply)
-
-export {
-  set_entry,
-  set_property,
-}
-
-const set_entries    = mutative.derive(set_entry)(over)
-const set_properties = mutative.derive(set_property)(over)
-
-export {
-  set_entries,
-  set_properties,
-}
-
+// { [key]: (value|descriptor), ... }
 const set_values      = mutative.from(js.assign)(copy_apply1)
 const set_descriptors = mutative.from(js.define_properties)(copy_apply1)
 
+// [ key, (value|descriptor) ]
+const set_entry    = mutative.derive(set_value)(apply)
+const set_property = mutative.derive(set_descriptor)(apply)
+
+// [ [ key, (value|descriptor) ], ... ]
+const set_entries    = mutative.derive(set_entry)(over)
+const set_properties = mutative.derive(set_property)(over)
+
+const set = js.assign({
+  // one-key setters
+  value      : set_value,
+  entry      : set_entry,
+  property   : set_property,
+  descriptor : set_descriptor,
+  // many-key setters
+  values      : set_values,
+  entries     : set_entries,
+  properties  : set_properties,
+  descriptors : set_descriptors,
+})(set_value)
+
 export {
-  set_values,
-  set_descriptors,
+  set,
 }
 
 const from_entries    = pairs => set_entries.mut(pairs)({})
