@@ -159,9 +159,11 @@ const fallible_create = definition => value => definition({
 })(value)
 
 // 'Guard's a function with a predicate in a fallible
-const fallible_guard = pred => fn => fallible(({ pose, fail }) => v => {
-  return pred(v) ? pose(fn(v)) : fail()
-})
+function fallible_guard (pred) {
+  return fn => fallible_create(({ pose, fail }) => value => {
+    return pred(value) ? pose(fn(value)) : fail()
+  })
+}
 
 // Forces a fallible composition to succeed or Error fatally
 const fallible_fatalize = fallible => v => {
