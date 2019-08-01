@@ -230,6 +230,10 @@ function fallible_unwrap ([ succeeded, result, index = None ]) {
   )
 }
 
+function fallible_succeeded ([ succeeded, result ]) {
+  return succeeded
+}
+
 const fallible_assert = fallible => value => {
   return fallible_unwrap(fallible(value))
 }
@@ -250,6 +254,7 @@ const fallible = js.assign({
   // Unwrappers
   assert    : fallible_assert,
   unwrap    : fallible_unwrap,
+  succeeded : fallible_succeeded,
 })(fallible_create)
 
 export {
