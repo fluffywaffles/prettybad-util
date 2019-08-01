@@ -52,7 +52,7 @@ practice, perfect immutability in JavaScript is a lie whenever you touch
 the DOM. Frameworks that espouse "immutable" web UIs hide mutation -
 sometimes in a compiler backend (hi, Elm) and sometimes in a runtime (hi,
 React) - but the fact is, the DOM mutates, and browsers are optimized for
-this. If you replaced entire DOM nodes every time they updated, in fact,
+this. If you replaced entire DOM trees every time a node changed, in fact,
 the browser would grind to a complete halt running even moderately
 interactive pages. The Garbage Collection! Oh, The Garbage Collection!
 
