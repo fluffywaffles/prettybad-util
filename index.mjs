@@ -656,6 +656,7 @@ export {
 const is_key     = v => includes(typeof v)([`string`,`number`,`symbol`])
 const unsafe_has = key => obj => and([ is_value, js.has_own(key) ])(obj)
 const has        = key => obj => is_key(key) && unsafe_has(key)(obj)
+const has_path   = p => obj => fallible.succeeded(maybe_get_path(p)(obj))
 
 export {
   is_key,
@@ -1190,6 +1191,14 @@ export function test (suite) {
               && t.ok(has(0)([1]))
               && !t.ok(has(0)([]))
               && !t.ok(has([`a`])({ a: `b` }))
+        },
+      'has_path: returns true if a path is valid and present in an object':
+        t => {
+          return true
+              && t.ok(has_path([ 'a', 'b', 'c' ])({ a: { b: { c: 5 } } }))
+              && t.ok(has_path([ 1, 1 ])([ 0, [ 0, 1 ] ]))
+              && !t.ok(has_path([ 'z' ])({ a: { b: { c: 5 } } }))
+              && !t.ok(has_path([ 1, 1, 0 ])([ 0, [ 0, 1 ] ]))
         },
       'get: gets a key/index or None if not present':
         t => {
