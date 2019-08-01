@@ -395,7 +395,7 @@ export const reflex = {
 
 // polymorphic object/array copiers
 const array_copy  = arr => concat(arr)([])
-const object_copy = obj => ᐅ([ get.properties, from_properties ])(obj)
+const object_copy = obj => ᐅ([ js.own_descriptors, js.create ])(obj)
 const copy = object => fallible.assert(fallible.first([
   fallible.guard(reflex.instance.Array)(array_copy),
   fallible.guard(reflex.type.object)(object_copy),
