@@ -1,18 +1,30 @@
-- Make `update*` functions work for properties, entries, descriptors...
-  - `update_value`, `update_descriptor`
-  - does `update_value` respect the descriptor? (no)
-  - `update` does the mid-optimal thing: it wraps `update_descriptor`
-    but takes a function on `value`; so, if you just use the "obvious"
-    thing, it behaves in an obvious way. If you use `update_value` for
-    some reason, you're opting in to the "ignore descriptor
-    configuration" outcome. You can also use `update_descriptor` to get
-    access to get/set and other descriptor configuration.
-- Fix `update_with`
-- Add `set*` functions for setting (but not overwriting) values
+- `update*` improvements/consistency fixes:
+  - `update[_value]`: updates `value` (preserves descriptor)
+  - `update_descriptor`: updates `descriptor`
+  - `update_entry`: apply(update_value)
+  - `update_entries`: over(apply(update_value))
+  - `update_property`: apply(update_descriptor)
+  - `update_properties`: over(apply(update_descriptor))
+  - `update_with`: { [key]: value => value, ... } (preserves descriptors)
+  - `update_values`: update_with
+  - `update_descriptors`: { [key]: descriptor => descriptor, ... }
+  - `update_path[_value]`: [ key, ... ] => (value => value)
+  - `update_path_descriptor`: [ key, ... ] => (descriptor => descriptor)
+- `set*` functions for setting values
+  - `set[_value]`: key => value => !has(key) &-> default descriptor
+  - `set_descriptor`: key => descriptor => !has(key) &-> descriptor
+  - `set_entry`: apply(set_value)
+  - `set_property`: apply(set_descriptor)
 - Now the taxonomy is:
-  - `set*`: create a new {entry,property}
-  - `define*`: set/change an {entry,property}
-  - `update*`: modify an existing {entry,property}
+  - `set*`: set/create new
+  - `update*`: modify existing
+    - `_path*`: at the end of a path
+      - `_entry`: [ key, value ]
+      - `_value`: key => value
+      - `_values`: { [key]: value, ... } merge
+      - `_property`: [ key, descriptor ]
+      - `_descriptor`: key => descriptor
+      - `_descriptors`: { [key]: descriptor, ... } merge
 - Try to remove some `define*` functions -- seems like too many
 - Make sure all functions are tested
   - Including modules (d, linchpin, ...)
@@ -28,6 +40,17 @@
   - wait  ↔ setTimeout
   - every ↔ setInterval
   - soon  ↔ {setIdleCallback,requestAnimationFrame}
+
+"Deep" update:
+
+update_path([ 'x', 'y', 'z' ])(v => v + 1)({ x: { y: { z: 5 } } })
+=> { x: { y: { z: 6 } } }
+
+"update*_or" ?
+
+update_or = key => fallback => updater => object => {
+  ᐅif(has(key)(object))
+}
 
 update_or_set = key => ({ initial }) => updater => object => {
   return update
