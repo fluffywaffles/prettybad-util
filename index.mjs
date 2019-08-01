@@ -1186,10 +1186,10 @@ export function test (suite) {
       'has: returns true if a key is valid and present in an object':
         t => {
           return true
-              && !t.ok(has([`a`])({ a: `b` }))
               && t.ok(has(`a`)({ a: `b` }))
-              && !t.ok(has(0)([]))
               && t.ok(has(0)([1]))
+              && !t.ok(has(0)([]))
+              && !t.ok(has([`a`])({ a: `b` }))
         },
       'get: gets a key/index or None if not present':
         t => {
