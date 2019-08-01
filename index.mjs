@@ -225,7 +225,9 @@ function fallible_unfailing (fn) {
 
 function fallible_unwrap ([ succeeded, result, index = None ]) {
   if (succeeded) return result
-  throw new Error(`fallible.assert: failed on ${result}`)
+  throw new Error(
+    `fallible.assert: fallible did not succeed; last result: ${result}`
+  )
 }
 
 const fallible_assert = fallible => value => {
