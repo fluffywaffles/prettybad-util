@@ -1183,7 +1183,7 @@ export function test (suite) {
         },
       'merge: combines properties of 2 source objects':
         t => t.eq(merge({ a: 4 })({ a: 5 }))({ a: 5 }),
-      'has: returns true is a key is valid and present in an object':
+      'has: returns true if a key is valid and present in an object':
         t => {
           return true
               && !t.ok(has([`a`])({ a: `b` }))
