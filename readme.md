@@ -17,8 +17,7 @@ pretty bad goals:
       writable if it wasn't before
     - In general, updating an object doesn't change things you don't
       explicitly intend to change
-    - `*_propert{y,ies}` and `*_descriptor{s}` APIs exist for
-      explicitness, and you can opt-in to
+    - `*_propert{y,ies}` and `*_descriptor{s}` APIs exist for explicitness
 3. Everything is curried all of the time
     - Composition over rice with a cup of chai tea
     - I get tired of writing out names for arguments I'm passing along
