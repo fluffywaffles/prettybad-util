@@ -659,17 +659,14 @@ export {
 }
 
 // getters
-// value getters
+// base value getters
 const get_value      = key => or_none(has(key))(obj => obj[key])
 const get_values     = keys => fmap(map(get)(keys))
-const get_path_value = path => obj => fold(get)(obj)(path)
 
-// (flipped)
-const get_value_in      = obj => key  => get_value(key)(obj)
-const get_values_in     = obj => keys => get_values(keys)(obj)
-const get_path_value_in = obj => path => get_path_value(path)(obj)
+// flipped base value getter
+const get_value_in   = o => k => get_value(k)(o)
 
-// entry, property, descriptor getters
+// base entry, property, descriptor getters
 const get_entry      = key => obj => [ key, get(key)(obj) ]
 const get_property   = key => obj => [ key, get_descriptor(key)(obj) ]
 const get_descriptor = key => or_none(has(key))(js.get_descriptor(key))
@@ -679,6 +676,8 @@ const get_entries     = keys => map_keys(get_entry)(keys)
 const get_properties  = keys => map_keys(get_property)(keys)
 const get_descriptors = keys => map_keys(get_descriptor)(keys)
 
+// base path getters
+const get_path_value = path => obj => fold(get)(obj)(path)
 const at_path = getter => path => ᐅ([
   fmap([ last, ᐅ([ but_last, get_path_value ]) ]),
   apply(getter),
@@ -688,21 +687,22 @@ const at_path = getter => path => ᐅ([
  * ... and so on, for get_property, get_properties, get_descriptor, etc.
  */
 
-// filtered getters
+// categorized getters
 const get = js.assign({
-  for_key : {
+  // for_{key,keys,path}
+  for_key: {
     value      : get_value,
     entry      : get_entry,
     property   : get_property,
     descriptor : get_descriptor,
   },
-  for_keys : {
+  for_keys: {
     values      : get_values,
     entries     : get_entries,
     properties  : get_properties,
     descriptors : get_descriptors,
   },
-  for_path : {
+  for_path: {
     value       : get_path_value,
     values      : at_path(get_values),
     entry       : at_path(get_entry),
@@ -712,51 +712,127 @@ const get = js.assign({
     descriptor  : at_path(get_descriptor),
     descriptors : at_path(get_descriptors),
   },
-  string_keyed : {
+  // for all keys
+  string_keyed: {
     values      : on_string_keys(get_values),
     entries     : on_string_keys(get_entries),
     properties  : on_string_keys(get_properties),
     descriptors : on_string_keys(get_descriptors),
   },
-  symbol_keyed : {
+  symbol_keyed: {
     values      : on_symbol_keys(get_values),
     entries     : on_symbol_keys(get_entries),
     properties  : on_symbol_keys(get_properties),
     descriptors : on_symbol_keys(get_descriptors),
   },
-  all : {
+  all: {
     values      : on_keys(get_values),
     entries     : on_keys(get_entries),
     properties  : on_keys(get_properties),
     descriptors : on_keys(get_descriptors),
   },
-})(get_value)
-/* get(k)(obj) -- same as: get.for_key.value(k)(obj)
+  // get "in" (flipped getters)
+  in: object => {
+    return js.assign({
+      for_key: {
+        value       : get_value_in,
+        entry       : k  => get.for_key.entry(k)(object),
+        property    : k  => get.for_key.property(k)(object),
+        descriptor  : k  => get.for_key.descriptor(k)(object),
+      },
+      for_keys: {
+        values      : ks => get.for_keys.values(ks)(object),
+        entries     : ks => get.for_keys.entries(ks)(object),
+        properties  : ks => get.for_keys.properties(ks)(object),
+        descriptors : ks => get.for_keys.descriptors(ks)(object),
+      },
+      for_path: {
+        value       : p => get.for_path.value(p)(object),
+        values      : p => get.for_path.values(p)(object),
+        entry       : p => get.for_path.entry(p)(object),
+        entries     : p => get.for_path.entries(p)(object),
+        property    : p => get.for_path.property(p)(object),
+        properties  : p => get.for_path.properties(p)(object),
+        descriptor  : p => get.for_path.descriptor(p)(object),
+        descriptors : p => get.for_path.descriptors(p)(object),
+      },
+      string_keyed: {
+        values      : ks => get.string_keyed.values(ks)(object),
+        entries     : ks => get.string_keyed.entries(ks)(object),
+        properties  : ks => get.string_keyed.properties(ks)(object),
+        descriptors : ks => get.string_keyed.descriptors(ks)(object),
+      },
+      symbol_keyed: {
+        values      : ks => get.symbol_keyed.values(ks)(object),
+        entries     : ks => get.symbol_keyed.entries(ks)(object),
+        properties  : ks => get.symbol_keyed.properties(ks)(object),
+        descriptors : ks => get.symbol_keyed.descriptors(ks)(object),
+      },
+      all: {
+        values      : ks => get.all.values(ks)(object),
+        entries     : ks => get.all.entries(ks)(object),
+        properties  : ks => get.all.properties(ks)(object),
+        descriptors : ks => get.all.descriptors(ks)(object),
+      },
+      /* EXPLANATION(jordan): cannot modify get_value_in directly or it
+       * becomes circular! Create a wrapper and modify that instead.
+       */
+    })(object => get_value_in(object))
+  },
+  /* EXPLANATION(jordan): cannot modify get_value directly or it becomes
+   * circular! Create a wrapper and modify that instead.
+   */
+})(key => get_value(key))
+/* get(k)(obj)                      -- same as: get.for_key.value(k)(obj)
  * get.for_key.entry(k)(obj)
- * get.keys.entries(ks)(obj)
+ * get.for_keys.entries(ks)(obj)
+ * get.for_path.value(p)(obj)
+ * get.for_path.descriptors(p)(obj)
  * get.string_keyed.entries(obj)
  * get.symbol_keyed.properties(obj)
+ * get.in(obj)(k)                   -- get.in(obj).for_key.value(k)
+ * get.in(obj).for_key.value(k)
+ * get.in(obj).for_path.value(p)
+ * get.in(obj).for_path.entries(p)
  * &c.
  */
 
-// define some shortcuts
+// getter short hand
 js.assign({
-  // single-result getters
-  value       : get.for_key.value,
-  entry       : get.for_key.entry,
-  property    : get.for_key.property,
-  descriptor  : get.for_key.descriptor,
-  // many-result getters
-  values      : get.all.values,
-  entries     : get.all.entries,
-  properties  : get.all.properties,
-  descriptors : get.all.descriptors,
+  value       : js.assign({ in : o => get.in(o).value       })(get.for_key.value),
+  entry       : js.assign({ in : o => get.in(o).entry       })(get.for_key.entry),
+  values      : js.assign({ in : o => get.in(o).values      })(get.for_keys.values),
+  entries     : js.assign({ in : o => get.in(o).entries     })(get.for_keys.entries),
+  property    : js.assign({ in : o => get.in(o).property    })(get.for_key.property),
+  properties  : js.assign({ in : o => get.in(o).properties  })(get.for_keys.properties),
+  descriptor  : js.assign({ in : o => get.in(o).descriptor  })(get.for_key.descriptor),
+  descriptors : js.assign({ in : o => get.in(o).descriptors })(get.for_keys.descriptors),
+  path: {
+    value       : js.assign({ in : o => get.in(o).for_path.value       })(get.for_path.value),
+    entry       : js.assign({ in : o => get.in(o).for_path.entry       })(get.for_path.entry),
+    values      : js.assign({ in : o => get.in(o).for_path.values      })(get.for_path.values),
+    entries     : js.assign({ in : o => get.in(o).for_path.entries     })(get.for_path.entries),
+    property    : js.assign({ in : o => get.in(o).for_path.property    })(get.for_path.property),
+    properties  : js.assign({ in : o => get.in(o).for_path.properties  })(get.for_path.properties),
+    descriptor  : js.assign({ in : o => get.in(o).for_path.descriptor  })(get.for_path.descriptor),
+    descriptors : js.assign({ in : o => get.in(o).for_path.descriptors })(get.for_path.descriptors),
+  },
 })(get)
+/* get.value(k)(obj)             -- get.for_key.value(k)(obj)
+ * get.value.in(obj)(k)          -- get.in(obj).for_key.value(k)
+ * get.descriptors(ks)(obj)      -- get.for_keys(ks).descriptors(obj)
+ * get.descriptors.in(obj)(ks)   -- get.in(obj).for_keys.descriptors(obj)
+ * get.path.value(p)(obj)        -- get.for_path.value(p)(obj)
+ * get.path.value.in(obj)(p)     -- get.in(obj).for_path.value(p)(obj)
+ * get.path.descriptors(ks)(obj) -- get.for_path.descriptors(ks)(obj)
+ * &c.
+ */
 
 export {
   get,
 }
 
+// TODO(jordan): bring fallible getters into the unified 'get' object
 // Fallible getters
 const maybe_get = key => fallible.guard(has(key))(get(key))
 const maybe_get_path = keys => fallible.ᐅ(map(maybe_get)(keys))
@@ -808,8 +884,8 @@ export {
 }
 
 const merge_by = ([ get, join ]) => ᐅ([ map(get), flatten, join ])
-const merge_entries    = vs => merge_by([ get.entries, from_entries ])(vs)
-const merge_properties = vs => merge_by([ get.properties, from_properties ])(vs)
+const merge_entries    = vs => merge_by([ get.all.entries, from_entries ])(vs)
+const merge_properties = vs => merge_by([ get.all.properties, from_properties ])(vs)
 
 export {
   merge_by,
@@ -1122,8 +1198,8 @@ export function test (suite) {
               && t.eq(get.for_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
               && t.eq(get.for_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None)
         },
-      'get_path_value_in: gets a path of keys/indices in a target object':
-        t => t.eq(get_path_value_in({'a': {'b': {'c': 5 }}})(['a','b','c']))(5),
+      'get.in(object).for_path.value: gets a path of keys/indices in a target object':
+        t => t.eq(get.in({'a': {'b': {'c': 5 }}}).for_path.value(['a','b','c']))(5),
       'maybe_get: conditionally gets a key and returns success':
         t => {
           return true
