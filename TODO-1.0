@@ -10,11 +10,6 @@
   - `update_descriptors`: { [key]: descriptor => descriptor, ... }
   - `update_path[_value]`: [ key, ... ] => (value => value)
   - `update_path_descriptor`: [ key, ... ] => (descriptor => descriptor)
-- `set*` functions for setting values
-  - `set[_value]`: key => value => !has(key) &-> default descriptor
-  - `set_descriptor`: key => descriptor => !has(key) &-> descriptor
-  - `set_entry`: apply(set_value)
-  - `set_property`: apply(set_descriptor)
 - Now the taxonomy is:
   - `set*`: set/create new
   - `update*`: modify existing
@@ -25,7 +20,6 @@
       - `_property`: [ key, descriptor ]
       - `_descriptor`: key => descriptor
       - `_descriptors`: { [key]: descriptor, ... } merge
-- Try to remove some `define*` functions -- seems like too many
 - Make sure all functions are tested
   - Including modules (d, linchpin, ...)
 - Make sure mutative alternates are tested
