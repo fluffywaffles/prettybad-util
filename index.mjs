@@ -1176,6 +1176,151 @@ export function test (suite) {
               && t.eq(fallible.first([ gt1, gt5 ])(0))([ false, 0  ])
         },
     }),
+    t => t.suite(`getters`, [
+      t => t.suite(`for_key`, {
+        'value: gets the value for a key':
+          t => {
+            return true
+                && t.eq(get.for_key.value(0)([5]))(5)
+                && t.eq(get.for_key.value('a')({}))(None)
+                && !t.eq(get.for_key.value(['a'])({ 'a': 'b' }))('b')
+          },
+        'entry: gets the [ key, value ] pair for a key':
+          t => {
+            return true
+                && t.eq(get.for_key.entry(0)([5]))([ 0, 5])
+          },
+        'property: gets the [ key, descriptor ] pair for a key':
+          t => {
+            return true
+                && t.eq(get.for_key.property(0)([5]))([ 0, d.default({ v: 5 }) ])
+                && t.eq(get.for_key.property('a')({ a: 4 }))([ 'a', d.default({ v: 4 }) ])
+          },
+        'descriptor: gets the descriptor for a key':
+          t => {
+            return true
+                && t.eq(get.for_key.descriptor(0)([5]))(d.default({ v: 5 }))
+                && t.eq(get.for_key.descriptor('a')({ a: 4 }))(d.default({ v: 4 }))
+          },
+      }),
+      t => t.suite(`for_keys`, {
+        // TODO(jordan): values, entries, properties, descriptors
+      }),
+      t => t.suite(`at_path`, {
+        'value: gets the value at a path':
+          t => {
+            return true
+                && t.eq(get.at_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
+                && t.eq(get.at_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None)
+          },
+        /* TODO(jordan):
+         * entry, property, descriptor, values, entries, properties,
+         * descriptors
+         */
+      }),
+      t => t.suite(`string_keyed`, {
+        'values: gets all string-keyed values':
+          t => {
+            return true
+                && t.eq(get.string_keyed.values({ [sym_a]: `hi`, a: 4 }))([4])
+          },
+        'properties: gets all string-keyed [ key, descriptor ] pairs':
+          t => {
+            return t.eq(get.string_keyed.properties({ a: 5, b: 7, [sym_a]: 'hi' }))([
+              ['a', d.default({ v: 5 }) ],
+              ['b', d.default({ v: 7 }) ],
+            ])
+          },
+        // TODO(jordan): entries, descriptors
+      }),
+      t => t.suite(`symbol_keyed`, {
+        'values: gets all symbol-keyed values':
+          t => {
+            return true
+                && t.eq(get.symbol_keyed.values({ [sym_a]: `hi`, a: 4 }))([ `hi` ])
+          },
+        'properties: gets all symbol-keyed [ key, descriptor ] pairs':
+          t => {
+            return t.eq(get.symbol_keyed.properties({ [Symbol.split]: `hi`, a: 7 }))([
+              [Symbol.split, d.default({ v: `hi` })],
+            ])
+          },
+        // TODO(jordan): entries, descriptors
+      }),
+      t => t.suite(`all`, {
+        'values: gets all values (string and symbol keys)':
+          t => {
+            return true
+                && t.eq(get.all.values({ [sym_a]: `hi`, a: 4 }))([ 4, `hi` ])
+          },
+        'properties: gets all [ key, descriptor ] pairs (string and symbol keys)':
+          t => {
+            return t.eq(get.all.properties({ a: 5, [Symbol.split]: `hi` }))([
+              [ 'a',          d.default({ v: 5 })    ],
+              [ Symbol.split, d.default({ v: `hi` }) ],
+            ])
+          },
+        'entries: gets all [ key, value ] pairs (string and symbol keys)':
+          t => {
+            return t.eq(get.all.entries({ a: 5, [Symbol.split]: `hi` }))([
+              ['a', 5],
+              [Symbol.split, `hi`],
+            ])
+          },
+        // TODO(jordan): descriptors
+      }),
+      t => t.suite(`in(object)`, {
+        'at_path.value: gets the value at a specified path in the given object':
+          t => {
+            return true
+                && t.eq(get.in({'a': {'b': {'c': 5 }}}).at_path.value(['a','b','c']))(5)
+          },
+        /* TODO(jordan):
+         *  for_key.{value,entry,property,descriptor}
+         *  for_keys.{values,entries,properties,descriptors}
+         *  at_path.{entry,property,descriptor,values,entries,properties,descriptors}
+         */
+      }),
+      t => t.suite(`shorthand`, {
+        'get: gets a key/index or None if not present':
+          t => {
+            return true
+                && t.eq(get(0)([5]))(5)
+                && t.eq(get('a')({}))(None)
+                && !t.eq(get(['a'])({ 'a': 'b' }))('b')
+          },
+        /* TODO(jordan):
+         * every permutation of:
+         *
+         * get[.path].{
+         *  value,
+         *  entry,
+         *  values,
+         *  entries,
+         *  property,
+         *  properties,
+         *  descriptor,
+         *  descriptors,
+         * }[.in]
+         *
+         */
+      }),
+      t => t.suite(`maybe getters`, {
+        'maybe_get: conditionally gets a key and returns success':
+          t => {
+            return true
+                && t.eq(maybe_get(0)([`a`]))([ true, `a` ])
+                && t.eq(maybe_get(`a`)({ b: 0 }))([ false, { b: 0 } ])
+                && t.eq(maybe_get(0)([]))([ false, [] ])
+          },
+        'maybe_get_path: conditionally gets a path and returns success':
+          t => {
+            return true
+                && t.eq(maybe_get_path([0, 1])([[0, 1]]))([ true, 1, 1 ])
+                && t.eq(maybe_get_path([`a`, `b`])({ a: 0 }))([ false, 0, 1 ])
+          },
+      }),
+    ]),
     t => t.suite(`objects`, {
       'string_keys: lists string keys':
         t => t.eq(string_keys({ [sym_a]: `hi`, a: 4 }))(['a']),
@@ -1183,14 +1328,6 @@ export function test (suite) {
         t => t.eq(symbol_keys({ [sym_a]: `hi`, a: 4 }))([sym_a]),
       'keys: lists both string and symbol keys':
         t => t.eq(keys({ [sym_a]: `hi`, a: 4 }))(['a', sym_a]),
-      'get.string_keyed.values: lists string-keyed values':
-        t => t.eq(get.string_keyed.values({ [sym_a]: `hi`, a: 4 }))([4]),
-      'get.symbol_keyed.values: lists symbol-keyed values':
-        t => t.eq(get.symbol_keyed.values({ [sym_a]: `hi`, a: 4 }))([ `hi` ]),
-      'get.all.values: lists both symbol values and non-symbol values':
-        t => t.eq(get.all.values({ [sym_a]: `hi`, a: 4 }))([ 4, `hi` ]),
-      'get.descriptor: gets property descriptor':
-        t => t.eq(get.descriptor('a')({ a: 4 }))(d.default({ v: 4 })),
       'set_descriptors.mut: copies descriptors from an object':
         t => {
           const o = { a: 5 }
@@ -1210,25 +1347,6 @@ export function test (suite) {
             && t.eq(o.b)(5)
             && t.eq(o.a)(1)
             && t.eq(Object.keys(o))([])
-        },
-      'get.string_keyed.properties: gets non-symbol properties':
-        t => {
-          return t.eq(get.string_keyed.properties({ a: 5 }))([
-            ['a', d.default({ v: 5 }) ],
-          ])
-        },
-      'get.symbol_keyed.properties: gets symbol properties':
-        t => {
-          return t.eq(get.symbol_keyed.properties({ [Symbol.split]: `hi` }))([
-            [Symbol.split, d.default({ v: `hi` })],
-          ])
-        },
-      'get.all.properties: gets all properties':
-        t => {
-          return t.eq(get.all.properties({ a: 5, [Symbol.split]: `hi` }))([
-            [ 'a',          d.default({ v: 5 })    ],
-            [ Symbol.split, d.default({ v: `hi` }) ],
-          ])
         },
       'from_properties: converts [prop, desc] pairs to an object':
         t => t.eq(from_properties([['a',d.default({ v: 5 })]]))({ a: 5 }),
@@ -1255,41 +1373,6 @@ export function test (suite) {
               && t.ok(has_path([ 1, 1 ])([ 0, [ 0, 1 ] ]))
               && !t.ok(has_path([ 'z' ])({ a: { b: { c: 5 } } }))
               && !t.ok(has_path([ 1, 1, 0 ])([ 0, [ 0, 1 ] ]))
-        },
-      'get: gets a key/index or None if not present':
-        t => {
-          return true
-              && t.eq(get(0)([5]))(5)
-              && t.eq(get('a')({}))(None)
-              && !t.eq(get(['a'])({ 'a': 'b' }))('b')
-        },
-      'get.at_path.value: gets a path, or returns None if path does not exist':
-        t => {
-          return true
-              && t.eq(get.at_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
-              && t.eq(get.at_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None)
-        },
-      'get.in(object).at_path.value: gets a path of keys/indices in a target object':
-        t => t.eq(get.in({'a': {'b': {'c': 5 }}}).at_path.value(['a','b','c']))(5),
-      'maybe_get: conditionally gets a key and returns success':
-        t => {
-          return true
-              && t.eq(maybe_get(0)([`a`]))([ true, `a` ])
-              && t.eq(maybe_get(`a`)({ b: 0 }))([ false, { b: 0 } ])
-              && t.eq(maybe_get(0)([]))([ false, [] ])
-        },
-      'maybe_get_path: conditionally gets a path and returns success':
-        t => {
-          return true
-              && t.eq(maybe_get_path([0, 1])([[0, 1]]))([ true, 1, 1 ])
-              && t.eq(maybe_get_path([`a`, `b`])({ a: 0 }))([ false, 0, 1 ])
-        },
-      'get.all.entries: gets {key,symbol}, value pairs':
-        t => {
-          return t.eq(get.all.entries({ a: 5, [Symbol.split]: `hi` }))([
-            ['a', 5],
-            [Symbol.split, `hi`],
-          ])
         },
       'from_entries: turns {key,symbol}, value pairs into an object':
         t => t.eq(from_entries([['a', 5],['b', `hi`]]))({a: 5, b: `hi`}),
