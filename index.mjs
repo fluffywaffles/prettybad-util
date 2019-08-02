@@ -112,6 +112,25 @@ export {
   apply3,
 }
 
+// binding and calling methods
+const method_exists = name => obj => name in obj
+const method_of = obj => name => js.bind(obj)(get(name)(obj))
+const method  = name => args => obj => apply(method_of(obj)(name))(args)
+const method0 = name => _ =>           method(name)([])
+const method1 = name => a =>           method(name)([a])
+const method2 = name => a => b =>      method(name)([a,b])
+const method3 = name => a => b => c => method(name)([a,b,c])
+
+export {
+  method,
+  method0,
+  method1,
+  method2,
+  method3,
+  method_of,
+  method_exists,
+}
+
 // Fallibles: they're not Promises. I know, I know. But they aren't.
 /* EXPLANATION(jordan): A "fallible" either `pose`s a result, or it
  * `fail`s without computing one. Why use these names?
@@ -255,25 +274,6 @@ const fallible = js.assign({
 
 export {
   fallible,
-}
-
-// binding and calling methods
-const method_exists = name => obj => name in obj
-const method_of = obj => name => js.bind(obj)(get(name)(obj))
-const method  = name => args => obj => apply(method_of(obj)(name))(args)
-const method0 = name => _ =>           method(name)([])
-const method1 = name => a =>           method(name)([a])
-const method2 = name => a => b =>      method(name)([a,b])
-const method3 = name => a => b => c => method(name)([a,b,c])
-
-export {
-  method,
-  method0,
-  method1,
-  method2,
-  method3,
-  method_of,
-  method_exists,
 }
 
 // predicates
