@@ -1023,6 +1023,33 @@ export function test (suite) {
           && t.eq(inc_when_even(2))(3)
           && t.eq(inc_when_even(1))(1)
       },
+      'ᐅeffect: returns effected object after performing an effect': t => {
+        const id = x => x
+        const array = []
+        return true
+            && t.eq(ᐅeffect(id)(array))(array)
+            && t.eq(ᐅeffect(a => a.push(2))(array))(array)
+            && t.eq(array.length)(1)
+            && t.eq(array[0])(2)
+      },
+      'ᐅlog: short-hand for ᐅeffect(console.log.bind(console))': t => {
+        function suspending_and_counting_logs (level, fn) {
+          return (...args) => {
+            let count       = 0
+            const saved_log = console[level]
+            console[level]  = _ => (count++)
+            const result    = fn(...args)
+            console[level]  = saved_log
+            return { count, result }
+          }
+        }
+        const testᐅlog = suspending_and_counting_logs('dir', ᐅlog)
+        const array = [ 1, 2, 3 ]
+        return true
+            && t.eq(testᐅlog(    5))({ count: 1, result:     5 })
+            && t.eq(testᐅlog(array))({ count: 1, result: array })
+            && t.eq(array)([ 1, 2, 3 ])
+      },
     }),
     t => t.suite('functions', {
       'id: id(6) is 6':
