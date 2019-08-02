@@ -20,6 +20,15 @@
       - `_property`: [ key, descriptor ]
       - `_descriptor`: key => descriptor
       - `_descriptors`: { [key]: descriptor, ... } merge
+- Generalized tree-walking functions
+  - proposal:
+    - order: {breadth,depth}
+    - walk.{order}: walk_fn => object => object
+    - walk_fn: key => parent => (walk.recur)|(new value for key)
+    - walker: like mutative.derive; e.g.: walker(walk => { ... }) => { depth: { ... }, breadth: { ... } }
+  - example:
+    - walk_leaves: walker(walk => fn => walk(ᐅif(ᐅ([ apply(get), reflex.type.object ]))(walk.recur)(fn)))
+    - walk_leaves.{order}(increment)([ 1, 2, [ 3, 4, [ 5 ] ] ])([ 2, 3, [ 4, 5, [ 6 ] ] ])
 - Make sure all functions are tested
   - Including modules (d, linchpin, ...)
 - Make sure mutative alternates are tested
