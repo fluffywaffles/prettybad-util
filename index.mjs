@@ -875,6 +875,17 @@ const set = js.assign({
   entries     : set_entries,
   properties  : set_properties,
   descriptors : set_descriptors,
+  // path setters
+  at_path: {
+    value       : at_path(set_value),
+    entry       : at_path(set_entry),
+    values      : at_path(set_values),
+    entries     : at_path(set_entries),
+    property    : at_path(set_property),
+    properties  : at_path(set_properties),
+    descriptor  : at_path(set_descriptor),
+    descriptors : at_path(set_descriptors),
+  },
 })(set_value)
 
 export {
@@ -1323,7 +1334,7 @@ export function test (suite) {
     ]),
     t => t.suite(`setters`, {
       // TODO(jordan): unify, similar to getters tests
-      // TODO(jordan): test short-hand
+      // TODO(jordan): test short-hand, path setters
       'set_descriptors.mut: copies descriptors from an object':
         t => {
           const o = { a: 5 }
