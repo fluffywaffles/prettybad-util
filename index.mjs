@@ -68,13 +68,9 @@ const None = proxy({
   [Symbol.isConcatSpreadable] : { value: false },
 })(function () {}))
 
-// utilities
-const value_or = replacement => ᐅwhen(not(is_value))(ret(replacement))
-
 export {
   None,
   proxy,
-  value_or,
 }
 
 // functions
@@ -283,6 +279,8 @@ export {
 // predicates
 const not      = f => v => !f(v)
 const is_value = v => v != null        // [1]
+const value_or = replacement => ᐅwhen(not(is_value))(ret(replacement))
+
 /* NOTE(jordan):
  *
  * [1]: Using the *fancy* rules for {truthy,falsy}ness, one can determine
@@ -293,6 +291,7 @@ export {
   /* NOTE(jordan): `is` was exported from linchpin above */
   not,
   is_value,
+  value_or,
 }
 
 // pipelining
@@ -1318,11 +1317,13 @@ export function test (suite) {
               && t.ok(is(undefined)(undefined))
               && t.ok(is(0)(0))
               && t.ok(is("hello")("hello"))
+              && t.ok(is(NaN)(NaN))
               && !t.ok(is("hello")("goodbye"))
               && !t.ok(is(0)(1))
               && !t.ok(is(null)(undefined))
               && !t.ok(is(false)(undefined))
               && !t.ok(is(null)(false))
+              && !t.ok(is(false)(NaN))
         },
       'not':
         t => {
@@ -1336,8 +1337,20 @@ export function test (suite) {
               && t.ok(is_value(0))
               && t.ok(is_value(false))
               && t.ok(is_value(NaN))
+              && t.ok(is_value(''))
               && !t.ok(is_value(undefined))
               && !t.ok(is_value(null))
+        },
+      'value_or':
+        t => {
+          return true
+              && t.eq(value_or(5)(undefined))(5)
+              && t.eq(value_or(None)(undefined))(None)
+              && t.eq(value_or(None)(     null))(None)
+              && t.eq(value_or(None)(false))(false)
+              && t.eq(value_or(None)(NaN))(NaN)
+              && t.eq(value_or(None)(0))(0)
+              && t.eq(value_or(None)(''))('')
         },
     }),
     t => t.suite('arrays', {
