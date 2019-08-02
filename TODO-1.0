@@ -21,6 +21,9 @@
       - `_descriptor`: key => descriptor
       - `_descriptors`: { [key]: descriptor, ... } merge
 - Generalized tree-walking functions
+  - proof of need:
+    - https://github.com/npm/treeverse
+    - that api tho (*shudder*)
   - proposal:
     - order: {breadth,depth}
     - walk.{order}: walk_fn => object => object
