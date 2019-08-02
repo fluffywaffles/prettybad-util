@@ -261,7 +261,7 @@ export {
 const method_exists = name => obj => name in obj
 const method_of = obj => name => js.bind(obj)(get(name)(obj))
 const method  = name => args => obj => apply(method_of(obj)(name))(args)
-const method0 = name =>                method(name)([])
+const method0 = name => _ =>           method(name)([])
 const method1 = name => a =>           method(name)([a])
 const method2 = name => a => b =>      method(name)([a,b])
 const method3 = name => a => b => c => method(name)([a,b,c])
@@ -1089,10 +1089,12 @@ export function test (suite) {
             multiply  (value) { return mutiplicand => mutiplicand * value },
             double    (value) { return this.multiply(value)(2) },
             raise_sum (power) { return a => b => Math.pow(a + b, power) },
+            pi        ()      { return Math.PI },
           }
           return true
               && t.eq(method(`multiply`)([ 3, 3 ])(obj))(9)
               && t.eq(method(`double`)([ 4 ])(obj))(8)
+              && t.eq(method0(`pi`)()(obj))(Math.PI)
               && t.eq(method1(`double`)(5)(obj))(10)
               && t.eq(method2(`multiply`)(5)(4)(obj))(20)
               && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
