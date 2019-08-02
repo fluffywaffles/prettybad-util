@@ -1321,13 +1321,9 @@ export function test (suite) {
           },
       }),
     ]),
-    t => t.suite(`objects`, {
-      'string_keys: lists string keys':
-        t => t.eq(string_keys({ [sym_a]: `hi`, a: 4 }))(['a']),
-      'symbol_keys: lists symbol keys':
-        t => t.eq(symbol_keys({ [sym_a]: `hi`, a: 4 }))([sym_a]),
-      'keys: lists both string and symbol keys':
-        t => t.eq(keys({ [sym_a]: `hi`, a: 4 }))(['a', sym_a]),
+    t => t.suite(`setters`, {
+      // TODO(jordan): unify, similar to getters tests
+      // TODO(jordan): test short-hand
       'set_descriptors.mut: copies descriptors from an object':
         t => {
           const o = { a: 5 }
@@ -1348,6 +1344,14 @@ export function test (suite) {
             && t.eq(o.a)(1)
             && t.eq(Object.keys(o))([])
         },
+    }),
+    t => t.suite(`objects`, {
+      'string_keys: lists string keys':
+        t => t.eq(string_keys({ [sym_a]: `hi`, a: 4 }))(['a']),
+      'symbol_keys: lists symbol keys':
+        t => t.eq(symbol_keys({ [sym_a]: `hi`, a: 4 }))([sym_a]),
+      'keys: lists both string and symbol keys':
+        t => t.eq(keys({ [sym_a]: `hi`, a: 4 }))(['a', sym_a]),
       'from_properties: converts [prop, desc] pairs to an object':
         t => t.eq(from_properties([['a',d.default({ v: 5 })]]))({ a: 5 }),
       'object_copy: (shallowly) clones an object':
