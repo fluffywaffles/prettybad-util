@@ -1058,8 +1058,10 @@ export function test (suite) {
           const object = { a: 5 }
           return t.refeq(id(object))(object)
         },
-      'call: calls func':
+      'call: calls a function':
         t => t.eq(call(id)(1))(1),
+      'pass: passes a value into a function':
+        t => t.eq(pass(5)(id))(5),
       'bind: binds ctx':
         t => t.eq(js.bind(5)(function () { return this })())(5),
       'ret: returns a computed value':
@@ -1083,7 +1085,33 @@ export function test (suite) {
         t => t.ok(or([ x => x + 1 === 3, x => x + 1 === 2 ])(1)),
       'fmap: runs a series of functions on an object':
         t => t.eq(fmap([ v => v + 1, v => v / 2 ])(4))([ 5, 2 ]),
-      'method{n}: calls a named method with argument(s)':
+      'flatfmap: runs a series of functions on an object, then flattens':
+        t => t.eq(flatfmap([ v => [ v - 1, v + 1 ], v => [ v * 2, v / 2 ] ])(4))([ 3, 5, 8, 2 ]),
+      '{fold,over}: perform a fold over an array of values; can break':
+        t => {
+          const sum = v => a => a + v
+          const break_gt_4 = v => ᐅif(a => a > 4)(ret(fold.break))(sum(v))
+          return true
+              && t.eq(fold(sum)(0)([ 1, 2, 3 ]))(6)
+              && t.eq(over(sum)([ 1, 2, 3 ])(0))(6)
+              && t.eq(fold(break_gt_4)(3)([ 1, 2, 3, 4, 5 ]))(6)
+              && t.eq(over(break_gt_4)([ 1, 2, 'a', 'b' ])(7))(7)
+        },
+      'apply{n}: applies a function with argument(s); must have > 0':
+        t => {
+          const add = a => b => a + b
+          const quadratic_add = a => b => c => {
+            return (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a)
+          }
+          return true
+              && t.eq(apply(add)([]))(add)
+              && t.eq(apply(add)([ 1, 2 ]))(3)
+              && t.eq(apply(quadratic_add)([ 1, 2, 1 ]))(-1)
+              && t.eq(apply1(x => x)('hello'))('hello')
+              && t.eq(apply2(add)(5)(4))(9)
+              && t.eq(apply3(quadratic_add)(-1)(5)(-4))(1)
+        },
+      'method{n}: calls a named method[ with argument(s)]':
         t => {
           const obj = {
             multiply  (value) { return mutiplicand => mutiplicand * value },
