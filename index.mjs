@@ -684,9 +684,9 @@ const get_descriptors = keys => map_keys(get_descriptor)(keys)
 
 // base path getters
 const get_path_value = path => obj => fold(get)(obj)(path)
-const at_path = getter => path => ᐅ([
+const at_path = fn => path => ᐅ([
   fmap([ last, ᐅ([ but_last, get_path_value ]) ]),
-  apply(getter),
+  apply(fn),
 ])(path)
 /*
  * at_path(get_entry)([ 'a', 'b' ])({ a: { b: 5 } }) // => [ 'b', 5 ]
@@ -708,7 +708,7 @@ const get = js.assign({
     properties  : get_properties,
     descriptors : get_descriptors,
   },
-  for_path: {
+  at_path: {
     value       : get_path_value,
     values      : at_path(get_values),
     entry       : at_path(get_entry),
@@ -752,15 +752,15 @@ const get = js.assign({
         properties  : ks => get.for_keys.properties(ks)(object),
         descriptors : ks => get.for_keys.descriptors(ks)(object),
       },
-      for_path: {
-        value       : p => get.for_path.value(p)(object),
-        values      : p => get.for_path.values(p)(object),
-        entry       : p => get.for_path.entry(p)(object),
-        entries     : p => get.for_path.entries(p)(object),
-        property    : p => get.for_path.property(p)(object),
-        properties  : p => get.for_path.properties(p)(object),
-        descriptor  : p => get.for_path.descriptor(p)(object),
-        descriptors : p => get.for_path.descriptors(p)(object),
+      at_path: {
+        value       : p => get.at_path.value(p)(object),
+        values      : p => get.at_path.values(p)(object),
+        entry       : p => get.at_path.entry(p)(object),
+        entries     : p => get.at_path.entries(p)(object),
+        property    : p => get.at_path.property(p)(object),
+        properties  : p => get.at_path.properties(p)(object),
+        descriptor  : p => get.at_path.descriptor(p)(object),
+        descriptors : p => get.at_path.descriptors(p)(object),
       },
       string_keyed: {
         values      : ks => get.string_keyed.values(ks)(object),
@@ -792,14 +792,14 @@ const get = js.assign({
 /* get(k)(obj)                      -- same as: get.for_key.value(k)(obj)
  * get.for_key.entry(k)(obj)
  * get.for_keys.entries(ks)(obj)
- * get.for_path.value(p)(obj)
- * get.for_path.descriptors(p)(obj)
+ * get.at_path.value(p)(obj)
+ * get.at_path.descriptors(p)(obj)
  * get.string_keyed.entries(obj)
  * get.symbol_keyed.properties(obj)
  * get.in(obj)(k)                   -- get.in(obj).for_key.value(k)
  * get.in(obj).for_key.value(k)
- * get.in(obj).for_path.value(p)
- * get.in(obj).for_path.entries(p)
+ * get.in(obj).at_path.value(p)
+ * get.in(obj).at_path.entries(p)
  * &c.
  */
 
@@ -814,23 +814,23 @@ js.assign({
   descriptor  : js.assign({ in : o => get.in(o).descriptor  })(get.for_key.descriptor),
   descriptors : js.assign({ in : o => get.in(o).descriptors })(get.for_keys.descriptors),
   path: {
-    value       : js.assign({ in : o => get.in(o).for_path.value       })(get.for_path.value),
-    entry       : js.assign({ in : o => get.in(o).for_path.entry       })(get.for_path.entry),
-    values      : js.assign({ in : o => get.in(o).for_path.values      })(get.for_path.values),
-    entries     : js.assign({ in : o => get.in(o).for_path.entries     })(get.for_path.entries),
-    property    : js.assign({ in : o => get.in(o).for_path.property    })(get.for_path.property),
-    properties  : js.assign({ in : o => get.in(o).for_path.properties  })(get.for_path.properties),
-    descriptor  : js.assign({ in : o => get.in(o).for_path.descriptor  })(get.for_path.descriptor),
-    descriptors : js.assign({ in : o => get.in(o).for_path.descriptors })(get.for_path.descriptors),
+    value       : js.assign({ in : o => get.in(o).at_path.value       })(get.at_path.value),
+    entry       : js.assign({ in : o => get.in(o).at_path.entry       })(get.at_path.entry),
+    values      : js.assign({ in : o => get.in(o).at_path.values      })(get.at_path.values),
+    entries     : js.assign({ in : o => get.in(o).at_path.entries     })(get.at_path.entries),
+    property    : js.assign({ in : o => get.in(o).at_path.property    })(get.at_path.property),
+    properties  : js.assign({ in : o => get.in(o).at_path.properties  })(get.at_path.properties),
+    descriptor  : js.assign({ in : o => get.in(o).at_path.descriptor  })(get.at_path.descriptor),
+    descriptors : js.assign({ in : o => get.in(o).at_path.descriptors })(get.at_path.descriptors),
   },
 })(get)
 /* get.value(k)(obj)             -- get.for_key.value(k)(obj)
  * get.value.in(obj)(k)          -- get.in(obj).for_key.value(k)
  * get.descriptors(ks)(obj)      -- get.for_keys(ks).descriptors(obj)
  * get.descriptors.in(obj)(ks)   -- get.in(obj).for_keys.descriptors(obj)
- * get.path.value(p)(obj)        -- get.for_path.value(p)(obj)
- * get.path.value.in(obj)(p)     -- get.in(obj).for_path.value(p)(obj)
- * get.path.descriptors(ks)(obj) -- get.for_path.descriptors(ks)(obj)
+ * get.path.value(p)(obj)        -- get.at_path.value(p)(obj)
+ * get.path.value.in(obj)(p)     -- get.in(obj).at_path.value(p)(obj)
+ * get.path.descriptors(ks)(obj) -- get.at_path.descriptors(ks)(obj)
  * &c.
  */
 
@@ -1207,14 +1207,14 @@ export function test (suite) {
               && t.eq(get('a')({}))(None)
               && !t.eq(get(['a'])({ 'a': 'b' }))('b')
         },
-      'get.for_path.value: gets a path, or returns None if path does not exist':
+      'get.at_path.value: gets a path, or returns None if path does not exist':
         t => {
           return true
-              && t.eq(get.for_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
-              && t.eq(get.for_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None)
+              && t.eq(get.at_path.value(['a','b','c'])({'a': {'b': {'c': 5}}}))(5)
+              && t.eq(get.at_path.value(['a','b','d'])({'a': {'b': {'c': 5}}}))(None)
         },
-      'get.in(object).for_path.value: gets a path of keys/indices in a target object':
-        t => t.eq(get.in({'a': {'b': {'c': 5 }}}).for_path.value(['a','b','c']))(5),
+      'get.in(object).at_path.value: gets a path of keys/indices in a target object':
+        t => t.eq(get.in({'a': {'b': {'c': 5 }}}).at_path.value(['a','b','c']))(5),
       'maybe_get: conditionally gets a key and returns success':
         t => {
           return true
