@@ -167,7 +167,7 @@ export {
  * these 2 pieces of information can instead be used to produce an error
  * message for display, or converted into a normal JavaScript Error.
  */
-// REFACTOR(jordan): module
+// REFACTOR(jordan): module; but FIXME: it's circularly dependent on index
 const fallible_create = definition => value => definition({
   pose: result => [ true, result ],
   fail: _      => [ false, value ],
