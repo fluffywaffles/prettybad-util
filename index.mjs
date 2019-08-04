@@ -471,15 +471,6 @@ export {
   fold,
 }
 
-// arrays
-// const string_array_case = ({ string: string_fn, array: array_fn }) => {
-//   return ᐅif(reflex.type(types.string))(string_fn)(array_fn)
-// }
-// const slice    = mutative.with(array_slice.mut)(i => j => string_array_case({
-//   string : s => ''.slice.call(s, i, j),
-//   array  : a => [].slice.call(a, i, j),
-// }))
-
 const each     = f => ᐅeffect(js.each(f)) // NOTE: could mutate...
 const find     = f => arr => value_or(None)(js.find(f)(arr))
 const n_of     = x => n => fill.mut(x)(new Array(n))
