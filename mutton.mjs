@@ -13,7 +13,7 @@ import {
 } from './linchpin'
 
 // mutative function factories
-const mut        = fn => create({ mut: { value: fn } })
+const mut        = fn => create(null)({ mut: { value: fn } })
 const with_mut   = fn => define_property(`mut`)({ value: fn })
 const from_mut   = mut => derive => with_mut(mut)(derive(mut))
 const derive_mut = fn  => derive => with_mut(derive(fn.mut))(derive(fn))

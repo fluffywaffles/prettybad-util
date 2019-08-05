@@ -18,12 +18,16 @@ export {
   has_own,
 }
 
-const create          = descriptors => Obj.create(null, descriptors)
+const create = proto => descriptors => Obj.create(proto, descriptors)
+const get_prototype   = Obj.getPrototypeOf
+const set_prototype   = proto => o => Obj.setPrototypeOf(o, proto)
 const get_descriptor  = key => o => Obj.getOwnPropertyDescriptor(o, key)
 const own_descriptors = Obj.getOwnPropertyDescriptors
 
 export {
   create,
+  get_prototype,
+  set_prototype,
   get_descriptor,
   own_descriptors,
 }

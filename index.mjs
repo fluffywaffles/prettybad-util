@@ -36,9 +36,10 @@ export {
   string_keys,
   symbol_keys,
   is_enumerable,
+  get_prototype,
+  set_prototype,
   some as any,
   every as all,
-  create as from_descriptors,
 } from './linchpin'
 
 // general
@@ -399,7 +400,7 @@ export const reflex = {
 
 // polymorphic object/array copiers
 const array_copy  = arr => concat(arr)([])
-const object_copy = obj => ᐅ([ js.own_descriptors, js.create ])(obj)
+const object_copy = obj => ᐅ([ js.own_descriptors, ᐅdo([ js.get_prototype, js.create ]) ])(obj)
 const copy = object => fallible.assert(fallible.first([
   fallible.guard(reflex.instance.Array)(array_copy),
   fallible.guard(reflex.type.object)(object_copy),
@@ -883,12 +884,14 @@ export {
   set,
 }
 
-const from_entries    = pairs => set_entries.mut(pairs)({})
-const from_properties = pairs => set_properties.mut(pairs)({})
+const from_entries     = pairs => set_entries.mut(pairs)({})
+const from_properties  = pairs => set_properties.mut(pairs)({})
+const from_descriptors = descriptors => js.create(null)(descriptors)
 
 export {
   from_entries,
   from_properties,
+  from_descriptors,
 }
 
 const merge_by = ([ get, join ]) => ᐅ([ map(get), flatten, join ])
@@ -1367,7 +1370,7 @@ export function test (suite) {
       'map_properties: map over and alter object properties':
         t => {
           const a = { a: 5 }
-          const b = js.create({ a: { value: 5 } })
+          const b = js.create(null)({ a: { value: 5 } })
           const make_private_immutable = ([ key, descriptor ]) => {
             return [ key, { value: descriptor.value } ]
           }
@@ -1417,7 +1420,7 @@ export function test (suite) {
         },
       'enumerable_entries: entries, filtered by js.is_enumerable':
         t => {
-          const example = js.create({
+          const example = js.create(null)({
             a: d.default({ v: 5 }),
             b: d.nothing({ v: 'hidden' }),
           })
