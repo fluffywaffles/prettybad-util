@@ -1364,6 +1364,16 @@ export function test (suite) {
         },
       'merge: combines properties of 2 source objects':
         t => t.eq(merge({ a: 4 })({ a: 5 }))({ a: 5 }),
+      'map_properties: map over and alter object properties':
+        t => {
+          const a = { a: 5 }
+          const b = js.create({ a: { value: 5 } })
+          const make_private_immutable = ([ key, descriptor ]) => {
+            return [ key, { value: descriptor.value } ]
+          }
+          return true
+              && t.eq(map_properties(make_private_immutable)(a))(b)
+        },
       'has: returns true if a key is valid and present in an object':
         t => {
           return true
