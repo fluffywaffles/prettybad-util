@@ -117,9 +117,9 @@ const method_exists = name => obj => name in obj
 const method_of = obj => name => js.bind(obj)(get(name)(obj))
 const method  = name => args => obj => apply(method_of(obj)(name))(args)
 const method0 = name => _ =>           method(name)([])
-const method1 = name => a =>           method(name)([a])
-const method2 = name => a => b =>      method(name)([a,b])
-const method3 = name => a => b => c => method(name)([a,b,c])
+const method1 = name => a =>           method(name)([ a ])
+const method2 = name => a => b =>      method(name)([ a, b ])
+const method3 = name => a => b => c => method(name)([ a, b, c ])
 
 export {
   method,
