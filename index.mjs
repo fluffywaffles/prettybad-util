@@ -842,7 +842,20 @@ export {
 // Object manipulators
 // key, (value|descriptor)
 const set_value = mutative.from(k => v => o => (o[k] = v, o))(copy_apply2)
-const set_descriptor = mutative.from(js.define_property)(copy_apply2)
+const set_descriptor = mutative.from(key => descriptor => {
+  /* NOTE(jordan): js.define_property _merges_ property descriptors; since
+   * set_descriptor is meant to *set* a descriptor, not to merge it with
+   * the existing descriptor, we have to add to the given descriptor's
+   * configuration  non-writable, non-enumerable, non-configurable
+   * defaults. This is a strange default behavior, in my opinion, and
+   * frankly the language specification is broken in this regard.
+   */
+  return js.define_property(key)(js.assign(descriptor)({
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  }))
+})(copy_apply2)
 
 // { [key]: (value|descriptor), ... }
 const set_values      = mutative.from(js.assign)(copy_apply1)
