@@ -1032,7 +1032,7 @@ export function test (suite) {
             && t.eq(None[Symbol.toStringTag])(`None`)
       },
     }),
-    t => t.suite('pipelining', {
+    t => t.suite('pipes (ᐅ)', {
       'ᐅ: pipelines functions':
         t => t.eq(ᐅ([ id, x => x + 1 ])(1))(2),
       'ᐅdo: chains together calls on a common target': t => {
