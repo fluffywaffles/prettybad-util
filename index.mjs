@@ -755,24 +755,6 @@ const get = js.assign({
         descriptor  : p => get.at_path.descriptor(p)(object),
         descriptors : p => get.at_path.descriptors(p)(object),
       },
-      string_keyed: {
-        values      : ks => get.string_keyed.values(ks)(object),
-        entries     : ks => get.string_keyed.entries(ks)(object),
-        properties  : ks => get.string_keyed.properties(ks)(object),
-        descriptors : ks => get.string_keyed.descriptors(ks)(object),
-      },
-      symbol_keyed: {
-        values      : ks => get.symbol_keyed.values(ks)(object),
-        entries     : ks => get.symbol_keyed.entries(ks)(object),
-        properties  : ks => get.symbol_keyed.properties(ks)(object),
-        descriptors : ks => get.symbol_keyed.descriptors(ks)(object),
-      },
-      all: {
-        values      : ks => get.all.values(ks)(object),
-        entries     : ks => get.all.entries(ks)(object),
-        properties  : ks => get.all.properties(ks)(object),
-        descriptors : ks => get.all.descriptors(ks)(object),
-      },
       /* EXPLANATION(jordan): cannot modify get_value_in directly or it
        * becomes circular! Create a wrapper and modify that instead.
        */
