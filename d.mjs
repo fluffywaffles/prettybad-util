@@ -45,7 +45,7 @@ const d = assign({
  * Descriptor factory api
  *
  * Usage:
- *   d('ew')({ v: 'drops' }) ⇒ { enumerable: true, writable: true, value: 'drops' }
+ *   d('ew')({ v: 'drops' }) → { enumerable: true, writable: true, value: 'drops' }
  */
 function make_descriptor (cew) {
   const parse = typeof cew === 'string'
@@ -65,9 +65,9 @@ function make_descriptor (cew) {
  * Descriptor configuration option shorthands
  *
  * Usage:
- *   d.default({ v: 5 })      ⇒ { configurable: true, enumerable: true, writable: true, value: 5 }
- *   d.nothing({ g: ret(4) }) ⇒ { get: ret(4) }
- *   d.enumerable({ v: 'hi' }) ⇒ { enumerable: true, value: 'hi' }
+ *   d.default({ v: 5 })       → { configurable: true, enumerable: true, writable: true, value: 5 }
+ *   d.nothing({ g: ret(4) })  → { get: _ => 4 }
+ *   d.enumerable({ v: 'hi' }) → { enumerable: true, value: 'hi' }
  */
 assign({
   // Default descriptor: all permissions
