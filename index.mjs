@@ -2,6 +2,7 @@
  * UTF-8 Mappings
  * μ : U+03bc
  * ᐅ : U+1405
+ * ƒ : U+0192
  */
 
 import d from './d'
@@ -254,7 +255,7 @@ const fallible_assert = fallible => value => {
   return fallible_unwrap(fallible(value))
 }
 
-const fallible = js.assign({
+const ƒ = js.assign({
   // Composers
   ᐅ         : fallible_ᐅ,
   ᐅdo       : fallible_ᐅdo,
@@ -274,7 +275,8 @@ const fallible = js.assign({
 })(fallible_create)
 
 export {
-  fallible,
+  ƒ,
+  ƒ as fallible,
 }
 
 // predicates
@@ -401,9 +403,9 @@ export const reflex = {
 // polymorphic object/array copiers
 const array_copy  = arr => concat(arr)([])
 const object_copy = obj => ᐅ([ js.own_descriptors, ᐅdo([ js.get_prototype, js.create ]) ])(obj)
-const copy = object => fallible.assert(fallible.first([
-  fallible.guard(reflex.instance.Array)(array_copy),
-  fallible.guard(reflex.type.object)(object_copy),
+const copy = object => ƒ.assert(ƒ.first([
+  ƒ.guard(reflex.instance.Array)(array_copy),
+  ƒ.guard(reflex.type.object)(object_copy),
 ]))(object)
 const copy_and    = f => obj  => ᐅ([ copy, f ])(obj)
 const copy_apply  = f => args => copy_and(apply(f)(args))
@@ -647,7 +649,7 @@ export {
 const is_key     = v => includes(typeof v)([`string`,`number`,`symbol`])
 const unsafe_has = key => obj => and([ is_value, js.has_own(key) ])(obj)
 const has        = key => obj => is_key(key) && unsafe_has(key)(obj)
-const has_path   = p => obj => fallible.succeeded(maybe_get_path(p)(obj))
+const has_path   = p => obj => ƒ.succeeded(maybe_get_path(p)(obj))
 
 export {
   is_key,
@@ -831,8 +833,8 @@ export {
 
 // TODO(jordan): bring fallible getters into the unified 'get' object
 // Fallible getters
-const maybe_get = key => fallible.guard(has(key))(get(key))
-const maybe_get_path = keys => fallible.ᐅ(map(maybe_get)(keys))
+const maybe_get = key => ƒ.guard(has(key))(get(key))
+const maybe_get_path = keys => ƒ.ᐅ(map(maybe_get)(keys))
 
 export {
   maybe_get,
@@ -961,10 +963,10 @@ export {
 
 // TODO(jordan): clean-up
 const update_path = path => final_updater => {
-  return fold(key => value_updater => fallible.ᐅdo([
-    fallible.atomic(fallible.ᐅ([ maybe_get(key), value_updater ])),
-    new_value => fallible.unfailing(set_value(key)(new_value)),
-  ]))(fallible.unfailing(final_updater))(reverse(path))
+  return fold(key => value_updater => ƒ.ᐅdo([
+    ƒ.atomic(ƒ.ᐅ([ maybe_get(key), value_updater ])),
+    new_value => ƒ.unfailing(set_value(key)(new_value)),
+  ]))(ƒ.unfailing(final_updater))(reverse(path))
 }
 const update = key => fn => ᐅ([ update_path([ key ])(fn), take(2) ])
 // const update_with = ups => o => fold(apply(update))(o)(entries(ups))
@@ -1156,12 +1158,12 @@ export function test (suite) {
               && t.eq(method3(`raise_sum`)(2)(3)(4)(obj))(49)
         },
     }),
-    t => t.suite('fallibles', {
+    t => t.suite('fallibles (ƒ)', {
       'wraps a calculation that may fail':
         t => {
-          const poses5 = fallible(({ pose }) => _ => pose(5))
-          const fails  = fallible(({ fail }) => _ => fail())
-          const poses_uppercase = fallible(({ pose, fail }) => value => {
+          const poses5 = ƒ(({ pose }) => _ => pose(5))
+          const fails  = ƒ(({ fail }) => _ => fail())
+          const poses_uppercase = ƒ(({ pose, fail }) => value => {
             if (typeof value !== 'string') {
               return fail()
             } else {
@@ -1174,34 +1176,34 @@ export function test (suite) {
               && t.eq(poses_uppercase(5))([ false, 5 ])
               && t.eq(poses_uppercase('abc'))([ true, 'ABC' ])
         },
-      'fallible.unfailing: poses the result of a normal function':
+      'ƒ.unfailing: poses the result of a normal function':
         t => {
-          return t.eq(fallible.unfailing(v => v + 1)(5))([ true, 6 ])
+          return t.eq(ƒ.unfailing(v => v + 1)(5))([ true, 6 ])
         },
-      'fallible.fail: immediately fails':
+      'ƒ.fail: immediately fails':
         t => {
-          return t.eq(fallible.fail()(5))([ false, 5 ])
+          return t.eq(ƒ.fail()(5))([ false, 5 ])
         },
-      'fallible.ᐅ: chains a series of fallibles':
+      'ƒ.ᐅ: chains a series of fallibles':
         t => {
-          const arbitrary_pipe = fallible.ᐅ([
-            fallible.guard(v => typeof v === 'number')(id),
-            fallible.guard(v => v > 5)(v => v * 2),
-            fallible.guard(v => v % 2 === 0)(v => v - 1),
+          const arbitrary_pipe = ƒ.ᐅ([
+            ƒ.guard(v => typeof v === 'number')(id),
+            ƒ.guard(v => v > 5)(v => v * 2),
+            ƒ.guard(v => v % 2 === 0)(v => v - 1),
           ])
           return true
               && t.eq(arbitrary_pipe('abc'))([ false, 'abc', 0 ])
               && t.eq(arbitrary_pipe(5))([ false, 5, 1 ])
               && t.eq(arbitrary_pipe(7))([ true, 13, 2 ])
         },
-      'fallible.first: returns the first successful fallible':
+      'ƒ.first: returns the first successful ƒ':
         t => {
-          const gt5 = fallible.guard(v => v > 5)(ret(`5`))
-          const gt1 = fallible.guard(v => v > 1)(ret(`1`))
+          const gt5 = ƒ.guard(v => v > 5)(ret(`5`))
+          const gt1 = ƒ.guard(v => v > 1)(ret(`1`))
           return true
-              && t.eq(fallible.first([ gt5, gt1 ])(3))([ true, `1` ])
-              && t.eq(fallible.first([ gt5, gt1 ])(7))([ true, `5` ])
-              && t.eq(fallible.first([ gt1, gt5 ])(0))([ false, 0  ])
+              && t.eq(ƒ.first([ gt5, gt1 ])(3))([ true, `1` ])
+              && t.eq(ƒ.first([ gt5, gt1 ])(7))([ true, `5` ])
+              && t.eq(ƒ.first([ gt1, gt5 ])(0))([ false, 0  ])
         },
     }),
     t => t.suite(`getters`, [
