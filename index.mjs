@@ -917,14 +917,25 @@ export {
   merge_properties,
 }
 
+const property_setter = mutative.derive(set.properties)
+const entry_setter = mutative.derive(set.entries)
+
+const on_properties = property_setter(set_properties => f => {
+  return ᐅdo([ ᐅ([ get.all.properties, f ]), apply2(set_properties) ])
+})
+const on_entries = entry_setter(set_entries => f => {
+  return ᐅdo([ ᐅ([ get.all.entries, f ]), apply2(set_entries) ])
+})
+
+const with_on_properties = mutative.derive(on_properties)
+const with_on_entries = mutative.derive(on_entries)
+
+const map_properties    = with_on_properties(on => f => on(map(f)))
+const filter_properties = with_on_properties(on => f => on(filter(f)))
+const map_entries       = with_on_entries(on => f => on(map(f)))
+const filter_entries    = with_on_entries(on => f => on(filter(f)))
+
 const merge = a => b => merge_properties([ a, b ])
-const map_as = convert => undo => f => ᐅ([ convert, f, undo ])
-const on_properties = f => map_as(get.all.properties)(from_properties)(f)
-const on_entries    = f => map_as(get.all.entries)(from_entries)(f)
-const map_properties = f => on_properties(map(f))
-const map_entries    = f => on_entries(map(f))
-const filter_properties = f => on_properties(filter(f))
-const filter_entries    = f => on_entries(filter(f))
 const swap = k => v => fmap([ get(k), o => merge(o)({ [k]: v }) ])
 const enumerable_keys = o => ᐅ([ keys, filter(k => is_enumerable(k)(o)) ])(o)
 const enumerable_entries = o => ᐅdo([ enumerable_keys, get.for_keys.entries ])(o)
@@ -934,7 +945,6 @@ const unzip = obj => ᐅ([ entries, disinterlace ])(obj)
 
 export {
   merge,
-  map_as,
   on_properties,
   map_properties,
   map_entries,
