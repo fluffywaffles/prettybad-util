@@ -138,7 +138,7 @@ export {
  * `fail`s without computing one. Why use these names?
  *
  * A posed result can still become a failure in a composition of
- * fallibles. Thus, the result is "posed:" it isn't a "success" or a
+ * fallibles. Thus, the result is "posed": it isn't a "success" or a
  * "resolution." When a fallible poses a result, this does not signify the
  * completion of the computation. It merely poses an option. A failure,
  * however, cannot compose. When a fallible fails, its result is not
@@ -180,13 +180,6 @@ function fallible_guard (pred) {
   return fn => fallible_create(({ pose, fail }) => value => {
     return pred(value) ? pose(fn(value)) : fail()
   })
-}
-
-// Forces a fallible composition to succeed or Error fatally
-const fallible_fatalize = fallible => v => {
-  const [ succeeded, result ] = fallible(v)
-  if (succeeded) return result
-  else throw new Error(`fatalized fallible failed on ${v}`)
 }
 
 // Folds fallibles over results until one fails to pose a next result
@@ -241,17 +234,21 @@ function fallible_unfailing (fn) {
 }
 
 function fallible_unwrap ([ succeeded, result, index = None ]) {
-  if (succeeded) return result
-  throw new Error(
-    `fallible.assert: fallible did not succeed; last result: ${result}`
-  )
+  if (succeeded === true) {
+    return result
+  }
+  throw new Error(`
+    fallible.unwrap: 'succeeded' is not true
+      last result   : ${result}
+      failure index : ${index}
+  `)
 }
 
 function fallible_succeeded ([ succeeded, result ]) {
   return succeeded
 }
 
-const fallible_assert = fallible => value => {
+const fallible_fatalize = fallible => value => {
   return fallible_unwrap(fallible(value))
 }
 
@@ -261,15 +258,14 @@ const ƒ = js.assign({
   ᐅdo       : fallible_ᐅdo,
   fold      : fallible_fold,
   first     : fallible_first,
-  // Modifiers
+  // Constructors
+  fail      : fallible_fail,
+  unfailing : fallible_unfailing,
+  // Wrappers
+  guard     : fallible_guard,
   atomic    : fallible_atomic,
   fatalize  : fallible_fatalize,
-  // Wrappers
-  fail      : fallible_fail,
-  guard     : fallible_guard,
-  unfailing : fallible_unfailing,
   // Unwrappers
-  assert    : fallible_assert,
   unwrap    : fallible_unwrap,
   succeeded : fallible_succeeded,
 })(fallible_create)
@@ -402,8 +398,11 @@ export const reflex = {
 
 // polymorphic object/array copiers
 const array_copy  = arr => concat(arr)([])
-const object_copy = obj => ᐅ([ js.own_descriptors, ᐅdo([ js.get_prototype, js.create ]) ])(obj)
-const copy = object => ƒ.assert(ƒ.first([
+const object_copy = obj => ᐅ([
+  js.own_descriptors,
+  ᐅdo([ js.get_prototype, js.create ]),
+])(obj)
+const copy = object => ƒ.fatalize(ƒ.first([
   ƒ.guard(reflex.instance.Array)(array_copy),
   ƒ.guard(reflex.type.object)(object_copy),
 ]))(object)
@@ -655,6 +654,7 @@ export {
   is_key,
   unsafe_has,
   has,
+  has_path,
 }
 
 // getters
@@ -813,7 +813,7 @@ export {
   get,
 }
 
-// TODO(jordan): bring fallible getters into the unified 'get' object
+// TODO?(jordan): bring fallible getters into the unified 'get' object?
 // Fallible getters
 const maybe_get = key => ƒ.guard(has(key))(get(key))
 const maybe_get_path = keys => ƒ.ᐅ(map(maybe_get)(keys))
@@ -827,7 +827,7 @@ export {
 // key, (value|descriptor)
 const set_value = mutative.from(k => v => o => (o[k] = v, o))(copy_apply2)
 const set_descriptor = mutative.from(key => descriptor => {
-  /* NOTE(jordan): js.define_property _merges_ property descriptors; since
+  /* NOTE(jordan): js.define_property _merges_ property descriptors. Since
    * set_descriptor is meant to *set* a descriptor, not to merge it with
    * the existing descriptor, we have to add to the given descriptor's
    * configuration  non-writable, non-enumerable, non-configurable
@@ -904,23 +904,23 @@ export {
 const property_setter = mutative.derive(set.properties)
 const entry_setter = mutative.derive(set.entries)
 
-const on_properties = property_setter(set_properties => f => {
-  return ᐅdo([ ᐅ([ get.all.properties, f ]), apply2(set_properties) ])
+const on_properties = property_setter(set => f => {
+  return ᐅdo([ ᐅ([ get.all.properties, f ]), apply2(set) ])
 })
-const on_entries = entry_setter(set_entries => f => {
-  return ᐅdo([ ᐅ([ get.all.entries, f ]), apply2(set_entries) ])
+const on_entries = entry_setter(set => f => {
+  return ᐅdo([ ᐅ([ get.all.entries, f ]), apply2(set) ])
 })
 
-const with_on_properties = mutative.derive(on_properties)
-const with_on_entries = mutative.derive(on_entries)
+const derived_on_properties = mutative.derive(on_properties)
+const derived_on_entries = mutative.derive(on_entries)
 
-const map_properties    = with_on_properties(on => f => on(map(f)))
-const filter_properties = with_on_properties(on => f => on(filter(f)))
-const map_entries       = with_on_entries(on => f => on(map(f)))
-const filter_entries    = with_on_entries(on => f => on(filter(f)))
+const map_properties    = derived_on_properties(on => f => on(map(f)))
+const filter_properties = derived_on_properties(on => f => on(filter(f)))
+const map_entries       = derived_on_entries(on => f => on(map(f)))
+const filter_entries    = derived_on_entries(on => f => on(filter(f)))
 
 const merge = a => b => merge_properties([ a, b ])
-const swap = k => v => fmap([ get(k), o => merge(o)({ [k]: v }) ])
+const swap = k => v => fmap([ get(k), set.value(k)(v) ])
 const enumerable_keys = o => ᐅ([ keys, filter(k => is_enumerable(k)(o)) ])(o)
 const enumerable_entries = o => ᐅdo([ enumerable_keys, get.for_keys.entries ])(o)
 
@@ -944,13 +944,20 @@ export {
 }
 
 // TODO(jordan): clean-up
+/* NOTE(jordan): this code builds the update function from the end of the
+ * path to the front, starting from the actual intended update and
+ * wrapping it in a chain of maybe_get calls; effectively:
+ *
+ *   ᐅ([ maybe_get(key0), ... maybe_get(keyN-1), ᐅwhen(get(0))(updater) ])
+ *
+ */
 const update_path = path => final_updater => {
   return fold(key => value_updater => ƒ.ᐅdo([
     ƒ.atomic(ƒ.ᐅ([ maybe_get(key), value_updater ])),
     new_value => ƒ.unfailing(set_value(key)(new_value)),
   ]))(ƒ.unfailing(final_updater))(reverse(path))
 }
-const update = key => fn => ᐅ([ update_path([ key ])(fn), take(2) ])
+const update = key => fn => update_path([ key ])(fn)
 // const update_with = ups => o => fold(apply(update))(o)(entries(ups))
 
 export {
@@ -961,13 +968,14 @@ export {
 
 // strings
 // NOTE(jordan): most array functions also work on strings
-// REFACTOR(jordan): _is_object should probably be a predicate we export
-// IDEA(jordan): we should have a type_is.{object,&c} predicate object
-const _is_object    = v => reflex.type(types.object)(v)
-const _is_symbol    = v => reflex.type(types.symbol)(v)
-const _has_toString = o => method_exists(`toString`)(o)
-const _stringable_object = v => and([ _is_object, _has_toString ])(v)
-const _stringable = v => or([ _stringable_object, _is_symbol ])(v)
+const _stringable_object = v => and([
+  reflex.type.object,
+  method_exists(`toString`),
+])(v)
+const _stringable = v => or([
+  _stringable_object,
+  reflex.type.symbol,
+])(v)
 
 const string = v => `${ᐅwhen(_stringable)(v => v.toString())(v)}`
 const lowercase = str => ''.toLowerCase.call(str)
@@ -1034,7 +1042,7 @@ export function test (suite) {
           && t.eq(inc_when_even(2))(3)
           && t.eq(inc_when_even(1))(1)
       },
-      'ᐅeffect: returns effected object after performing an effect': t => {
+      'ᐅeffect: returns affected object after performing an effect': t => {
         const id = x => x
         const array = []
         return true
@@ -1165,7 +1173,7 @@ export function test (suite) {
         t => {
           return t.eq(ƒ.fail()(5))([ false, 5 ])
         },
-      'ƒ.ᐅ: chains a series of fallibles':
+      'ƒ.ᐅ: pipelines a series of fallibles':
         t => {
           const arbitrary_pipe = ƒ.ᐅ([
             ƒ.guard(v => typeof v === 'number')(id),
@@ -1370,13 +1378,14 @@ export function test (suite) {
           return true
               && t.eq(object_copy({ a: 5 }))({ a: 5 })
               && t.refeq(object_copy({ f: to6 }).f)(to6)
+              && !t.refeq(object_copy({ a: 5 }))({ a: 5 })
         },
       'merge: combines properties of 2 source objects':
         t => t.eq(merge({ a: 4 })({ a: 5 }))({ a: 5 }),
       'map_properties: map over and alter object properties':
         t => {
           const a = { a: 5 }
-          const b = js.create(null)({ a: { value: 5 } })
+          const b = js.create({})({ a: { value: 5 } })
           const make_private_immutable = ([ key, descriptor ]) => {
             return [ key, { value: descriptor.value } ]
           }
@@ -1407,11 +1416,11 @@ export function test (suite) {
         t => {
           const inc = v => v + 1
           return true
-            && t.eq(update(`a`)(inc)({ a: 4 }))([ true, { a: 5 } ])
-            && t.eq(update(`a`)(inc)({}))([ false, {} ])
-            && t.eq(update(`a`)(v => 5)({}))([ false, {} ])
+            && t.eq(update(`a`)(inc)({ a: 4 }))([ true, { a: 5 }, 1 ])
+            && t.eq(update(`a`)(inc)({}))([ false, {}, 0 ])
+            && t.eq(update(`a`)(v => 5)({}))([ false, {}, 0 ])
             && t.ok(ᐅ([ update(0)(inc), get(1) ])([ 1 ]) instanceof Array)
-            && t.eq(update(0)(inc)([ 1 ]))([ true, [ 2 ] ])
+            && t.eq(update(0)(inc)([ 1 ]))([ true, [ 2 ], 1 ])
         },
       'update_path: replace a nested key by a v -> v function':
         t => {
@@ -1568,7 +1577,7 @@ export function test (suite) {
           return true
               && t.eq(flatten([[1], [2, 3], 4, [5]]))(to6)
               && t.eq(flatten([ 1, [ 2, 3 ], [], [], 4 ]))([ 1, 2, 3, 4 ])
-              && t.eq(flatten([[ 1, 2, 3 ]]))([ 1, 2, 3 ])
+              && t.eq(flatten([[[ 1, 2, 3 ]]]))([[ 1, 2, 3 ]])
         },
       'flatmap: maps then flattens':
         t => t.eq(flatmap(v => [ v, v + 5 ])([ 1, 2 ]))([ 1, 6, 2, 7 ]),

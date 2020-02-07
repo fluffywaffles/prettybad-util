@@ -137,6 +137,6 @@ export {
   slice,
   fill,
   splice,
-  fold,
+  reduce,
   includes,
 }
