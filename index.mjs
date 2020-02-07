@@ -102,7 +102,7 @@ export {
   flatfmap,
 }
 
-const apply  = f => ᐅwhen(args => len(args) > 0)(fold(pass))(f)
+const apply  = f => args => len(args) > 0 ? fold(pass)(f)(args) : f()
 const apply1 = f => a =>           apply(f)([ a ])
 const apply2 = f => a => b =>      apply(f)([ a, b ])
 const apply3 = f => a => b => c => apply(f)([ a, b, c ])
@@ -409,7 +409,7 @@ const copy = object => ƒ.assert(ƒ.first([
 ]))(object)
 const copy_and    = f => obj  => ᐅ([ copy, f ])(obj)
 const copy_apply  = f => args => copy_and(apply(f)(args))
-const copy_apply0 = f =>                copy_apply(f)([])
+const copy_apply0 = f =>                copy_and(f)
 const copy_apply1 = f => a =>           copy_apply(f)([ a ])
 const copy_apply2 = f => a => b =>      copy_apply(f)([ a, b ])
 const copy_apply3 = f => a => b => c => copy_apply(f)([ a, b, c ])
@@ -1081,7 +1081,7 @@ export function test (suite) {
       'apply: applies function to array of args':
         t => {
           return t.eq(apply(function (a) { return b => a + b })([ 1, 2 ]))(3)
-              && t.eq(apply(_ => 5)([])())(5)
+              && t.eq(apply(_ => 5)([]))(5)
         },
       'times: repeats a function a set number of times':
         t => t.eq(times(3)(x => x * 2)(2))(16),
@@ -1116,7 +1116,6 @@ export function test (suite) {
             return (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a)
           }
           return true
-              && t.eq(apply(add)([]))(add)
               && t.eq(apply(add)([ 1, 2 ]))(3)
               && t.eq(apply(quadratic_add)([ 1, 2, 1 ]))(-1)
               && t.eq(apply1(x => x)('hello'))('hello')
