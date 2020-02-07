@@ -5,8 +5,8 @@
  * ƒ : U+0192
  */
 
-import d from './d'
-import * as mutative from './mutton'
+import d from './d.mjs'
+import * as mutative from './mutton.mjs'
 import {
   is,
   len,
@@ -20,11 +20,11 @@ import {
   is_enumerable,
   some as any,
   every as all,
-} from './linchpin'
-import * as js from './linchpin'
+} from './linchpin.mjs'
+import * as js from './linchpin.mjs'
 
 // re-exports
-export { default as d } from './d'
+export { default as d } from './d.mjs'
 export {
   is,
   len,
@@ -41,7 +41,7 @@ export {
   set_prototype,
   some as any,
   every as all,
-} from './linchpin'
+} from './linchpin.mjs'
 
 // general
 const proxy = traps => target => new Proxy(target, traps)

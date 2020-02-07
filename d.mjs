@@ -1,6 +1,6 @@
 import {
   assign,
-} from './linchpin'
+} from './linchpin.mjs'
 
 /**
  * descriptor factory

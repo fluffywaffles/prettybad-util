@@ -10,7 +10,7 @@
 import {
   create,
   define_property,
-} from './linchpin'
+} from './linchpin.mjs'
 
 // mutative function factories
 const mut        = fn => create(null)({ mut: { value: fn } })
