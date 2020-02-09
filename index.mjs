@@ -582,7 +582,7 @@ export {
 
 const mapper = mutative.derive(map)
 const offset = mapper(map => o => map((_, ix, ar) => ar[ix + o]))
-const til    = mapper(map => n => map((_, i) => i > n ? map.break : i))
+const til    = mapper(map => n => map((_, i) => i > n ? map.break : i)(new Array(n)))
 const thru   = mutative.derive(til)(til => n => til(n + 1))
 
 export {
@@ -1620,6 +1620,10 @@ export function test (suite) {
         t => t.eq(interlace([1,2])([`a`,`b`]))([[1,`a`],[2,`b`]]),
       'disinterlace: make same-length arrays out of pairs':
         t => t.eq(disinterlace([[1,`a`],[2,`b`]]))([[1,2], [`a`,`b`,]]),
+      'til: build an array of numbers up to a limit':
+        t => t.eq(til(6))(to6),
+      'thru: build an array of numbers including a limit':
+        t => t.eq(thru(5))(to6),
       'drop_end: drops n items from end of array':
         t => t.eq(drop_end(2)([ 1, 2, 3 ]))([ 1 ]),
     }),
