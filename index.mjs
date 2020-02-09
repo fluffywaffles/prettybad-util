@@ -84,6 +84,35 @@ export {
   trampoline,
 }
 
+const time = async thunk => {
+  const start = process.hrtime.bigint()
+  const value = await thunk()
+  const end   = process.hrtime.bigint()
+  const diff  = end - start
+  return {
+    value,
+    toString () {
+      const s = this.in.ns / BigInt(1e9)
+      let rem = this.in.ns - (s * BigInt(1e9))
+      const m = rem / BigInt(1e6)
+      rem     = rem - (m * BigInt(1e6))
+      const u = rem / BigInt(1e3)
+      const n = rem - (u * BigInt(1e3))
+      return [ `stats:`, `${s}s`, `${m}ms`, `${u}μs`, `${n}ns` ].join('\t')
+    },
+    in: {
+      ns: diff,
+      get s  () { return this.ns / 1e9 },
+      get ms () { return this.ns / 1e6 },
+      get us () { return this.ns / 1e3 },
+    },
+  }
+}
+
+export {
+  time,
+}
+
 // functions
 const id      = v => v
 const ret     = v  => _ => v
