@@ -82,6 +82,7 @@ Nevermind, I'm tired of making up FAQs.
 
 # Does it work?
 
-Yes. But unfortunately you'll have to take my word for it right now that
-the tests pass. I wrote the tests using my own testing library, Sisyphus,
-which I'm still in the process of... uh... fixing, before I release it.
+Yes. If you have a version of node later than v13, you can run the
+test-suite with `$ node test.mjs`. If you have an earlier version, then
+run `npm t` and it will bundle the code with `rollup` first before
+attempting to run the test suite.
