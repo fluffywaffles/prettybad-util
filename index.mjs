@@ -12,6 +12,7 @@ import {
   len,
   join,
   keys,
+  arity,
   index,
   filter,
   findex,
@@ -31,6 +32,7 @@ export {
   bind,
   join,
   keys,
+  arity,
   index,
   filter,
   findex,
@@ -147,12 +149,18 @@ const apply  = f => args => len(args) > 0 ? fold(pass)(f)(args) : f()
 const apply1 = f => a =>           apply(f)([ a ])
 const apply2 = f => a => b =>      apply(f)([ a, b ])
 const apply3 = f => a => b => c => apply(f)([ a, b, c ])
+const applyN = f => ƒ.fatalize(ƒ.first([
+  ƒ.ᐅwhen(ᐅ([ arity, is(1) ]))(apply1),
+  ƒ.ᐅwhen(ᐅ([ arity, is(2) ]))(apply2),
+  ƒ.ᐅwhen(ᐅ([ arity, is(3) ]))(apply3),
+]))(f)
 
 export {
   apply,
   apply1,
   apply2,
   apply3,
+  applyN,
 }
 
 // binding and calling methods
