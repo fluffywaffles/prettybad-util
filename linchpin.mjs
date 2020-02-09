@@ -72,11 +72,11 @@ export {
  *
  * — fin
  */
-const Fn    = Function
-const arity = f   => f.length
-const bind  = ctx => f => Fn.bind.call(f, ctx)
-const call  = ctx => f =>  arg => Fn.call.call(f, ctx, arg)
-const apply = ctx => f => args => Fn.apply.call(f, ctx, args)
+const Fn     = Function
+const arity  = f   => f.length
+const bind   = ctx => f => Fn.bind.call(f, ctx)
+const call   = ctx => f =>  arg => Fn.call.call(f, ctx, arg)
+const apply  = ctx => f => args => Fn.apply.call(f, ctx, args)
 const method = name => args => obj => apply(obj)(obj[name])(args)
 
 export {
