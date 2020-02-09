@@ -217,7 +217,7 @@ const fallible_create = definition => value => definition({
 })(value)
 
 // 'Guard's a function with a predicate in a fallible
-function fallible_guard (pred) {
+function fallible_ᐅwhen (pred) {
   return fn => fallible_create(({ pose, fail }) => value => {
     return pred(value) ? pose(fn(value)) : fail()
   })
@@ -313,7 +313,8 @@ const ƒ = js.assign({
   await     : fallible_await,
   unfailing : fallible_unfailing,
   // Wrappers
-  guard     : fallible_guard,
+  guard     : fallible_ᐅwhen,
+  ᐅwhen     : fallible_ᐅwhen,
   atomic    : fallible_atomic,
   fatalize  : fallible_fatalize,
   // Unwrappers
@@ -454,8 +455,8 @@ const object_copy = obj => ᐅ([
   ᐅdo([ js.get_prototype, js.create ]),
 ])(obj)
 const copy = object => ƒ.fatalize(ƒ.first([
-  ƒ.guard(reflex.instance.Array)(array_copy),
-  ƒ.guard(reflex.type.object)(object_copy),
+  ƒ.ᐅwhen(reflex.instance.Array)(array_copy),
+  ƒ.ᐅwhen(reflex.type.object)(object_copy),
 ]))(object)
 const copy_and    = f => obj  => ᐅ([ copy, f ])(obj)
 const copy_apply  = f => args => copy_and(apply(f)(args))
