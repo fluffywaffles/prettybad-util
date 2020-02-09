@@ -1662,9 +1662,9 @@ export function test (suite) {
       'disinterlace: make same-length arrays out of pairs':
         t => t.eq(disinterlace([[1,`a`],[2,`b`]]))([[1,2], [`a`,`b`,]]),
       'til: build an array of numbers up to a limit':
-        t => t.eq(til(6))(to6),
+        t => t.eq(til(6))([ 0, 1, 2, 3, 4, 5 ]),
       'thru: build an array of numbers including a limit':
-        t => t.eq(thru(5))(to6),
+        t => t.eq(thru(5))([ 0, 1, 2, 3, 4, 5 ]),
       'drop_end: drops n items from end of array':
         t => t.eq(drop_end(2)([ 1, 2, 3 ]))([ 1 ]),
     }),
