@@ -46,6 +46,13 @@
   - wait  ↔ setTimeout
   - every ↔ setInterval
   - soon  ↔ {setIdleCallback,requestAnimationFrame}
+- Thoroughly-tested profiling utilities
+  - time/timed
+  - These are implemented, but not well-tested
+- High-effort: follow-up to profiling utilities:
+  - automatic CI profiling
+  - speed comparison matrix wrt. other utility libraries
+    - spoiler alert: @prettybad/util will be slower ^______^...
 
 "Deep" update:
 
