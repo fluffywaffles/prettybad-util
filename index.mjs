@@ -235,6 +235,15 @@ function fallible_atomic (fallible) {
   })
 }
 
+function fallible_await (deferred) {
+  return fallible_create(({ pose, fail }) => (args = []) => {
+    return (async function () {
+      try       { return pose(await apply(deferred)(args)) }
+      catch (e) { return fail(e) }
+    })()
+  })
+}
+
 function fallible_fail () {
   return fallible_create(({ fail }) => _ => fail())
 }
@@ -269,6 +278,7 @@ const ƒ = js.assign({
   first     : fallible_first,
   // Constructors
   fail      : fallible_fail,
+  await     : fallible_await,
   unfailing : fallible_unfailing,
   // Wrappers
   guard     : fallible_guard,
