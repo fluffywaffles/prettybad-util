@@ -266,8 +266,8 @@ function fallible_succeeded ([ succeeded, result ]) {
   return succeeded
 }
 
-const fallible_fatalize = fallible => value => {
-  return fallible_unwrap(fallible(value))
+function fallible_fatalize (fallible) {
+  return ᐅ([ fallible, fallible_unwrap ])
 }
 
 const ƒ = js.assign({
