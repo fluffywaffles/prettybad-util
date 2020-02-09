@@ -75,6 +75,15 @@ export {
   proxy,
 }
 
+const trampoline = next => value => {
+  while (next !== false) { [ next, value ] = apply(next)(value) }
+  return value
+}
+
+export {
+  trampoline,
+}
+
 // functions
 const id      = v => v
 const ret     = v  => _ => v
