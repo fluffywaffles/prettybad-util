@@ -109,8 +109,11 @@ const time = async thunk => {
   }
 }
 
+const timed = fn => args => time(() => apply(fn)(args))
+
 export {
   time,
+  timed,
 }
 
 // functions
