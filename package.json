@@ -2,7 +2,7 @@
   "name": "@prettybad/util",
   "version": "0.2.2",
   "description": "μtil - micro utilities",
-  "main": "index.mjs",
+  "main": "lib/index.mjs",
   "scripts": {
     "test": "npx rollup -c .rollup.test.js -- test.mjs && node -r source-map-support/register .test.js && rm .test.js",
     "repl": "npm run build && node -i -e \"const mu = require('./out')\"",
