@@ -1,4 +1,4 @@
-# prettybad/μtil
+# @prettybad/util
 ## it's worse than underscore
 
 In keeping with my life motto ("I bet a could make a pretty bad {x}"),
