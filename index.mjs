@@ -1051,7 +1051,7 @@ export {
   string_split,
 }
 
-export function test (suite) {
+export function test (harness) {
   const to6 = [ 1, 2, 3, 4, 5 ]
   const sym_a = Symbol(`a`)
 
@@ -1060,7 +1060,7 @@ export function test (suite) {
     return false
   }
 
-  return suite(`prettybad/μtil: worse than underscore`, [
+  return harness.suite(`prettybad/μtil: worse than underscore`, [
     t => t.suite(`None`, {
       'perpetuates itself': t => {
         return true
