@@ -1445,7 +1445,7 @@ export function test (suite) {
       'map_properties: map over and alter object properties':
         t => {
           const a = { a: 5 }
-          const b = js.create({})({ a: { value: 5 } })
+          const b = js.create(Object.prototype)({ a: { value: 5 } })
           const make_private_immutable = ([ key, descriptor ]) => {
             return [ key, { value: descriptor.value } ]
           }
