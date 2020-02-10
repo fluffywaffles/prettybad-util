@@ -8,6 +8,10 @@
     "repl": "npm run build && node -i -e \"const mu = require('./out')\"",
     "build": "npx rollup -c .rollup.test.js -- index.mjs && mv .test.js out.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/fluffywaffles/prettybad-util.git"
+  },
   "author": "fluffywaffles <skorlir@gmail.com>",
   "license": "ISC",
   "devDependencies": {
