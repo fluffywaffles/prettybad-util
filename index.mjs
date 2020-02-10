@@ -100,7 +100,9 @@ const time = async thunk => {
       rem     = rem - (m * BigInt(1e6))
       const u = rem / BigInt(1e3)
       const n = rem - (u * BigInt(1e3))
-      return [ `stats:`, `${s}s`, `${m}ms`, `${u}μs`, `${n}ns` ].join('\t')
+      return [
+        `stats:`, `${s}s`, `${m}ms`, `${u}μs`, `${n}ns`,
+      ].join('\t')
     },
     in: {
       ns: diff,
