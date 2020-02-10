@@ -12,6 +12,7 @@
   "license": "ISC",
   "devDependencies": {
     "@sisyphus/sisyphus": "latest",
+    "cloc": "^2.5.1",
     "rollup": "^0.54.1",
     "rollup-plugin-node-resolve": "^3.4.0",
     "source-map-support": "^0.5.16"
