@@ -12,34 +12,38 @@ pretty bad goals:
     - Seriously why isn't the built-in library clear in the first place
 2. Don't ignore property descriptors
     - Merging objects merges descriptors
-    - Copying an object doesn't omit nonenumerable properties
-    - Updating an object doesn't make its descriptor enumerable or
-      writable if it wasn't before
+    - Copying an object doesn't omit non-enumerable properties
+    - Updating a non-enumerable property doesn't make it enumerable
+    - Updating a non-writable property doesn't make it writable
     - In general, updating an object doesn't change things you don't
-      explicitly intend to change
+      explicitly change
     - `*_propert{y,ies}` and `*_descriptor{s}` APIs exist for explicitness
 3. Everything is curried all of the time
     - Composition over rice with a cup of chai tea
     - I get tired of writing out names for arguments I'm passing along
     - Point-free... erm... et cetera
 4. As lodash/fp puts it, "Iteratee first, data last"
-    - The data is always the last argument, e.g. `map(inc)([ 1, 2, 3 ])`
-    - I could have just said that, but I think the lodash-eff-pee-ers are funnier so I copied them
+    - The data is always the last argument: `map(v => v + 1)([ 1, 2, 3 ])`
+    - I could've just said that, but the lodash-eff-pee-ers are funnier so
+      I copied them
 5. Where it makes sense, just be polymorphic
     - Check object type tags and dispatch the correct function
-    - For example, `copy` dispatches: `array_copy` on arrays, and `object_copy` on normal objects
+    - For example, `copy` dispatches: `object_copy`, but `array_copy` on
+      arrays
 6. In general, don't ever do anything with prototypes
     - They're complex and inefficient to work with. Leave them alone
 7. As a generalization of the prototypes rule: nothing is ever 'deep'
-    - 'Deep' recurrences into objects are generally inefficient and unnecessary
-    - Even worse: 'deep' is ambiguous.
+    - 'Deep' recurrences into objects are inefficient and often unneeded
+    - Even worse: a 'deep' action on an object is ambiguous.
+        - Does 'deep' include non-enumerable properties?
         - Does 'deep' include the protype chain?
         - Does 'deep' copy functions? (If so, how?)
-        - Does 'deep' also copy array elements?
+        - Does 'deep' copy array elements?
+        - We could go deeper into this sinkhole, but I'd rather just not.
     - Instead, the library should provide clean APIs for walking trees
-8. Be immutable by default, but provide clearly-labeled mutative alternatives
-    - e.g.: `splice` and `splice.mut`, `map` and `map.mut`, `filter` and `filter.mut`
-    - Mutation should be explicit and grep-able (so, like, search for `.*\.mut(.*)`)
+8. Be immutable by default, but with clearly-labeled mutative alternates
+    - `splice` and `splice.mut`; `map`, `map.mut`; `filter`, `filter.mut`
+    - Mutation is explicit and grep-able (like, search for `.*\.mut(.*)`)
 
 Why mutative APIs? Well, uh, what for... when you performant, need the...
 where we do want to, uh, do that.
