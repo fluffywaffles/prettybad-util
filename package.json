@@ -20,8 +20,8 @@
   "devDependencies": {
     "@sisyphus/sisyphus": "^0.5.0",
     "cloc": "^2.5.1",
-    "rollup": "^0.54.1",
-    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup": "^2.3.3",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "source-map-support": "^0.5.16"
   }
 }
