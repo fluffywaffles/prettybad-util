@@ -5,7 +5,8 @@ function mkbuild ({ input }) {
     input,
     output: {
       file: `.test.js`,
-      format: `cjs`,
+      name: `mu`,
+      format: `umd`,
       sourcemap: `inline`,
     },
     plugins: [ resolve() ],
