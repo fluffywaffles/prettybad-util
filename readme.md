@@ -87,6 +87,6 @@ Nevermind, I'm tired of making up FAQs.
 # Does it work?
 
 Yes. If you have a version of node later than v13, you can run the
-test-suite with `$ node test.mjs`. If you have an earlier version, then
-run `npm t` and it will bundle the code with `rollup` first before
-attempting to run the test suite.
+test-suite with `node test.mjs`. To only see failures, run `npm test`. If
+you have an earlier version, run `npm run test:bundle` and it will bundle
+the code with `rollup` first before attempting to run the test suite.

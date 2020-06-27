@@ -1,4 +1,3 @@
 node_modules/
-.test.js
+.out.js
 .tern-port
-out.js

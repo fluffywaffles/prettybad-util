@@ -4,7 +4,7 @@ function mkbuild ({ input }) {
   return {
     input,
     output: {
-      file: `.test.js`,
+      file: `.out.js`,
       name: `mu`,
       format: `umd`,
       sourcemap: `inline`,
