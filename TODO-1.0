@@ -1,15 +1,14 @@
 - Add usage examples to readme
 - Add iterators specification to documentation (`[ next, value ]`)
+- ᐅ.break alias to fold.break
+  - Enables short-circuiting pipelines without referencing fold
+  - Greatly expands and generalizes the use-case covered by pipelines
+  - `ᐅ([ ᐅwhen(_ => skip_this)(_ => ᐅ.break), ... ])`
 - Make sure all functions are tested
   - Including mutative alternates
   - Including modules (d, linchpin, ...)
   - Including setters, getters, updaters, fallibles, iterators...
   - Including time-profiling utils
-- `benchmark` util on top of `time`
-  - `benchmark({ samples: N, ... })(() => ...)` etc.
-  - call `time` multiple times and `reduce` the results
-  - calculate median, mean, standard deviation
-  - `profile.summarize({})` prints mean ± stddev, median, best, worst
 - `update*` improvements/consistency fixes:
   - `update[_value]`: updates `value` (preserves descriptor)
   - `update_descriptor`: updates `descriptor`
@@ -22,7 +21,7 @@
   - `update_descriptors`: { [key]: descriptor => descriptor, ... }
   - `update_path[_value]`: [ key, ... ] => (value => value)
   - `update_path_descriptor`: [ key, ... ] => (descriptor => descriptor)
-- Now the taxonomy is:
+- Now the hierarchy is:
   - `set*`: set/create new
   - `update*`: modify existing
     - `_path*`: at the end of a path
@@ -45,36 +44,49 @@
     - walk_leaves: walker(walk => fn => walk(ᐅif(ᐅ([ apply(get), reflex.type.object ]))(walk.recur)(fn)))
     - walk_leaves.{order}(increment)([ 1, 2, [ 3, 4, [ 5 ] ] ])([ 2, 3, [ 4, 5, [ 6 ] ] ])
 - Add more mutative alternates (where applicable)
-- `fallible.or`: supersedes `update_or` below with a more general solution
-  - `update_or`: update_or(handle_none)(key)(updater)(target)
-    - e.g.: update_or(set_value(value)) for supplying a default
+
+---- Additional updaters ?
+
+upsert = key => ({ default }) => updater => object => {
+  return update
+    (key)
+    (ᐅif(reflex.type(types.undefined))(_ => default)(updater))
+    (object)
+}
+
+const count_up = upsert('count')({ default: 0 })(v => v + 1)
+const counter = {}
+times(5)(count_up)(counter) // { count: 4 }
+
+---- fallible.first as fallback ?
+
+upsert_path([ 'a', 'b', 'c' ])({ default: default_value })(updater):
+
+  ƒ.first([
+    update_path([ 'a', 'b', 'c' ])(updater),
+    set.at_path.value([ 'a', 'b', 'c' ])(default_value),
+  ])
+
+---- POST 1.0 ?
+
+- `benchmark` util on top of `time`
+  - `benchmark({ samples: N, ... })(() => ...)` etc.
+  - call `time` multiple times and `reduce` the results
+  - calculate median, mean, standard deviation
+  - `profile.summarize({})` prints mean ± stddev, median, best, worst
+
 - Timers?
   - wait  ↔ setTimeout
   - every ↔ setInterval
   - soon  ↔ {setIdleCallback,requestAnimationFrame}
+
+- fallible recovery / fallback fns ?
+- fallible.first ALREADY DOES THIS
+- `fallible.or`: supersedes `update_or` below with a more general solution
+  - `update_or`: update_or(handle_none)(key)(updater)(target)
+    - e.g.: update_or(set_value(value)) for supplying a default
+
 - High-effort: follow-up to profiling utilities:
   - automatic CI profiling
   - speed comparison matrix wrt. other utility libraries
     - spoiler alert: @prettybad/util will be slower ^______^...
-
-"Deep" update:
-
-update_path([ 'x', 'y', 'z' ])(v => v + 1)({ x: { y: { z: 5 } } })
-=> { x: { y: { z: 6 } } }
-
-"update*_or" ?
-
-update_or = key => fallback => updater => object => {
-  ᐅif(has(key)(object))
-}
-
-update_or_set = key => ({ initial }) => updater => object => {
-  return update
-    (key)
-    (ᐅif(reflex.type(types.undefined))(_ => initial)(updater))
-    (object)
-}
-
-const count_up = update_or_set('count')({ intitial: 0 })(v => v + 1)
-const counter = {}
-times(5)(count_up)(counter) // { count: 4 }
